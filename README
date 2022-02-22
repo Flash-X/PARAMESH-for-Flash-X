@@ -1,0 +1,29 @@
+This is PARAMESH-for-Flash-X.
+
+This repository contains source files copied from or derived from the
+PARAMESH library, adapted for use as part of Flash-X simulations.
+To work properly within a Flash-X source tree, it should be unpacked
+as
+   source/Grid/GridMain/AMR/Paramesh4/PM4_package .
+
+Note that this is *not* a full distribution of PARAMESH code, and not
+meant to replace PARAMESH for purposes other than use by Flash-X. The
+original PARAMESH distribution contains additional files, source,
+tools, and documentation.
+
+The contents of this repository is licensed subject to a NASA OPEN
+SOURCE AGREEMENT VERSION 1.3.  A copy of this agreement can be found
+in the file PARAMESH_USERS_AGREEMENT .
+
+PARAMESH was developed under NASA Contracts/Grants NAG5-2652 with
+George Mason University; NAS5-32350 with Raytheon/STX; NAG5-6029 and
+NAG5-10026 with Drexel University; NAG5-9016 with the University of
+Chicago; and NCC5-494 with the GEST Institute.
+The PARAMESH software is now hosted using SourceForge.  You can
+download the files for PARAMESH 4.1 by going to
+https://sourceforge.net/projects/paramesh/ and clicking on the
+'Download' link. You can also find earlier versions of PARAMESH there.
+A detailed description of the PARAMESH package distribution and
+compilation instructions can be found in the PARAMESH User's manual,
+for this and more information on PARAMESH please see the website
+https://web.archive.org/web/20160421055017/http://www.physics.drexel.edu/~olson/paramesh-doc/Users_manual/amr.html .

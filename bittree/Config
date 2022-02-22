@@ -1,0 +1,6 @@
+#Config file for Grid/GridMain/AMR/Paramesh4/PM4_package/bittree
+
+D gr_btExchangeBflags True = bflags is exchanged during
+D & refinement. Increases communication. False (default) = entire bflags array
+D & is reset to -1 during each refinement.
+PARAMETER gr_btExchangeBflags BOOLEAN False

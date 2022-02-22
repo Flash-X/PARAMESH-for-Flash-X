@@ -1,0 +1,18 @@
+#Config file for Grid/GridMain/AMR/Paramesh4/PM4_package
+
+# Requires use of some Setup Variables
+USESETUPVARS FlashAvoidOrrery, Bittree
+
+# Note: Much of the rules for sources under PM4_package
+# are given at a higher level, primarily in
+# Grid/GridMain/AMR/Paramesh4/Config one dirfectory level up.
+
+IF FlashAvoidOrrery
+  REQUIRES ./flash_avoid_orrery
+  CHILDORDER headers source flash_avoid_orrery
+ENDIF
+
+IF Bittree
+  REQUIRES ./bittree
+  CHILDORDER headers source flash_avoid_orrery bittree
+ENDIF

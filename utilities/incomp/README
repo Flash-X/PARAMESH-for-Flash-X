@@ -1,0 +1,7 @@
+Auxiliary files moved inside the PM_package level, primarily
+for use by Incompressible-Navier-Stokes solver in Flash-X.
+Should work together with a higher-level "Incomp" directory.
+Source files here are used in place of files with
+the same name a higher directory levels if and
+only if this source directory is REQUIRED
+or REQEUSTED.

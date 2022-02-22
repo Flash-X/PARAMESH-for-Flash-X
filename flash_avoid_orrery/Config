@@ -1,0 +1,25 @@
+USESETUPVARS FlashAvoidOrrery
+
+IF FlashAvoidOrrery == ""
+   SETUPERROR "Unexpected setup problem."
+ENDIF
+
+#We use this pre-processor definition to enclose 
+#references to "use_flash_surr_blks_fill" variable 
+#that is only declared in a custom implementation of 
+#Paramesh's physicaldata.F90.
+PPDEFINE FLASH_GRID_PARAMESH4DEV_SURR_BLKS_OPTION
+
+D use_flash_surr_blks_fill  Whether to use FLASH's custom
+D & surr_blks fill rather than the default pm4dev orrery algorithm
+D & for surr_blks fill.  It is expected that the custom
+D & implementation will be faster, although it is less widely
+D & applicable.  It will be ignored if the custom implementation
+D & is not applicable, and the orrery will be used.  As such, setting
+D & to .true. as a default value is not dangerous.
+PARAMETER use_flash_surr_blks_fill BOOLEAN TRUE
+
+D use_reduced_orrery  If the orrery needs to be run it is
+D & useful to circulate the data in a reduced communicator
+D & containing only those MPI ranks that own Paramesh blocks.
+PARAMETER use_reduced_orrery BOOLEAN TRUE
