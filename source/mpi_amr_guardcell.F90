@@ -85,13 +85,52 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_guardcell(mype,iopt,nlayers,         & 
+Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &
+                               nlayersx,nlayersy,nlayersz, &
+                               maxNodetype_gcWanted,pdgNo)
+  Use paramesh_interfaces, Only : amr_guardcell_onePdg
+  Use physicaldata, only: gr_thePdgs
+  implicit none
+  Integer, intent(in) :: mype,iopt,nlayers
+  Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+  Integer, intent(in), optional :: maxNodetype_gcWanted
+  integer, intent(in), optional :: pdgNo
+
+  integer :: npdg, ig,sg,eg
+  npdg = 1
+  if (present(pdgNo)) npdg = pdgNo
+  if (npdg == -1) then
+     sg = 1; eg = NUM_PDGS
+  else
+     sg = npdg; eg = npdg
+  end if
+  do ig = sg,eg
+     call amr_guardcell_onePdg(mype,iopt,nlayers, gr_thePdgs(ig),ig, &
+                               nlayersx,nlayersy,nlayersz, &
+                               maxNodetype_gcWanted=maxNodetype_gcWanted)
+  end do
+
+
+end Subroutine amr_guardcell_pdgNo
+
+Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
                                nlayersx,nlayersy,nlayersz, &
                                maxNodetype_gcWanted)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
+  use gr_pmPdgDecl, ONLY : pdg_t
+  use paramesh_dimensions, ONLY: gr_thePdgDimens
+      Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge
+!      Use physicaldata
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              gt_facevarx,gt_facevary,gt_facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
+                              unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n, unk_n1
+      Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+      Use physicaldata, only: gcell_on_cc,gcell_on_fc,gcell_on_ec,gcell_on_nc
+      Use physicaldata, only: diagonals,advance_all_levels,force_consistency,no_permanent_guardcells
       Use workspace
       Use tree
       use paramesh_comm_data
@@ -111,6 +150,8 @@
 
 !-----Input/Output Arguments
       Integer, intent(in) :: mype,iopt,nlayers
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       Integer, intent(in), optional :: maxNodetype_gcWanted
 
@@ -141,6 +182,15 @@
       Else
          maxNodetype_gcWanted_loc = -1
       End If
+
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1      &
+            )
 
       If (iopt == 1) Then
 
@@ -241,7 +291,7 @@
 !-----Restrict solution to parent blocks
       If (.not.advance_all_levels) Then
          iempty = 0
-         call amr_restrict(mype,iopt,iempty,.True.)
+         call amr_restrict(mype,iopt,iempty,.True.,ig)
          call amr_1blk_guardcell_reset
       End if
 
@@ -281,6 +331,7 @@
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         & 
+                              pdg,ig,                                  &
                               nlayersx,nlayersy,nlayersz)
 
 
@@ -298,6 +349,7 @@
         Call amr_1blk_guardcell(mype,iopt,nlayers,lb,mype,             & 
                                 lcc,lfc,lec,lnc,                       & 
                                 l_srl_only,icoord,ldiag,               & 
+                                pdg,ig,                                &
                                 nlayersx,nlayersy,nlayersz)
 
         Do k = 1,1+2*k3d
@@ -470,8 +522,9 @@
       int_gcell_on_nc(:) = .True.
 
       Endif ! If (no_permanent_guardcells)
+  end ASSOCIATE
 
       Return
-      End Subroutine amr_guardcell
+End Subroutine amr_guardcell_onePdg
 
 

@@ -108,14 +108,14 @@
 !!
 !! CALLS
 !!
-!!   mpi_pack_blocks
+!!   mpiPack_blocks
 !!   mpi_Sbuffer_size
 !!   mpi_unpack_blocks
 !!   mpi_Rbuffer_size
 !!   mpi_pack_edges
 !!   mpi_unpack_edges
-!!   mpi_pack_fluxes
-!!   mpi_unpack_fluxes
+!!   mpiPack_fluxes
+!!   mpiUnpack_fluxes
 !!   mpi_amr_read_guard_comm
 !!   mpi_amr_read_prol_comm
 !!   mpi_amr_read_flux_comm
@@ -154,10 +154,12 @@
                                     lguard,lprolong,                   & 
                                     lflux,ledge,lrestrict,lfulltree,   & 
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   & 
+                                    pdg,ig,                            &
                                     nlayersx,nlayersy,nlayersz,        & 
                                     flux_dir)
 
 !-----Use statements.
+      use gr_pmPdgDecl, ONLY : pdg_t
       Use paramesh_dimensions
       Use physicaldata
       Use workspace
@@ -168,14 +170,14 @@
       Use mpi_morton, ONLY: commatrix_send, commatrix_recv, max_no_to_send
 #endif
       Use paramesh_mpi_interfaces, Only :                              & 
-                                      mpi_pack_blocks,                 & 
+                                      mpiPack_blocks,                 &
                                       mpi_Sbuffer_size,                & 
                                       mpi_unpack_blocks,               & 
                                       mpi_Rbuffer_size,                & 
                                       mpi_pack_edges,                  & 
                                       mpi_unpack_edges,                & 
-                                      mpi_pack_fluxes,                 & 
-                                      mpi_unpack_fluxes,               & 
+                                      mpiPack_fluxes,                 &
+                                      mpiUnpack_fluxes,               &
                                       mpi_amr_read_guard_comm,         & 
                                       mpi_amr_read_prol_comm,          & 
                                       mpi_amr_read_flux_comm,          & 
@@ -202,6 +204,8 @@
       Integer, Intent(inout) :: tag_offset
       Logical, Intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      type(pdg_t), intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       Integer, Intent(in), Optional :: nlayersx,nlayersy,nlayersz
       Integer, Intent(in), Optional :: flux_dir
 
@@ -442,36 +446,36 @@
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .True., .False., .False., flux_dir,      &
+                              .True., .False., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .True.,.False., .False., flux_dir,       &
+                              .True.,.False., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .False., .True., .False., flux_dir,      &
+                              .False., .True., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .False.,.True., .False., flux_dir,       &
+                              .False.,.True., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (ledge) Then
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .False., .False., .True., flux_dir,      &
+                              .False., .False., .True.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .False.,.False., .True., flux_dir,       &
+                              .False.,.False., .True.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       End If  ! End If (lguard.or.lprolong)
@@ -512,14 +516,15 @@
 
       If (lguard.or.lprolong) Then
 
-        Call mpi_pack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         & 
+        Call mpiPack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         &
                              buffer_dim_send,send_buf,offset_tree,     & 
+                             pdg,ig,                                  &
                              nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_pack_fluxes(mype,nprocs,buffer_dim_send,send_buf,     & 
-                             offset_tree,flux_dir)
+        Call mpiPack_fluxes(mype,nprocs,buffer_dim_send,send_buf,     &
+                             offset_tree,pdg,ig,flux_dir)
 
       ElseIf (ledge) Then
 
@@ -536,12 +541,13 @@
       If (lguard.or.lprolong) Then
 
          Call mpi_unpack_blocks(mype,iopt,lcc,lfc,lec,lnc,             & 
-                                buffer_dim_recv,temprecv_buf,          & 
+                                buffer_dim_recv,temprecv_buf,ig,   &
                                 nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
          
-         Call mpi_unpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     & 
+         Call mpiUnpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     &
+                                pdg,ig,                               &
                                 flux_dir)
 
       ElseIf (ledge) Then

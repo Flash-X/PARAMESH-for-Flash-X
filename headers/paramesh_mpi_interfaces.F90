@@ -33,37 +33,44 @@
 
       interface
       subroutine mpi_amr_get_remote_block(mype,remote_pe,remote_block, & 
-     &    idest,iopt,lcc,lfc,lec,lnc, & 
+     &    idest,iopt,lcc,lfc,lec,lnc,ig, &
      &    nlayersx,nlayersy,nlayersz)
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
+      integer, intent(in)  :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_amr_get_remote_block
       end interface
 
       interface
-      subroutine mpi_amr_get_remote_block_fvar(mype, & 
+      subroutine mpiAmr_get_remote_block_fvar(mype, & 
      &                     remote_pe,remote_block,icoord, & 
-     &                     recvx,recvy,recvz,idest)
+     &                     recvx,recvy,recvz,idest,ig)
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: icoord,idest
       real, intent(out)   :: recvx(:,:,:,:)
       real, intent(out)   :: recvy(:,:,:,:)
       real, intent(out)   :: recvz(:,:,:,:)
-      end subroutine mpi_amr_get_remote_block_fvar
+      integer, Intent(in) :: ig
+      end subroutine mpiAmr_get_remote_block_fvar
       end interface
 
       interface
       subroutine mpi_amr_comm_setup(mype,nprocs,lguard,lprolong, & 
      &                              lflux,ledge,lrestrict,lfulltree, & 
      &                              iopt,lcc,lfc,lec,lnc,tag_offset, & 
+                                    pdg,ig,                          &
      &                              nlayersx,nlayersy,nlayersz, & 
      &                              flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: mype,nprocs,iopt
       integer, intent(inout) :: tag_offset
       logical, intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       logical, intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      type(pdg_t),intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       integer, intent(in), optional :: flux_dir
       end subroutine mpi_amr_comm_setup
@@ -136,25 +143,34 @@
       end interface
 
       interface
-      subroutine mpi_amr_1blk_guardcell_c_to_f( & 
+      subroutine mpiAmr_1blk_guardcell_c_to_f( &
      &                    mype,lb,pe,iopt,nlayers, & 
      &                    surrblks,lcc,lfc,lec,lnc,icoord,ldiag, & 
-     &                    nlayersx,nlayersy,nlayersz,ipolar)
-      integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
-      integer, intent(in) :: surrblks(:,:,:,:)
-      logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
-      integer, intent(in) :: nlayersx,nlayersy,nlayersz
-      integer, intent(in) :: ipolar(2)
-      end subroutine mpi_amr_1blk_guardcell_c_to_f
+     &                    nlayersx,nlayersy,nlayersz,ipolar,pdg,ig)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
+        integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
+        integer, intent(in) :: surrblks(:,:,:,:)
+        logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
+        integer, intent(in) :: nlayersx,nlayersy,nlayersz
+        integer, intent(in) :: ipolar(2)
+        type(pdg_t), intent(INOUT) :: pdg
+        integer, intent(in) :: ig
+      end subroutine mpiAmr_1blk_guardcell_c_to_f
       end interface
 
       interface
-      subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc, & 
-     &                                 lfulltree,filling_guardcells)
-      integer, intent(in)  :: mype,iopt
-      logical, intent(in)  :: lcc,lfc,lec,lnc,lfulltree
-      logical, intent(in)  :: filling_guardcells
-      end subroutine mpi_amr_1blk_restrict
+         subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc, & 
+     &                                 lfulltree,filling_guardcells,&
+                                       pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
+           integer, intent(in)  :: mype,iopt
+           logical, intent(in)  :: lcc,lfc,lec,lnc,lfulltree
+           logical, intent(in)  :: filling_guardcells
+           type(pdg_t), intent(INOUT) :: pdg
+           integer, intent(in) :: ig
+         end subroutine mpiAmr_1blk_restrict
       end interface
 
       interface
@@ -173,26 +189,32 @@
       end subroutine mpi_amr_global_domain_limits
       end interface
 
-      interface
-      subroutine mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      interface !mpi_set_message_limits
+      subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                                  nlayersx,nlayersy,nlayersz)
       integer, intent(in)  ::  dtype,vtype
       integer, intent(out) ::  ia,ib,ja,jb,ka,kb
+      integer, intent(in)  ::  ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      end subroutine mpi_set_message_limits
+      end subroutine mpiSet_message_limits
       end interface
 
       interface
-      subroutine mpi_pack_blocks(mype,nprocs,iopt, & 
+      subroutine mpiPack_blocks(mype,nprocs,iopt, & 
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,S_buffer,offset, & 
+                                 pdg,ig,                  &
      &                           nlayersx,nlayersy,nlayersz)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
+      type(pdg_t),intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      end subroutine mpi_pack_blocks
+      end subroutine mpiPack_blocks
       end interface
 
       interface
@@ -200,13 +222,18 @@
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,offset, & 
      &                           block_sections, fluxes, edges, &
+                                 pdg,ig,                        &
      &                           flux_dir, &
      &                           nlayersx,nlayersy,nlayersz)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(out) ::  buf_dim
       integer, intent(in)  ::  offset
       logical, intent(in)  ::  block_sections, fluxes, edges
+      type(pdg_t), intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       integer, intent(in), optional :: flux_dir
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_Sbuffer_size
@@ -223,13 +250,17 @@
 
 
       interface
-      subroutine mpi_pack_fluxes(mype,nprocs, & 
-     &                          buf_dim,S_buffer,offset,flux_dir)
+      subroutine mpiPack_fluxes(mype,nprocs, & 
+     &                          buf_dim,S_buffer,offset,pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
       integer, intent(in)  ::  mype,nprocs
+      type(pdg_t),intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: flux_dir
-      end subroutine mpi_pack_fluxes
+      end subroutine mpiPack_fluxes
       end interface
 
       interface
@@ -245,11 +276,15 @@
       interface
       subroutine mpi_unpack_blocks(mype,iopt, & 
      &                             lcc,lfc,lec,lnc, & 
-     &                             buf_dim,R_buffer, & 
+     &                             buf_dim,R_buffer,ig, &
      &                             nlayersx,nlayersy,nlayersz)
+!      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in) :: mype,buf_dim,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
       real,    intent(IN) ::  R_buffer(buf_dim)
+!      type(pdg_t),intent(IN) :: pdg
+      integer, intent(in) :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_unpack_blocks
       end interface
@@ -258,12 +293,16 @@
       subroutine mpi_Rbuffer_size(mype,nprocs,iopt, & 
      &                            lcc,lfc,lec,lnc, & 
      &                            buf_dim, & 
-     &                            block_sections, fluxes, edges, flux_dir, &
+     &                            block_sections, fluxes, edges, pdg,ig, flux_dir, &
      &                            nlayersx,nlayersy,nlayersz)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  :: mype, nprocs, iopt
       integer, intent(out) :: buf_dim
       logical, intent(in)  :: lcc,lfc,lec,lnc
       logical, intent(in)  :: block_sections, fluxes, edges
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)  :: ig
       integer, intent(in), optional :: flux_dir
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_Rbuffer_size
@@ -279,13 +318,17 @@
       end interface
 
       interface
-      subroutine mpi_unpack_fluxes(mype, & 
-     &                          buf_dim,R_buffer,flux_dir)
+      subroutine mpiUnpack_fluxes(mype, & 
+     &                          buf_dim,R_buffer,pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  mype
       integer, intent(in)  ::  buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)  ::  ig
       integer, optional, intent(in) :: flux_dir
-      end subroutine mpi_unpack_fluxes
+      end subroutine mpiUnpack_fluxes
       end interface
 
       interface
@@ -302,23 +345,25 @@
       interface
       subroutine mpi_put_buffer(lb,ioptw,offset, & 
      &                          lcc,lfc,lec,lnc, & 
-     &                          buffer_size,R_buffer, & 
+     &                          buffer_size,R_buffer,ig, &
      &                          nlayersx,nlayersy,nlayersz)
       integer, intent(in)    :: lb,ioptw,buffer_size
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
       real,    intent(IN)    :: R_buffer(buffer_size)
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_put_buffer
       end interface
 
       interface
       subroutine mpi_get_Rbuffer_size(lb,dtype,ioptw,offset, & 
-     &                                lcc,lfc,lec,lnc, & 
+     &                                lcc,lfc,lec,lnc,ig, &
      &                                nlayersx,nlayersy,nlayersz)
       integer, intent(in)    :: lb,dtype,ioptw
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_get_Rbuffer_size
       end interface
@@ -346,48 +391,62 @@
       end interface
 
       interface
-      subroutine mpi_put_flux_buffer(mype,lb,offset, & 
-     &                          buffer_size,R_buffer,flux_dir)
+      subroutine mpiPut_flux_buffer(mype,lb,offset, & 
+     &                          buffer_size,R_buffer,pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: mype,lb,buffer_size
       integer, intent(inout) :: offset
       real,    intent(inout) :: R_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
-      end subroutine mpi_put_flux_buffer
+      end subroutine mpiPut_flux_buffer
       end interface
       interface
 
       subroutine mpi_get_Rbuffer_size_fluxes(lb,dtype,offset, & 
-     &                                       flux_dir)
+     &                                       pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: lb,dtype
       integer, intent(inout) :: offset
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
       end subroutine mpi_get_Rbuffer_size_fluxes
       end interface
 
       interface
-      subroutine mpi_get_buffer(mype,lb,dtype,iopt,offset, & 
+      subroutine mpiGet_buffer(mype,lb,dtype,iopt,offset, & 
      &                          lcc,lfc,lec,lnc, & 
      &                          buffer_size,S_buffer, & 
+                                pdg,ig,               &
      &                          nlayersx,nlayersy,nlayersz)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: dtype
       integer, intent(in)    :: lb,mype,iopt,buffer_size
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
       real,    intent(inout) :: S_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      end subroutine mpi_get_buffer
+      end subroutine mpiGet_buffer
       end interface
 
       interface
-      subroutine mpi_get_Sbuffer_size(mype,lb,dtype,iopt,offset, & 
-     &                                lcc,lfc,lec,lnc, & 
+      subroutine mpiGet_Sbuffer_size(mype,lb,dtype,iopt,offset, & 
+     &                                lcc,lfc,lec,lnc,ig, &
      &                                nlayersx,nlayersy,nlayersz)
       integer, intent(in)    :: dtype
       integer, intent(in)    :: lb,mype,iopt
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      end subroutine mpi_get_Sbuffer_size
+      end subroutine mpiGet_Sbuffer_size
       end interface
 
       interface
@@ -409,24 +468,30 @@
       end interface
 
       interface
-      subroutine mpi_get_flux_buffer(mype,lb,dtype,offset, & 
-     &                          buffer_size,S_buffer,flux_dir)
+      subroutine mpiGet_flux_buffer(mype,lb,dtype,offset, & 
+     &                          buffer_size,S_buffer,pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: dtype
       integer, intent(in)    :: lb,mype,buffer_size
       integer, intent(inout) :: offset
       real,    intent(inout) :: S_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
-      end subroutine mpi_get_flux_buffer
+      end subroutine mpiGet_flux_buffer
       end interface
 
       interface
-      subroutine mpi_get_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
-     &                                       flux_dir)
+      subroutine mpiGet_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
+     &                                       ig,flux_dir)
+      implicit none
       integer, intent(in)    :: dtype
       integer, intent(in)    :: lb,mype
       integer, intent(inout) :: offset
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
-      end subroutine mpi_get_Sbuffer_size_fluxes
+      end subroutine mpiGet_Sbuffer_size_fluxes
       end interface
 
       interface

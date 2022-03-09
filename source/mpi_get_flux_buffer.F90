@@ -11,8 +11,8 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_get_flux_buffer(mype,lb,dtype,offset, & 
-     &                          buffer_size,S_buffer,flux_dir)
+      subroutine mpiGet_flux_buffer(mype,lb,dtype,offset, & 
+     &                          buffer_size,S_buffer,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -33,6 +33,7 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -40,7 +41,7 @@
       use paramesh_comm_data
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -51,6 +52,8 @@
       integer, intent(in)    :: lb,mype,buffer_size
       integer, intent(inout) :: offset
       real,    intent(inout) :: S_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -73,7 +76,7 @@
       ilimit = shape(S_buffer)
 
       if(lb.gt.maxblocks_alloc) then
-        write(*,*) 'ERROR : mpi_get_buffer pe ',mype, & 
+        write(*,*) 'ERROR : mpiGet_buffer pe ',mype, & 
      &        ' putting blk ',lb,' into Sbuf'
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
@@ -100,8 +103,8 @@
 
 ! set vtype as though appropriate for cell-centered data
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
 ! pack the flux_x array for block lb
 
@@ -314,12 +317,12 @@
       offset = index 
 
       return
-      end subroutine mpi_get_flux_buffer
+      end subroutine mpiGet_flux_buffer
 
 !------------------------------------------------------------------------
 
-      subroutine mpi_get_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
-     &                                       flux_dir)
+      subroutine mpiGet_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
+     &                                       ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -347,7 +350,7 @@
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -357,6 +360,7 @@
 
       integer, intent(in)    :: lb,mype
       integer, intent(inout) :: offset
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -387,8 +391,8 @@
 
 ! set vtype as though appropriate for cell-centered data
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
 ! pack the flux_x array for block lb
 
@@ -574,4 +578,4 @@
       offset = index 
 
       return
-      end subroutine mpi_get_Sbuffer_size_fluxes
+      end subroutine mpiGet_Sbuffer_size_fluxes

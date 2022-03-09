@@ -36,7 +36,7 @@
       use paramesh_comm_data
 
       use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -68,8 +68,8 @@
       call amr_mpi_find_blk_in_buffer(mype,remote_block, & 
      &     remote_pe,1,dtype,index0,lfound)
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
       index = index0 + 1
 

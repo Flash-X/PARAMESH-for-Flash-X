@@ -108,18 +108,32 @@
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(5): unk, facevar[xyz]
 #include "paramesh_preprocessor.fh"
 
-Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
-                                       lfulltree,filling_guardcells)
+Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
+                                       lfulltree,filling_guardcells,&
+                                       pdg,ig)
 
 
 !-----Use Statements
-  Use paramesh_dimensions
-  Use physicaldata
-  Use tree
+  use gr_pmPdgDecl, ONLY : pdg_t
+!  Use paramesh_dimensions
+  Use paramesh_dimensions, only: gr_thePdgDimens
+  Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
+                                 nbndvar,nbndvare
+!  Use physicaldata
+  Use physicaldata, only: interp_mask_unk_res,     &
+                          interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
+                          interp_mask_ec_res,      &
+                          interp_mask_nc_res
+  Use physicaldata, only: cell_vol,cell_area1,cell_area2,cell_area3
+  Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                          facevarx1,  facevary1,  facevarz1
+  Use physicaldata, only: curvilinear, curvilinear_conserve
+  Use physicaldata, only: diagonals,lrestrict_in_progress
+  Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+  Use tree, only: lnblocks, nchild, lrefine, nodetype, child, laddress, empty
   Use workspace
   use mpi_morton
   Use timings
@@ -148,15 +162,14 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer, Intent(in)  :: mype,iopt
   Logical, Intent(in)  :: lcc,lfc,lec,lnc,lfulltree
   Logical, Intent(in)  :: filling_guardcells
+  type(pdg_t), intent(INOUT) :: pdg
+  integer, intent(in) :: ig
 
 !-----Local Variables and Arrays
-  Real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
+  Real,allocatable :: temp(:,:,:,:)
 
 #ifdef FLASH_PMFEATURE_UNUSED
-    Real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
-                                          kl_bnd1:ku_bnd1+k3d)
-    Real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
-                                          kl_bnd1:ku_bnd1+k3d)
+  Real,allocatable :: tempn(:,:,:,:),sendn(:,:,:,:)
 #endif
   Real,Allocatable :: tempf(:,:,:,:)
   Real,Allocatable :: sendf(:,:,:,:)
@@ -188,11 +201,44 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   include 'mpif.h'
 
 !-----Begin Executable Code
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            il_bnd      => gr_thePdgDimens(ig) % il_bnd,  &
+            iu_bnd      => gr_thePdgDimens(ig) % iu_bnd,  &
+            jl_bnd      => gr_thePdgDimens(ig) % jl_bnd,  &
+            ju_bnd      => gr_thePdgDimens(ig) % ju_bnd,  &
+            kl_bnd      => gr_thePdgDimens(ig) % kl_bnd,  &
+            ku_bnd      => gr_thePdgDimens(ig) % ku_bnd,  &
+            il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1      &
+            )
+
   nguard0 = nguard*npgs
   nguard1 = nguard - nguard0
   nguard_work0 = nguard_work*npgs
   nguard_work1 = nguard_work - nguard_work0
 
+  if (iopt == 1 .AND. lcc) then
+     allocate(temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1))
+  end if
+
+#ifdef FLASH_PMFEATURE_UNUSED
+  if (iopt == 1 .AND. lnc) then
+     allocate(tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d))
+     allocate(sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d))
+  end if
+#endif
   if (iopt == 1 .AND. (lfc .OR. lec)) then
      maxbnd = max(1,nbndvare,nbndvar)
      Allocate(                                                     &
@@ -263,6 +309,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                               lflux,ledge,lrestrict,.False.,           & 
                               iopt,lcc,lfc,lec,lnc,                    & 
                               tag_offset,                              & 
+                              pdg,ig,                                  &
                               1,1,1)
 
         If (lnblocks > 0) Then
@@ -318,7 +365,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                        idest = 1
                        Call amr_perm_to_1blk(lcc,lfc,lec,lnc,                  &
                                  remote_block,remote_pe,             &
-                                 iopt,idest)
+                                 iopt,idest,pdg,ig)
                        if (iopt.eq.1) call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, &
                             il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
                             why=gr_callReason_RESTRICT)
@@ -1001,11 +1048,20 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
   lrestrict_in_progress = .False.
 
-  if (allocated(tempf)) then
-     Deallocate(tempf)
-     Deallocate(sendf)
-  end if
-
+    if (allocated(tempf)) then
+       Deallocate(tempf)
+       Deallocate(sendf)
+    end if
+#ifdef FLASH_PMFEATURE_UNUSED
+    if (iopt == 1 .AND. lnc) then
+       deallocate(tempn)
+       deallocate(sendn)
+    end if
+#endif
+    if (allocated(temp)) then
+       deallocate(temp)
+    end if
+  end ASSOCIATE
   Return
-End Subroutine mpi_amr_1blk_restrict
+End Subroutine mpiAmr_1blk_restrict
 

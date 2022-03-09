@@ -41,7 +41,7 @@
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -94,8 +94,8 @@
 
 ! set vtype as though appropriate for node-centered data
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
 
@@ -524,7 +524,7 @@
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -564,8 +564,8 @@
 
 ! set vtype as though appropriate for node-centered data
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
 

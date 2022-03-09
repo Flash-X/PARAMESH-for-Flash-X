@@ -38,7 +38,7 @@
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -74,8 +74,8 @@
       index = index+3
 
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
 ! unpack the bedge_facex_y and bedge_facex_z arrays for block lb
@@ -488,7 +488,7 @@
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -522,8 +522,8 @@
       index = index+3
 
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
 ! unpack the bedge_facex_y and bedge_facex_z arrays for block lb

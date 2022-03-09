@@ -81,7 +81,7 @@
 !! CALLS
 !!
 !!  amr_mpi_find_blk_in_buffer
-!!  mpi_set_message_limits
+!!  mpiSet_message_limits
 !!
 !! RETURNS
 !!  
@@ -97,6 +97,7 @@
 !! AUTHORS
 !!
 !!  Peter MacNeice, July 1998.
+!!  Klaus Weide (2021) additions for pdg stuff
 !!
 !!***
 
@@ -108,18 +109,23 @@
       Subroutine amr_1blk_cc_cp_remote(mype,remote_pe,remote_block,  & 
                                        idest,iopt,id,jd,kd,is,js,ks, &
                                        ilays,jlays,klays,            & 
-                                       nblk_ind,ipolar)
+                                       nblk_ind,ipolar,              &
+                                       pdg,ig)
 
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use workspace
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      Use paramesh_dimensions, only : k2d,k3d, nguard_work
+      Use physicaldata, only : gt_unk
+      Use physicaldata, only : ngcell_on_cc, int_gcell_on_cc, gcell_on_cc_pointer
+      Use physicaldata, only : spherical_pm, lsingular_line, no_permanent_guardcells
+      Use tree, only : lnblocks
+      Use workspace, only : work1, work
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
-      Use timings
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
+      Use timings, only : timing_mpix, timer_amr_1blk_cc_cp_remote
 
       Implicit None
 
@@ -131,6 +137,8 @@
       Integer, Intent(in) :: idest,iopt,id,jd,kd,is,js,ks
       Integer, Intent(in) :: ilays,jlays,klays,nblk_ind
       Integer, Intent(in) :: ipolar(:)
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 
 !-----Local variables and arrays
@@ -153,6 +161,12 @@
       jl = (jlays-1)*k2d
       kl = (klays-1)*k3d
 
+      ASSOCIATE(nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard,   &
+                nvar        => gr_thePdgDimens(ig) % nvar  ,   &
+                unk         => pdg % unk,      &
+                unk1        => pdg % unk1      &
+      )
       If (remote_block <= lnblocks .and. remote_pe == mype) Then
 
       If (timing_mpix) Then
@@ -303,8 +317,7 @@
           jll = jlays
           kll = klays
 
-          Call mpi_set_message_limits(                 & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,  & 
+          Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig,  & 
                        ill,jll,kll)
 
           kk = kd
@@ -379,8 +392,7 @@
           jll = jlays
           kll = klays
 
-          Call mpi_set_message_limits(                  & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,   & 
+          Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig,  & 
                        ill,jll,kll)
           kk = kd
           Do k = ka,kb
@@ -448,7 +460,7 @@
         End If
 
       End If  ! End If (remote_block <= lnblocks .and. remote_pe == mype)
-
+      end ASSOCIATE
       Return
       End Subroutine amr_1blk_cc_cp_remote
 

@@ -77,56 +77,74 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson for 
 !!   directional guardcell filling.
-!!
+!!   Klaus Weide (2021)    modified for pdg stuff
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_flux_conserve(mype,nsub,flux_dir)
+Subroutine amr_flux_conserve(mype,nsub,flux_dir,pdgNo)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use paramesh_interfaces, only : amr_flux_conserve_udt,           & 
+  Use paramesh_dimensions, only: ndim
+  Use physicaldata, only: gr_thePdgs
+  Use physicaldata, only: advance_all_levels, var_dt
+  Use tree, only: lnblocks, nodetype
+  Use paramesh_interfaces, only : amr_flux_conserve_udt,           & 
                                       amr_flux_conserve_vdt
 
-      Implicit None
+  Implicit None
 
 !-----Input/Output arguments.
-      Integer, intent(in)  ::  mype,nsub
-      Integer, optional, intent(in) :: flux_dir
+  Integer, intent(in)  ::  mype,nsub
+  Integer, optional, intent(in) :: flux_dir
+  Integer, optional, intent(in) :: pdgNo
 
 !-----Local variables
-      Integer :: lb
+  Integer :: lb
+  integer :: npdg, ig,sg,eg
 
 !-----Begin executable code.
-      If (lnblocks > 0) Then
-      Do lb = 1,lnblocks
+  npdg = 1
+  if (present(pdgNo)) npdg = pdgNo
+  if (npdg == -1) then
+     sg = 1; eg = NUM_PDGS
+  else
+     sg = npdg; eg = npdg
+  end if
 
-      If (nodetype(lb) == 1 .or. advance_all_levels) Then
+  do ig = sg,eg
+
+     If (lnblocks > 0) Then
+        Do lb = 1,lnblocks
+
+           If (nodetype(lb) == 1 .or. advance_all_levels) Then
 
 !------Store fluxes in temporary storage
-       tflux_x(:,:,:,:,lb) = flux_x(:,:,:,:,lb)
-       if (ndim >= 2) then
-          tflux_y(:,:,:,:,lb) = flux_y(:,:,:,:,lb)
-       end if
-       if (ndim == 3) then
-          tflux_z(:,:,:,:,lb) = flux_z(:,:,:,:,lb)
-       end if
+              if (allocated(gr_thePdgs(ig)%tflux_x)) gr_thePdgs(ig)%tflux_x(:,:,:,:,lb) = &
+                                                      gr_thePdgs(ig)%flux_x(:,:,:,:,lb)
+              if (ndim >= 2 .AND. allocated(gr_thePdgs(ig)%tflux_y)) then
+                 gr_thePdgs(ig)%tflux_y(:,:,:,:,lb) = &
+                  gr_thePdgs(ig)%flux_y(:,:,:,:,lb)
+              end if
+              if (ndim == 3 .AND. allocated(gr_thePdgs(ig)%tflux_z)) then
+                 gr_thePdgs(ig)%tflux_z(:,:,:,:,lb) = &
+                  gr_thePdgs(ig)%flux_z(:,:,:,:,lb)
+              end if
 
-      End If
+           End If
 
-      End Do
-      End If
+        End Do
+     End If
 
-      If (var_dt) Then
-       Call amr_flux_conserve_vdt(mype,nsub) ! Called if variable dt
-      Else
-       Call amr_flux_conserve_udt(mype,flux_dir) ! Called if uniform dt
-      End If
+     If (var_dt) Then
+        Call amr_flux_conserve_vdt(mype,nsub,gr_thePdgs(ig),ig) ! Called if variable dt
+     Else
+        Call amr_flux_conserve_udt(mype,gr_thePdgs(ig),ig,flux_dir) ! Called if uniform dt
+     End If
 
-      Return
-      End Subroutine amr_flux_conserve
+  end do
+
+  Return
+End Subroutine amr_flux_conserve

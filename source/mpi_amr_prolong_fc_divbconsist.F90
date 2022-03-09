@@ -44,7 +44,7 @@
 !!
 !! CALLS
 !!
-!!    mpi_amr_get_remote_block_fvar
+!!    mpiAmr_get_remote_block_fvar
 !!    compute_evalues
 !!
 !! RETURNS
@@ -81,7 +81,7 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_prolong_fc_divbconsist(mype,level,nfield)
+      Subroutine amr_prolong_fc_divbconsist(mype,level,nfield,ig)
 
 !-----Use statements.
       Use paramesh_dimensions
@@ -89,7 +89,7 @@
       Use tree
       Use mpi_morton
       Use paramesh_mpi_interfaces, only :                              & 
-                             mpi_amr_get_remote_block_fvar
+                             mpiAmr_get_remote_block_fvar
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None
@@ -101,6 +101,7 @@
       Integer, intent(in) ::  mype
       Integer, intent(in) ::  level
       Integer, intent(in) ::  nfield
+      Integer, intent(in) ::  ig
 
 !-----Local arrays and variables
 
@@ -207,9 +208,9 @@
                i_source = nxb+nguard0 + 1 -gc_off_x + iface_off
                tempx(:,:) = facevarx(idvx,i_dest,:,:,idest)
 
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,1,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevarx(idvx,i_dest,:,:,idest) =                       & 
                                    recvx(idvx,i_source,:,:)
 
@@ -273,9 +274,9 @@
                i_dest   = nxb+1+nguard0 + iface_off
                i_source = 1+nguard0+gc_off_x + iface_off
                tempx(:,:) = facevarx(idvx,i_dest,:,:,idest)
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,1,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevarx(idvx,i_dest,:,:,idest) =                       & 
                                    recvx(idvx,i_source,:,:)
  
@@ -338,9 +339,9 @@
                j_dest   = nguard0*k2d + 1 + iface_off*k2d
                j_source = nyb+nguard0 + 1 -gc_off_y + iface_off
                tempy(:,:) = facevary(idvy,:,j_dest,:,idest)
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,2,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevary(idvy,:,j_dest,:,idest) =                       & 
                                       recvy(idvy,:,j_source,:)
 
@@ -402,9 +403,9 @@
                j_dest   = nyb*k2d + 1 + nguard0*k2d + iface_off*k2d
                j_source = 1+nguard0+gc_off_y + iface_off
                tempy(:,:) = facevary(idvy,:,j_dest,:,idest)
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,2,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevary(idvy,:,j_dest,:,idest) =                       & 
                                  recvy(idvy,:,j_source,:)
 
@@ -467,9 +468,9 @@
                k_dest   = nguard0*k3d + 1 + iface_off*k3d
                k_source = nzb+nguard0 + 1 -gc_off_z + iface_off
                tempz(:,:) = facevarz(idvz,:,:,k_dest,idest)
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,3,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevarz(idvz,:,:,k_dest,idest) =                       & 
                                   recvz(idvz,:,:,k_source)
 
@@ -531,9 +532,9 @@
                k_dest   = nzb*k3d+1+nguard0*k3d + iface_off*k3d
                k_source = 1+nguard0+gc_off_z + iface_off
                tempz(:,:) = facevarz(idvz,:,:,k_dest,idest)
-               Call mpi_amr_get_remote_block_fvar(mype,                & 
+               Call mpiAmr_get_remote_block_fvar(mype,                & 
                            remote_pe,remote_block,3,                   & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
                facevarz(idvz,:,:,k_dest,idest) =                       & 
                                    recvz(idvz,:,:,k_source)
 

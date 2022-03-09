@@ -67,7 +67,7 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          May 2001
-!!
+!    Modified:     Klaus Weide             Dec 2021  minor tweaks
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -76,9 +76,7 @@
               mype,remote_block,remote_pe,idest,dtype,index0,lfound)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
+      Use tree, only : lnblocks, strt_buffer, laddress
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 

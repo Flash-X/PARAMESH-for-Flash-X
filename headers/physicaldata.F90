@@ -54,6 +54,7 @@
       module physicaldata
 
       use paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdg_t
 
       private
 
@@ -77,7 +78,8 @@
       Public :: ngcell_on_cc
       Public :: checkp_on_cc
       Public :: gcell_on_cc_pointer
-      Real,Allocatable,Save ::  unk(:,:,:,:,:)
+!!$      Real,Allocatable,Save ::  unk(:,:,:,:,:)
+      Real,pointer ::  unk(:,:,:,:,:)
       Integer,Allocatable,Save :: interp_mask_unk(:)
       Integer,Allocatable,Save :: interp_mask_unk_res(:)
       Integer,Allocatable,Save :: gcell_on_cc_pointer(:)
@@ -85,7 +87,6 @@
       Logical,Allocatable,Save :: int_gcell_on_cc(:)
       Logical,Allocatable,Save :: checkp_on_cc(:)
       Integer, Save :: ngcell_on_cc
-      target :: unk
 
 
 !!****v* physicaldata/unk
@@ -1057,7 +1058,8 @@
       Public :: unk_e_x1,unk_e_y1,unk_e_z1
       Public :: unk_n1
 ! the solution for cell-centered quantities.
-      Real, Save, Allocatable :: unk1(:,:,:,:,:)
+!!$      Real, Save, Allocatable :: unk1(:,:,:,:,:)
+      Real, pointer :: unk1(:,:,:,:,:)
 ! the solution for cell-face-centered quantities.
       Real, Save, Allocatable :: facevarx1(:,:,:,:,:)
       Real, Save, Allocatable :: facevary1(:,:,:,:,:)
@@ -1068,7 +1070,6 @@
       Real, Save, Allocatable ::  unk_e_z1(:,:,:,:,:)
 ! the solution for cell-corner based quantities.
       Real, Save, Allocatable ::  unk_n1(:,:,:,:,:)
-      target :: unk1
       target :: facevarx1, facevary1, facevarz1
       target :: unk_e_x1, unk_e_y1, unk_e_z1
       target :: unk_n1
@@ -1130,13 +1131,15 @@
       Integer,Save :: nfluxvar
       Integer,Save :: nfluxes
       Integer,Save :: maxblocksfl
-      Real, Allocatable, Save ::  flux_x(:,:,:,:,:)
-      Real, Allocatable, Save ::  flux_y(:,:,:,:,:)
-      Real, Allocatable, Save ::  flux_z(:,:,:,:,:)
+!!$      Real, Allocatable, Save ::  flux_x(:,:,:,:,:)
+!!$      Real, Allocatable, Save ::  flux_y(:,:,:,:,:)
+!!$      Real, Allocatable, Save ::  flux_z(:,:,:,:,:)
+      Real, pointer ::  flux_x(:,:,:,:,:)
+      Real, pointer ::  flux_y(:,:,:,:,:)
+      Real, pointer ::  flux_z(:,:,:,:,:)
       Real, Allocatable, Save ::  tflux_x(:,:,:,:,:)
       Real, Allocatable, Save ::  tflux_y(:,:,:,:,:)
       Real, Allocatable, Save ::  tflux_z(:,:,:,:,:)
-      target :: flux_x, flux_y, flux_z 
 
 
 ! temporary flux storage needed inside amr_flux_conserve when using
@@ -1211,16 +1214,20 @@
       Real, Allocatable  :: cell_face_coord3(:)
 
 ! workspace arrays used for inter-block communications
-      Public :: nbndmax
       Public :: recvarxf,recvaryf,recvarzf
       Public :: bndtempx1,bndtempy1,bndtempz1
-      Integer :: nbndmax
-      Real, Allocatable, Save :: recvarxf(:,:,:,:)
-      Real, Allocatable, Save :: recvaryf(:,:,:,:)
-      Real, Allocatable, Save :: recvarzf(:,:,:,:)
-      Real, Allocatable, Save :: bndtempx1(:,:,:,:)
-      Real, Allocatable, Save :: bndtempy1(:,:,:,:)
-      Real, Allocatable, Save :: bndtempz1(:,:,:,:)
+!!$      Real, Allocatable, Save :: recvarxf(:,:,:,:)
+!!$      Real, Allocatable, Save :: recvaryf(:,:,:,:)
+!!$      Real, Allocatable, Save :: recvarzf(:,:,:,:)
+!!$      Real, Allocatable, Save :: bndtempx1(:,:,:,:)
+!!$      Real, Allocatable, Save :: bndtempy1(:,:,:,:)
+!!$      Real, Allocatable, Save :: bndtempz1(:,:,:,:)
+      Real, pointer :: recvarxf(:,:,:,:)
+      Real, pointer :: recvaryf(:,:,:,:)
+      Real, pointer :: recvarzf(:,:,:,:)
+      Real, pointer :: bndtempx1(:,:,:,:)
+      Real, pointer :: bndtempy1(:,:,:,:)
+      Real, pointer :: bndtempz1(:,:,:,:)
 
 ! parameters used in communication calls
       Public :: len_block_bndx,len_block_bndy,len_block_bndz
@@ -1330,5 +1337,9 @@
      &                 spherical_pm, polar_pm, lsingular_line,     & 
      &                 curvilinear_conserve
 !-----------------------------------------------------------------
+
+      public :: gr_thePdgs
+      type(pdg_t),save, dimension(NUM_PDGS) :: gr_thePdgs
+      target :: gr_thePdgs
 
       end module physicaldata

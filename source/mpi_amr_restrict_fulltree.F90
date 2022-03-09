@@ -17,16 +17,54 @@
 
 ! This routine should be moved to 'utilities', not part of the PARAMESH kernal
 
-      subroutine mpi_amr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc)
+subroutine mpi_amr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc,pdgNo)
+  Use physicaldata, only: gr_thePdgs
+  implicit none
+  integer, intent(in)  :: mype,iopt
+  logical, intent(in)  :: lcc,lfc,lec,lnc
+  integer, intent(in), optional :: pdgNo
+
+  integer :: npdg, ig,sg,eg
+  npdg = 1
+  if (present(pdgNo)) npdg = pdgNo
+  if (npdg == -1) then
+     sg = 1; eg = NUM_PDGS
+  else
+     sg = npdg; eg = npdg
+  end if
+
+  do ig = sg,eg
+     call mpi_amr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,gr_thePdgs(ig),ig)
+  end do
+
+contains
+
+  subroutine mpi_amr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,pdg,ig)
 
 
-      use paramesh_dimensions
-      use physicaldata
-      use tree
-      use workspace
-      use paramesh_comm_data
+    use gr_pmPdgDecl, ONLY : pdg_t
+!    use paramesh_dimension
+    Use paramesh_dimensions, only: gr_thePdgDimens
+    Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
+                                 nbndvar,nbndvare,nbndvarc
+!    use physicaldata
+    Use physicaldata, only: interp_mask_unk_res,     &
+                          interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
+                          interp_mask_ec_res,      &
+                          interp_mask_nc_res
+    Use physicaldata, only: cell_vol,cell_area1,cell_area2,cell_area3,cell_leng1,cell_leng2,cell_leng3
+    Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                          facevarx1,  facevary1,  facevarz1
+    Use physicaldata, only: unk_n , unk_e_x ,unk_e_y ,unk_e_z, &
+                              unk_n1, unk_e_x1,unk_e_y1,unk_e_z1
+    Use physicaldata, only: curvilinear, curvilinear_conserve
+    Use physicaldata, only: diagonals,lrestrict_in_progress
+    Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+    use tree
+    use workspace
+    use paramesh_comm_data
 
-      use paramesh_interfaces, only : amr_1blk_copy_soln, & 
+    use paramesh_interfaces, only : amr_1blk_copy_soln, & 
      &                                amr_1blk_guardcell_reset, & 
      &                                amr_perm_to_1blk, & 
      &                                amr_1blk_guardcell, & 
@@ -40,9 +78,9 @@
      &                                comm_int_min_to_all & 
      &                                ,amr_block_geometry
 
-      use paramesh_mpi_interfaces, only :  & 
+    use paramesh_mpi_interfaces, only :  & 
      &                                mpi_amr_comm_setup
-      use gr_flashHook_interfaces
+    use gr_flashHook_interfaces
 
 !------------------------------------------------------------------------
 !
@@ -59,9 +97,11 @@
 !
 ! Written :     Peter MacNeice          February 1999
 !------------------------------------------------------------------------
-#include "Flashx_mpi_implicitNone.fh"      
+#include "Flashx_mpi_implicitNone.fh"
       integer, intent(in)  :: mype,iopt
       logical, intent(in)  :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
       integer nguard0,nguard_work0
 
@@ -74,16 +114,6 @@
 !------------------------------------
 ! local arrays
 
-
-      real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
-      real send(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
-
-      real recvn0(nbndvarc,il_bnd:iu_bnd+1,jl_bnd:ju_bnd+k2d, & 
-     &                                      kl_bnd:ku_bnd+k3d)
-      real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
-     &                                      kl_bnd1:ku_bnd1+k3d)
-      real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
-     &                                      kl_bnd1:ku_bnd1+k3d)
 
       integer ::  maxbnd
       real,allocatable :: tempf(:,:,:,:)
@@ -118,6 +148,38 @@
       write(*,*) 'entered mpi_amr_restrict_fulltree: pe ',mype, & 
      &           ' iopt ',iopt
 #endif /* DEBUG_FLOW_TRACE */
+
+
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            il_bnd      => gr_thePdgDimens(ig) % il_bnd,  &
+            iu_bnd      => gr_thePdgDimens(ig) % iu_bnd,  &
+            jl_bnd      => gr_thePdgDimens(ig) % jl_bnd,  &
+            ju_bnd      => gr_thePdgDimens(ig) % ju_bnd,  &
+            kl_bnd      => gr_thePdgDimens(ig) % kl_bnd,  &
+            ku_bnd      => gr_thePdgDimens(ig) % ku_bnd,  &
+            il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1      &
+            )
+    BLOCK
+      real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
+      real send(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
+
+      real recvn0(nbndvarc,il_bnd:iu_bnd+1,jl_bnd:ju_bnd+k2d, & 
+     &                                      kl_bnd:ku_bnd+k3d)
+      real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
+     &                                      kl_bnd1:ku_bnd1+k3d)
+      real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
+     &                                      kl_bnd1:ku_bnd1+k3d)
 
 
       nguard0 = nguard*npgs
@@ -196,7 +258,7 @@
                            ! the correct communication pattern!
       call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong, & 
      &                        lflux,ledge,lrestrict,lfulltree, & 
-     &                        iopt,lcc,lfc,lec,lnc,tag_offset)
+     &                        iopt,lcc,lfc,lec,lnc,tag_offset, pdg,ig)
 
       if(lnblocks.gt.0) then
       do lb = 1,lnblocks
@@ -284,7 +346,7 @@
              idest = 1
              call amr_perm_to_1blk(lcc,lfc,lec,lnc, & 
      &                             remote_block,remote_pe, & 
-     &                             iopt,idest)
+     &                             iopt,idest,pdg,ig)
 
 
             endif
@@ -301,7 +363,8 @@
              call amr_1blk_guardcell(mype,iopt,nlayers, & 
      &                               remote_block,remote_pe, & 
      &                               lcc,lfc,lec,lnc, & 
-     &                               l_srl_only,icoord,ldiag)
+     &                               l_srl_only,icoord,ldiag,&
+                                     pdg,ig)
            endif
            if (iopt.eq.1) call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, &
                 il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
@@ -873,7 +936,7 @@
 
       if (iopt.eq.1) call flash_unconvert_cc_hook(unk(:,:,:,:,lb), nvar, &
                 il_bnd,iu_bnd, jl_bnd,ju_bnd, kl_bnd,ku_bnd, &
-                where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
+             &  where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
                 nlayers_in_data=nguard0)
 
 ! If using odd sized grid blocks then parent copies any face bounding
@@ -1079,7 +1142,8 @@
 
 
       lrestrict_in_progress = .false.
-
+      END BLOCK
+      end ASSOCIATE
       deallocate(tempf)
       deallocate(sendf)
 
@@ -1089,8 +1153,6 @@
 #endif /* DEBUG_FLOW_TRACE */
 
       return
-      end subroutine mpi_amr_restrict_fulltree
+    end subroutine mpi_amr_restrict_fulltree_onePdg
 
-
-
-
+end subroutine mpi_amr_restrict_fulltree

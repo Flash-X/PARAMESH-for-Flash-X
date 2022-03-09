@@ -13,7 +13,7 @@
 
       subroutine mpi_put_buffer(lb,ioptw,offset, & 
      &                          lcc,lfc,lec,lnc, & 
-     &                          buffer_size,R_buffer, & 
+     &                          buffer_size,R_buffer,ig, &
      &                          nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -49,7 +49,7 @@
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -59,6 +59,7 @@
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
       real,    intent(IN)    :: R_buffer(buffer_size)
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -94,7 +95,7 @@
       if(ioptw.gt.1) then
 
       vtype = 0
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + (kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -118,7 +119,7 @@
 ! pack the unk array for block lb
 
       vtype = 1
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -142,7 +143,7 @@
 ! pack the facevarx array for block lb
 
       vtype = 2
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(1)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -151,7 +152,7 @@
       if(ndim.ge.2) then
 
       vtype = 3
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(2)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -162,7 +163,7 @@
       if(ndim.eq.3.or.(ndim == 2 .and. l2p5d == 1)) then
 
       vtype = 4
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(3)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -184,7 +185,7 @@
 ! pack the unk_e_x array for block lb
 
       vtype = 5
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -192,7 +193,7 @@
 ! pack the unk_e_y array for block lb
 
       vtype = 6
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -200,7 +201,7 @@
 ! pack the unk_e_z array for block lb
 
       vtype = 7
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -221,7 +222,7 @@
 ! pack the unk_n array for block lb
 
       vtype = 8
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -338,7 +339,7 @@
 !------------------------------------------------------------------------
 
       subroutine mpi_get_Rbuffer_size(lb,dtype,ioptw,offset, & 
-     &                                lcc,lfc,lec,lnc, & 
+     &                                lcc,lfc,lec,lnc,ig, &
      &                                nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -372,7 +373,7 @@
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -381,6 +382,7 @@
       integer, intent(in)    :: lb,dtype,ioptw
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -414,7 +416,7 @@
       if(ioptw.gt.1) then
 
       vtype = 0
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + (kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -437,7 +439,7 @@
 ! pack the unk array for block lb
 
       vtype = 1
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -461,7 +463,7 @@
 ! pack the facevarx array for block lb
 
       vtype = 2
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(1)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -470,7 +472,7 @@
       if(ndim.ge.2) then
 
       vtype = 3
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(2)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -481,7 +483,7 @@
       if(ndim.eq.3.or.(ndim == 2 .and. l2p5d == 1)) then
 
       vtype = 4
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + ngcell_on_fc(3)*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -503,7 +505,7 @@
 ! pack the unk_e_x array for block lb
 
       vtype = 5
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -511,7 +513,7 @@
 ! pack the unk_e_y array for block lb
 
       vtype = 6
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -519,7 +521,7 @@
 ! pack the unk_e_z array for block lb
 
       vtype = 7
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 
@@ -540,7 +542,7 @@
 ! pack the unk_n array for block lb
 
       vtype = 8
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                            nlayersx,nlayersy,nlayersz)
       index = index + invar*(kb-ka+1)*(jb-ja+1)*(ib-ia+1)
 

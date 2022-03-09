@@ -104,7 +104,7 @@
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpi_amr_get_remote_block(mype,remote_pe,remote_block, & 
-          idest,iopt,lcc,lfc,lec,lnc,                                  & 
+          idest,iopt,lcc,lfc,lec,lnc,ig,                               &
           nlayersx,nlayersy,nlayersz)
 
 !-----Use statements
@@ -114,7 +114,7 @@
       Use workspace
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None
@@ -126,6 +126,7 @@
       Integer, intent(in) :: mype,remote_pe,remote_block
       Integer, intent(in) :: idest,iopt
       Logical, intent(in) :: lcc,lfc,lec,lnc
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !-----Local arrays and variables.
@@ -401,8 +402,8 @@
         If (iopt == 1) Then
           vtype = 1
           index = index0
-          Call mpi_set_message_limits(                                 & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,                  & 
+          Call mpiSet_message_limits(                                 & 
+                       dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                  & 
                        nlayersx,nlayersy,nlayersz)
 
           If (no_permanent_guardcells) Then
@@ -430,8 +431,8 @@
 
           vtype = 0
           index = index0
-          Call mpi_set_message_limits(                                 & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,                  & 
+          Call mpiSet_message_limits(                                 & 
+                       dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                  & 
                        nlayersx,nlayersy,nlayersz)
 
           If (no_permanent_guardcells) Then
@@ -466,8 +467,8 @@
                              index + ngcell_on_cc*message_size_cc(dtype)
 
         vtype = 2
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -493,8 +494,8 @@
 
         If (ndim >= 2) Then
          vtype = 3
-         Call mpi_set_message_limits(                                  & 
-                    dtype,ia,ib,ja,jb,ka,kb,vtype,                     & 
+         Call mpiSet_message_limits(                                  & 
+                    dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                     & 
                     nlayersx,nlayersy,nlayersz)
  
          If (no_permanent_guardcells) Then
@@ -521,8 +522,8 @@
 
         If (ndim == 3) Then
          vtype = 4
-         Call mpi_set_message_limits(                                  & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+         Call mpiSet_message_limits(                                  & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
          If (no_permanent_guardcells) Then
@@ -568,8 +569,8 @@
                                   + ngcell_on_fc(3) *                  &
                                     message_size_fcz(dtype)   
         vtype = 5
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -595,8 +596,8 @@
 
         If (ndim >= 2) Then
         vtype = 6
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -623,8 +624,8 @@
 
         If (ndim == 3) Then
         vtype =7
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -675,8 +676,8 @@
                                      *message_size_ec(dtype)
 
         vtype = 8
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
 

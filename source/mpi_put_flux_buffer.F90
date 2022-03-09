@@ -12,8 +12,8 @@
 #include "paramesh_preprocessor.fh"
 
 
-      subroutine mpi_put_flux_buffer(mype,lb,offset, & 
-     &                          buffer_size,R_buffer,flux_dir)
+      subroutine mpiPut_flux_buffer(mype,lb,offset, & 
+     &                          buffer_size,R_buffer,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -31,6 +31,8 @@
 !      R_buffer       receive buffer
 !
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -39,16 +41,16 @@
       use paramesh_comm_data
 
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
-
-      include 'mpif.h'
 
 
       integer, intent(in)    :: mype,lb,buffer_size
       integer, intent(inout) :: offset
       real,    intent(inout) :: R_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 
@@ -63,6 +65,9 @@
       integer :: i, j, k, n, ii, jj, iii
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      ASSOCIATE(nguard      => gr_thePdgDimens(ig) % nguard,   &
+                nfluxes     => pdg % nfluxes)
 
       nguard0 = nguard*npgs
       nguard_work0 = nguard_work*npgs
@@ -82,8 +87,8 @@
       end if
 
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
 ! unpack the flux_x array for block lb
       if (flux_dirt == 1 .or. flux_dirt == 0) then
@@ -292,13 +297,14 @@
 
       offset = index
 
+      end ASSOCIATE
       return
-      end subroutine mpi_put_flux_buffer
+      end subroutine mpiPut_flux_buffer
 
 !------------------------------------------------------------------------
 
       subroutine mpi_get_Rbuffer_size_fluxes(lb,dtype,offset, & 
-     &                                       flux_dir)
+     &                                       pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -316,21 +322,22 @@
 !      R_buffer       receive buffer
 !
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use workspace
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
-
-      include 'mpif.h'
 
 
       integer, intent(in)    :: lb, dtype
       integer, intent(inout) :: offset
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 
@@ -343,6 +350,8 @@
       integer :: i, j, k, n, ii, jj, iii
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      ASSOCIATE(nfluxes     => pdg % nfluxes)
 
 ! take over incoming index offset for block lb to be sent to remote pe
 
@@ -357,8 +366,8 @@
       end if
 
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
 ! unpack the flux_x array for block lb
       if (flux_dirt == 1 .or. flux_dirt == 0) then
@@ -543,5 +552,6 @@
 
       offset = index
 
+      end ASSOCIATE
       return
       end subroutine mpi_get_Rbuffer_size_fluxes

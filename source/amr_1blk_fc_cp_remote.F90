@@ -88,7 +88,7 @@
 !! CALLS
 !!
 !!  amr_mpi_find_blk_in_buffer
-!!  mpi_set_message_limits
+!!  mpiSet_message_limits
 !!
 !! RETURNS
 !!  
@@ -120,7 +120,7 @@
 
       Subroutine amr_1blk_fc_cp_remote(mype,remote_pe,remote_block,    & 
          idest,id,jd,kd,is,js,ks,ilays,jlays,klays,ip1,jp1,kp1,        & 
-         ip2,jp2,kp2,iface,nblk_ind,ipolar,                            &
+         ip2,jp2,kp2,iface,nblk_ind,ipolar,ig,                         &
          curBlock,ibnd,jbnd,kbnd,surrblks)
 
 !-----Use Statements
@@ -129,7 +129,7 @@
       Use tree
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       Implicit None
 
@@ -140,6 +140,7 @@
       Integer, Intent(in) :: ip1,jp1,kp1,ip2,jp2,kp2,iface
       Integer, Intent(in) :: nblk_ind
       Integer, Intent(in) :: ipolar(:)
+      Integer, Intent(in) :: ig
       integer, intent(in),OPTIONAL :: curBlock
       integer, intent(in),OPTIONAL :: ibnd,jbnd,kbnd
       integer, intent(in),OPTIONAL :: surrblks(:,:,:,:)
@@ -407,8 +408,8 @@
         kll = klays
 
         vtype = 2
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                &
                      ill,jll,kll)
 
         ilo = is1
@@ -496,8 +497,8 @@
         if(ndim >= 2) Then
 
         vtype = 3 
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                &
                      ill,jll,kll)
 
 
@@ -587,8 +588,8 @@
         if(ndim == 3) then
 
         vtype = 4 
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                &
                      ill,jll,kll)
 
         klo = ks1

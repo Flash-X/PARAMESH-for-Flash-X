@@ -100,7 +100,7 @@
 !! CALLS
 !!
 !!     mpi_amr_local_surr_blks_lkup
-!!     mpi_amr_1blk_guardcell_c_to_f
+!!     mpiAmr_1blk_guardcell_c_to_f
 !!     mpi_amr_get_remote_block
 !!     amr_perm_to_1blk
 !!     amr_1blk_guardcell_srl
@@ -200,7 +200,7 @@
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
+!!REORDER(5): facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
@@ -208,10 +208,25 @@
                                     mype,iopt,nlayers,lb,pe,           & 
                                     lcc,lfc,lec,lnc,                   & 
                                     l_srl_only,icoord,ldiag,           & 
+                                    pdg,ig,                            & 
                                     nlayersx,nlayersy,nlayersz)
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      Use paramesh_dimensions, only: k2d,k3d,nguard_work,nvar_work, nfacevar,nvarcorn,nvaredge
+!      Use physicaldata
+      Use physicaldata, only: interp_mask_unk,     &
+                          interp_mask_facex,interp_mask_facey,interp_mask_facez,&
+                          interp_mask_ec,      &
+                          interp_mask_nc
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                          facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_n , unk_e_x ,unk_e_y ,unk_e_z, &
+                              unk_n1, unk_e_x1,unk_e_y1,unk_e_z1
+      Use physicaldata, only: amr_error_checking, lnew_parent
+      Use physicaldata, only: lprolong_in_progress, lrestrict_in_progress
+      Use physicaldata, only: lsingular_line, spherical_pm, mpi_pattern_id
+      Use physicaldata, only: pcache_blk_u,pcache_pe_u, pcache_blk_w,pcache_pe_w
       Use tree
       Use timings
       Use workspace
@@ -219,7 +234,7 @@
       Use constants
       Use paramesh_mpi_interfaces, Only :                              & 
                                       mpi_amr_local_surr_blks_lkup,    & 
-                                      mpi_amr_1blk_guardcell_c_to_f,   & 
+                                      mpiAmr_1blk_guardcell_c_to_f,    &
                                       mpi_amr_get_remote_block
       Use paramesh_interfaces, Only : amr_perm_to_1blk,                & 
                                       amr_1blk_guardcell_srl
@@ -235,6 +250,8 @@
 !-----Input/Output arguements.
       Logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       Integer, intent(in) :: mype,lb,pe,iopt,nlayers,icoord
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !-----Local arrays and variables
@@ -266,6 +283,19 @@
 
 !------Begin Executable code.
 
+      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard,   &
+                nvar        => gr_thePdgDimens(ig) % nvar,     &
+                il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+                iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+                jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+                ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+                kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+                ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+                unk1        => pdg % unk1      &
+            )
       pbnd_box(:,:) = 0.
       lcoarse = .FALSE.
       accuracy = 10./10.**precision(accuracy)
@@ -641,7 +671,7 @@
 !-----Put leaf block lb's data into the '1blk' datastructures, 
 !-----with the appropriate guardcell padding.
       idest = 1
-      Call amr_perm_to_1blk(lcc,lfc,lec,lnc,lb,pe,iopt,idest)
+      Call amr_perm_to_1blk(lcc,lfc,lec,lnc,lb,pe,iopt,idest,pdg,ig)
 
       If (iopt == 1) Then
           pcache_pe  = pcache_pe_u
@@ -699,7 +729,7 @@
 
         idest = 2
         Call mpi_amr_get_remote_block(mype,parent_pe,parent_lb,        & 
-                                      idest,iopt,lcc,lfc,lec,lnc,      & 
+                                      idest,iopt,lcc,lfc,lec,lnc,ig,   &
                                       nlayers0x,nlayers0y,nlayers0z)
 
 !-------Do guardcell filling for lb's parent from any surrounding blocks at 
@@ -741,7 +771,8 @@
                                     icoord_loc,ldiag_loc,              & 
                                     nlayers0x,                         &
                                     nlayers0y,                         &
-                                    nlayers0z,ippolar,curBlock=lb)
+                                    nlayers0z,ippolar,pdg,ig,          &
+                                    curBlock=lb)
          if (lcc .and. iopt.eq.1)  & 
      &        call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, & 
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
@@ -751,13 +782,13 @@
         End If  ! End If ( (parent_lb > 0) .And. ...)
 
 !-------Do guardcell filling from coarse neigbors into the current block
-        Call mpi_amr_1blk_guardcell_c_to_f( mype,lb,pe,iopt,nlayers,   & 
+        Call mpiAmr_1blk_guardcell_c_to_f( mype,lb,pe,iopt,nlayers,    &
                                             surrblks,                  & 
                                             lcc,lfc,lec,lnc,           & 
                                             icoord,ldiag,              & 
                                             nlayers0x,                 & 
                                             nlayers0y,                 & 
-                                            nlayers0z,ipolar)
+                                            nlayers0z,ipolar,pdg,ig)
         if (lcc .and. iopt.eq.1)  & 
      &       call flash_unconvert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &       il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
@@ -781,7 +812,7 @@
                                   lcc,lfc,lec,lnc,                     & 
                                   icoord,ldiag,                        & 
                                   nlayers0x,nlayers0y,nlayers0z,       & 
-                                  ipolar,curBlock=lb)
+                                  ipolar,pdg,ig,curBlock=lb)
 
 
       If (timing_mpi) Then
@@ -801,7 +832,7 @@
       timer_amr_1blk_guardcell(0) = timer_amr_1blk_guardcell(0)        & 
                                  +  mpi_wtime() - time1
       End If
-
+      end ASSOCIATE
       Return
       End Subroutine amr_1blk_guardcell
 

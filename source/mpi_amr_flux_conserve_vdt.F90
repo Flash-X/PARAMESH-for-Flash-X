@@ -81,9 +81,10 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_flux_conserve_vdt(mype,nsub)
+      Subroutine amr_flux_conserve_vdt(mype,nsub,pdg,ig)
 
 !-----Use statements
+      use gr_pmPdgDecl, ONLY : pdg_t
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -91,7 +92,7 @@
       Use paramesh_interfaces, only : amr_restrict_bnd_data_vdt,       & 
                                       amr_mpi_find_blk_in_buffer
       Use paramesh_mpi_interfaces, only : mpi_amr_comm_setup,          & 
-                                          mpi_set_message_limits
+                                          mpiSet_message_limits
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None
@@ -101,6 +102,8 @@
 
 !-----Input/Output statements.
       Integer, intent(in)  ::  mype,nsub
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 !-----Local arrays and variables.
       Integer :: remote_pe,remote_block
@@ -164,12 +167,12 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, pdg,ig)
 
 !-----Leaf blocks which have completed their timestep provide reduced 
 !-----boundary data to their parents.
 !-----Fluxes are accumulated in the ttflux_ arrays.
-      Call amr_restrict_bnd_data_vdt(mype)
+      Call amr_restrict_bnd_data_vdt(mype,ig)
 
 !-----Parents who have completed their timestep and border a leaf block
 !-----update their fluxes.
@@ -229,7 +232,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, pdg,ig)
 
 !-----cycle through the grid blocks on this processor
       If (lnblocks > 0) Then
@@ -313,8 +316,8 @@
                                             remote_pe,1,dtype,index0,  &
                                             lfound)
             vtype = 1
-            Call mpi_set_message_limits(dtype,                         & 
-                                        ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+            Call mpiSet_message_limits(dtype,                         & 
+                                        ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
             index = index0 + 1
 

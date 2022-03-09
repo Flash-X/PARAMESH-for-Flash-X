@@ -40,7 +40,6 @@
 !! CALLS
 !!
 !!   amr_mpi_find_blk_in_buffer
-!!   mpi_set_message_limits
 !!   mpi_put_edge_buffer_1blk
 !!
 !! RETURNS
@@ -73,8 +72,7 @@
       Use tree
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits,      & 
-                                          mpi_put_edge_buffer_1blk
+      Use paramesh_mpi_interfaces, only : mpi_put_edge_buffer_1blk
 
       Implicit None 
 

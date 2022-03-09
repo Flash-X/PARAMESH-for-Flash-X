@@ -11,9 +11,10 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_get_buffer(mype,lb,dtype,iopt,offset, & 
+      subroutine mpiGet_buffer(mype,lb,dtype,iopt,offset, & 
      &                          lcc,lfc,lec,lnc, & 
      &                          buffer_size,S_buffer, & 
+                                pdg,ig,               &
      &                          nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -44,6 +45,7 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -52,7 +54,7 @@
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -64,6 +66,8 @@
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
       real,    intent(inout) :: S_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -91,7 +95,7 @@
       ilimit = size(S_buffer,1)
 
       if(lb.gt.maxblocks_alloc) then
-        write(*,*) 'ERROR : mpi_get_buffer pe ',mype, & 
+        write(*,*) 'ERROR : mpiGet_buffer pe ',mype, & 
      &        ' putting blk ',lb,' into Sbuf'
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
@@ -131,7 +135,7 @@
 ! pack the work array for block lb
 
       vtype = 0
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -154,7 +158,7 @@
 
 
       vtype = 1
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -186,7 +190,7 @@
 
 
       vtype = 2
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -212,7 +216,7 @@
 
 
       vtype = 3
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -240,7 +244,7 @@
 
 
       vtype = 4
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -272,7 +276,7 @@
 ! pack the unk_e_x array for block lb
 
       vtype = 5
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -302,7 +306,7 @@
 
 
       vtype = 6
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -331,7 +335,7 @@
 
 
       vtype = 7
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -369,7 +373,7 @@
 
 
       vtype = 8
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
 
       do k = ka , kb
@@ -494,12 +498,12 @@
       offset = index 
 
       return
-      end subroutine mpi_get_buffer
+      end subroutine mpiGet_buffer
 
 !------------------------------------------------------------------------
 
-      subroutine mpi_get_Sbuffer_size(mype,lb,dtype,iopt,offset, & 
-     &                                lcc,lfc,lec,lnc, & 
+      subroutine mpiGet_Sbuffer_size(mype,lb,dtype,iopt,offset, & 
+     &                                lcc,lfc,lec,lnc,ig, &
      &                                nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -534,7 +538,7 @@
       use paramesh_comm_data
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -545,6 +549,7 @@
       integer, intent(in)    :: lb,mype,iopt
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -569,7 +574,7 @@
       nguard_work0 = nguard_work*npgs
 
       if(lb.gt.maxblocks_alloc) then
-        write(*,*) 'ERROR : mpi_get_buffer pe ',mype, & 
+        write(*,*) 'ERROR : mpiGet_buffer pe ',mype, & 
      &        ' putting blk ',lb,' into Sbuf'
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
@@ -601,7 +606,7 @@
 ! pack the work array for block lb
 
       vtype = 0
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -623,7 +628,7 @@
 
 
       vtype = 1
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -647,7 +652,7 @@
 
 
       vtype = 2
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -665,7 +670,7 @@
 
 
       vtype = 3
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -685,7 +690,7 @@
 
 
       vtype = 4
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -709,7 +714,7 @@
 ! pack the unk_e_x array for block lb
 
       vtype = 5
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -725,7 +730,7 @@
 
 
       vtype = 6
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -740,7 +745,7 @@
 
 
       vtype = 7
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
       do k = ka , kb
       do j = ja , jb
@@ -764,7 +769,7 @@
 
 
       vtype = 8
-      call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, & 
      &                            nlayersx,nlayersy,nlayersz)
 
       do k = ka , kb
@@ -851,4 +856,4 @@
       offset = index 
 
       return
-      end subroutine mpi_get_Sbuffer_size
+      end subroutine mpiGet_Sbuffer_size

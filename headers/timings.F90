@@ -17,7 +17,7 @@
       Module timings
 
         Use paramesh_dimensions
-
+        PRIVATE
         Double Precision,Public :: timer_amr_initialize
         Double Precision,Public :: start_time, end_time
 

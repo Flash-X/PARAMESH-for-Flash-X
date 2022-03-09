@@ -12,6 +12,7 @@
 
 
       Module paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdgConst_t
 
 #include "paramesh_preprocessor.fh"
 
@@ -289,6 +290,29 @@
 
 !---------------------------------
 
+      public :: gr_thePdgDimens
+#if 0
+      type(pdgConst_t),save, dimension(NUM_PDGS) :: gr_thePdgDimens
+      target :: gr_thePdgDimens
+#else
+      integer, private :: i
+      type(pdgConst_t),parameter,dimension(NUM_PDGS) :: gr_thePdgDimens = &
+           (/(pdgConst_t( &
+           nxb, nyb, nzb,     &
+           nguard,            &
+           nvar,              &
+           il_bnd, iu_bnd,  &
+           jl_bnd, ju_bnd,  &
+           kl_bnd, ku_bnd,  &
+           il_bndi, iu_bndi,&
+           jl_bndi, ju_bndi,&
+           kl_bndi, ku_bndi,&
+           il_bnd1,iu_bnd1, &
+           jl_bnd1,ju_bnd1, &
+           kl_bnd1,ku_bnd1  &
+           ), i=1,NUM_PDGS)/)
+!!$      type(pdgConst_t),parameter, dimension(NUM_PDGS) :: gr_thePdgDimens = {0,0,0}
+#endif
 
       End Module paramesh_dimensions
 !-----------------------------------------------------------------

@@ -9,8 +9,8 @@
 
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_unpack_fluxes(mype, & 
-     &                             buf_dim,R_buffer,flux_dir)
+      subroutine mpiUnpack_fluxes(mype, & 
+     &                             buf_dim,R_buffer,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -31,13 +31,14 @@
 !      ir_buf         starting & ending indices of buffer
 !
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_put_flux_buffer
+      use paramesh_mpi_interfaces, only : mpiPut_flux_buffer
 
       implicit none
 
@@ -45,6 +46,8 @@
 
       integer, intent(in) :: mype,buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -72,8 +75,8 @@
         write(*,*) 'pe ',mype,' lblk ',lblk,' unpacking starting ', & 
      &        ' at index ',index
 #endif /* DEBUG */
-        call mpi_put_flux_buffer(mype, & 
-     &         lb,index,buf_dim,R_buffer,flux_dir)
+        call mpiPut_flux_buffer(mype, & 
+     &         lb,index,buf_dim,R_buffer,pdg,ig,flux_dir)
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' lblk ',lblk,' unpacked into ',lb
 #endif /* DEBUG */
@@ -93,4 +96,4 @@
 #endif
 
       return
-      end subroutine mpi_unpack_fluxes
+      end subroutine mpiUnpack_fluxes

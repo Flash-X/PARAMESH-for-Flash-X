@@ -12,7 +12,7 @@
 #include "paramesh_preprocessor.fh"
 
 
-      subroutine amr_restrict_bnd_data(mype,flux_dir)
+      subroutine amr_restrict_bnd_data(mype,flux_dir,pdg,ig)
 
 
 
@@ -36,6 +36,7 @@
 ! Written :     Peter MacNeice          February 1997
 !------------------------------------------------------------------------
 
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -44,7 +45,7 @@
 
       use paramesh_interfaces, only : amr_restrict_red, & 
      &                                amr_mpi_find_blk_in_buffer
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
 
@@ -52,6 +53,8 @@
 
       integer, intent(in)    :: flux_dir
       integer, intent(in)    :: mype
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in)    :: ig
 
 !------------------------------------
 ! local arrays
@@ -79,6 +82,26 @@
 
       Call MPI_COMM_SIZE(amr_mpi_meshComm, nprocs, ierr)
 
+      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard,   &
+                nvar        => gr_thePdgDimens(ig) % nvar,     &
+                il_bnd      => gr_thePdgDimens(ig) % il_bnd,  &
+                iu_bnd      => gr_thePdgDimens(ig) % iu_bnd,  &
+                jl_bnd      => gr_thePdgDimens(ig) % jl_bnd,  &
+                ju_bnd      => gr_thePdgDimens(ig) % ju_bnd,  &
+                kl_bnd      => gr_thePdgDimens(ig) % kl_bnd,  &
+                ku_bnd      => gr_thePdgDimens(ig) % ku_bnd,  &
+                il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+                iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+                jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+                ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+                kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+                ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+                unk         => pdg % unk,      &
+                unk1        => pdg % unk1      &
+)
       nguard0 = nguard*npgs
 
       if(mpi_pattern_id.ne.40 .and. nprocs.gt.1) then
@@ -163,8 +186,8 @@
              call amr_mpi_find_blk_in_buffer(mype,remote_block, & 
      &              remote_pe,1,dtype,index0,lfound)
              vtype = 1
-             call mpi_set_message_limits(dtype, & 
-     &            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+             call mpiSet_message_limits(dtype, & 
+     &            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
             end if
 
@@ -406,6 +429,6 @@
 
       enddo
       endif
-
+      end ASSOCIATE
       return
       end subroutine amr_restrict_bnd_data

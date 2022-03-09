@@ -74,6 +74,7 @@
       Subroutine amr_edge_average_udt(mype)
 
 !-----Use statements.
+      Use physicaldata, only: gr_thePdgs
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -137,7 +138,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
 !-----all leaf blocks provide reduced boundary edge data to their parents
       Call amr_restrict_edge_data(mype)
@@ -152,7 +153,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
 !-----cycle through the grid blocks on this processor
       If (lnblocks > 0) Then

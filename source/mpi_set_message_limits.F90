@@ -11,7 +11,7 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+      subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
      &                                  nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -21,6 +21,7 @@
 !
 !
 ! Written :     Peter MacNeice          April 2001
+! Modified:     Klaus Weide             Dec 2021   renamed, additions for pdg stuff
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -35,12 +36,11 @@
 !      vtype          sets variable type.
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
-      use tree
-      use paramesh_comm_data
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      use paramesh_dimensions, only : k2d,k3d,nguard_work
+      use physicaldata, only : no_permanent_guardcells
+      use paramesh_comm_data, only : amr_mpi_meshComm
 
-      use mpi_morton
 
       implicit none
 
@@ -48,6 +48,7 @@
 
       integer, intent(in)  ::  dtype,vtype
       integer, intent(out) ::  ia,ib,ja,jb,ka,kb
+      integer, intent(in)  ::  ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 ! local variables
@@ -63,6 +64,11 @@
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
 
+      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard    &
+      )
 ! set i to message type
       i = dtype
 
@@ -195,6 +201,6 @@
           ka = ka + nguard0*k3d
           kb = kb + nguard0*k3d
        end if
-
+     end ASSOCIATE
       return
-      end subroutine mpi_set_message_limits
+      end subroutine mpiSet_message_limits

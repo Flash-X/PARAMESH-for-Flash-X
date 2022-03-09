@@ -35,23 +35,28 @@
       interface
       subroutine amr_1blk_cc_cp_remote(mype,remote_pe,remote_block,      & 
      &    idest,iopt,id,jd,kd,is,js,ks,ilays,jlays,klays,nblk_ind, & 
-     &    ipolar)
+     &    ipolar,pdg,ig)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,iopt,id,jd,kd,is,js,ks
       integer, intent(in) :: ilays,jlays,klays,nblk_ind
       integer, intent(in) :: ipolar(:)
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_1blk_cc_cp_remote
       end interface
 
       interface
       subroutine amr_1blk_nc_cp_remote(mype,remote_pe,remote_block,      & 
      &    idest,id,jd,kd,is,js,ks,ilays,jlays,klays,ip1,jp1,kp1,         & 
-     &    ip3,jp3,kp3,nblk_ind)
+     &    ip3,jp3,kp3,nblk_ind,ig)
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,id,jd,kd,is,js,ks
       integer, intent(in) :: ilays,jlays,klays
       integer, intent(in) :: ip1,jp1,kp1,ip3,jp3,kp3
       integer, intent(in) :: nblk_ind
+      integer, intent(in) :: ig
       end subroutine amr_1blk_nc_cp_remote
       end interface
 
@@ -167,12 +172,13 @@
       interface
       subroutine amr_1blk_ec_cp_remote(mype,remote_pe,remote_block, & 
      &   idest,id,jd,kd,is,js,ks,ilays,jlays,klays,ip1,jp1,kp1,    & 
-     &    ip2,jp2,kp2,ip3,jp3,kp3,iface,nblk_ind)
+     &    ip2,jp2,kp2,ip3,jp3,kp3,iface,nblk_ind,ig)
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,id,jd,kd,is,js,ks
       integer, intent(in) :: ilays,jlays,klays
       integer, intent(in) :: ip1,jp1,kp1,ip2,jp2,kp2,ip3,jp3,kp3,iface
       integer, intent(in) :: nblk_ind
+      integer, intent(in) :: ig
       end subroutine amr_1blk_ec_cp_remote 
       end interface
 
@@ -180,6 +186,7 @@
       subroutine amr_1blk_fc_cp_remote(mype,remote_pe,remote_block, & 
      &   idest,id,jd,kd,is,js,ks,ilays,jlays,klays,ip1,jp1,kp1,    & 
      &    ip2,jp2,kp2,iface,nblk_ind,ipolar,                       &
+          ig,                                                      &
           curBlock,ibnd,jbnd,kbnd,surrblks)
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,id,jd,kd,is,js,ks
@@ -187,6 +194,7 @@
       integer, intent(in) :: ip1,jp1,kp1,ip2,jp2,kp2,iface
       integer, intent(in) :: nblk_ind
       integer, intent(in) :: ipolar(:)
+      integer, intent(in) :: ig
       integer,OPTIONAL, intent(in) :: curBlock
       integer,OPTIONAL, intent(in) :: ibnd,jbnd,kbnd
       integer,OPTIONAL, intent(in) :: surrblks(:,:,:,:)
@@ -345,9 +353,14 @@
       subroutine amr_1blk_guardcell(mype,iopt,nlayers,lb,pe,             & 
      &                              lcc,lfc,lec,lnc,                     & 
      &                              l_srl_only,icoord,ldiag,             & 
+                                    pdg,ig,                              &
      &                              nlayersx, nlayersy, nlayersz)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
       logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine amr_1blk_guardcell
       end interface
@@ -375,12 +388,16 @@
       subroutine amr_1blk_guardcell_srl(mype,pe,lb,iblock,iopt,nlayers,  & 
      &                         surrblks,lcc,lfc,lec,lnc,icoord,ldiag,    & 
      &                         nlayers0x,nlayers0y,nlayers0z, & 
-     &                         ipolar,curBlock)
+     &                         ipolar,pdg,ig,curBlock)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,iblock,icoord
       integer, intent(in) :: surrblks(:,:,:,:)
       logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
       integer, intent(in) :: nlayers0x, nlayers0y, nlayers0z
       integer, intent(in) :: ipolar(2)
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       integer,OPTIONAL, intent(in) :: curBlock
       end subroutine amr_1blk_guardcell_srl
       end interface
@@ -681,22 +698,32 @@
       end interface
 
       interface
-      subroutine amr_flux_conserve(mype,nsub,flux_dir)
-      integer, optional, intent(in)  ::  flux_dir
-      integer, intent(in)  ::  mype,nsub
+      subroutine amr_flux_conserve(mype,nsub,flux_dir,pdgNo)
+        implicit none
+        integer, intent(in)  ::  mype,nsub
+        integer, optional, intent(in) :: flux_dir
+        integer, optional, intent(in) :: pdgNo
       end subroutine amr_flux_conserve
       end interface
 
       interface
-      subroutine amr_flux_conserve_udt(mype,flux_dir)
-      integer, optional, intent(in) :: flux_dir
+      subroutine amr_flux_conserve_udt(mype,pdg,ig,flux_dir)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  mype
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
+      integer, optional, intent(in) :: flux_dir
       end subroutine amr_flux_conserve_udt
       end interface
 
       interface
-      subroutine amr_flux_conserve_vdt(mype,nsub)
+      subroutine amr_flux_conserve_vdt(mype,nsub,pdg,ig)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)  ::  mype,nsub
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_flux_conserve_vdt
       end interface
 
@@ -708,14 +735,34 @@
       end interface
 
 
-      interface
-      subroutine amr_guardcell(mype,iopt,nlayers, & 
+      interface amr_guardcell
+!!$      subroutine amr_guardcell(mype,iopt,nlayers, & 
+!!$                               nlayersx,nlayersy,nlayersz,&
+!!$                               maxNodetype_gcWanted)
+!!$      integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+!!$      integer, intent(in)  ::  mype,iopt,nlayers
+!!$      integer,OPTIONAL, intent(in) :: maxNodetype_gcWanted
+!!$      end subroutine amr_guardcell
+      subroutine amr_guardcell_pdgNo(mype,iopt,nlayers, & 
+                               nlayersx,nlayersy,nlayersz,&
+                               maxNodetype_gcWanted,pdgNo)
+        implicit none
+        integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+        integer, intent(in)  ::  mype,iopt,nlayers
+        integer,OPTIONAL, intent(in) :: maxNodetype_gcWanted
+        integer, intent(in), optional :: pdgNo
+      end subroutine amr_guardcell_pdgNo
+      subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
                                nlayersx,nlayersy,nlayersz,&
                                maxNodetype_gcWanted)
-      integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      integer, intent(in)  ::  mype,iopt,nlayers
-      integer,OPTIONAL, intent(in) :: maxNodetype_gcWanted
-      end subroutine amr_guardcell
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
+        integer, intent(in)  ::  mype,iopt,nlayers
+        type(pdg_t), intent(INOUT) :: pdg
+        integer, intent(in) :: ig
+        integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+        integer,OPTIONAL, intent(in) :: maxNodetype_gcWanted
+      end subroutine amr_guardcell_onePdg
       end interface
 
       interface
@@ -747,9 +794,13 @@
 
 
       interface
-      subroutine amr_perm_to_1blk( lcc,lfc,lec,lnc,lb,pe,iopt,idest)
+      subroutine amr_perm_to_1blk( lcc,lfc,lec,lnc,lb,pe,iopt,idest,pdg,ig)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in) ::  lb,pe,iopt,idest
       logical, intent(in) ::  lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_perm_to_1blk
       end interface
 
@@ -763,10 +814,11 @@
       end interface
 
 
-      interface
-      subroutine amr_prolong(mype,iopt,nlayers)
+      interface amr_prolong
+      subroutine amr_prolong_pdgNo(mype,iopt,nlayers,pdgNo)
       integer, intent(in) ::  mype,iopt,nlayers
-      end subroutine amr_prolong
+      integer, intent(in),optional ::  pdgNo
+      end subroutine amr_prolong_pdgNo
       end interface
 
       interface
@@ -781,10 +833,11 @@
 
       interface
 !      subroutine amr_prolong_fc_divbconsist(mype)
-      subroutine amr_prolong_fc_divbconsist(mype,level,nfield)
+      subroutine amr_prolong_fc_divbconsist(mype,level,nfield,ig)
       integer, intent(in) ::  mype
       integer, intent(in) ::  level
       integer, intent(in) ::  nfield
+      integer, intent(in) ::  ig
       end subroutine amr_prolong_fc_divbconsist
       end interface
 
@@ -818,23 +871,34 @@
       end interface
 
 
-      interface
-      subroutine amr_restrict(mype,iopt,iempty,filling_guardcells)
-      integer, intent(in)    :: mype,iopt,iempty
-      logical, optional, intent(in) :: filling_guardcells
-      end subroutine amr_restrict
+      interface amr_restrict
+!!$      subroutine amr_restrict(mype,iopt,iempty,filling_guardcells)
+!!$      integer, intent(in)    :: mype,iopt,iempty
+!!$      logical, optional, intent(in) :: filling_guardcells
+!!$      end subroutine amr_restrict
+         subroutine amr_restrict_pdgNo(mype,iopt,iempty,filling_guardcells,pdgNo)
+           implicit none
+           integer, intent(in)    :: mype,iopt,iempty
+           logical, optional, intent(in) :: filling_guardcells
+           integer, intent(in), optional :: pdgNo
+         end subroutine amr_restrict_pdgNo
       end interface
 
       interface
-      subroutine amr_restrict_bnd_data(mype,flux_dir)
+      subroutine amr_restrict_bnd_data(mype,flux_dir,pdg,ig)
+      use gr_pmPdgDecl, ONLY : pdg_t
+      implicit none
       integer, intent(in)    :: flux_dir
       integer, intent(in)    :: mype
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in)    :: ig
       end subroutine amr_restrict_bnd_data
       end interface
 
       interface
-      subroutine amr_restrict_bnd_data_vdt(mype)
+      subroutine amr_restrict_bnd_data_vdt(mype,ig)
       integer, intent(in)    :: mype
+      integer, intent(in)    :: ig
       end subroutine amr_restrict_bnd_data_vdt
       end interface
 
