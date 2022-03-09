@@ -1,0 +1,7 @@
+# file types
+*.pyc
+*.o
+*~
+*.sif
+# Dirs
+__pycache__
