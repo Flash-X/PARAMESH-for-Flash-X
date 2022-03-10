@@ -95,7 +95,7 @@ Subroutine amr_prolong_pdgNo(mype,iopt,nlayers,pdgNo)
   Use paramesh_interfaces, Only : & 
                         amr_q_sort
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 !-----Input/Output arguments.
   Integer, Intent(in) ::  mype,iopt,nlayers
   integer, intent(in), optional :: pdgNo

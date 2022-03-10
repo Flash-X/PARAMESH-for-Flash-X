@@ -82,7 +82,7 @@ subroutine amr_restrict_pdgNo(mype,iopt,iempty,filling_guardcells,pdgNo)
   use timings, only: timer_amr_restrict, timing_mpi
   use paramesh_mpi_interfaces, only :  & 
      &                  mpiAmr_1blk_restrict
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
   integer, intent(in)    :: mype,iopt,iempty
   logical, optional, intent(in)  :: filling_guardcells
   integer, intent(in), optional :: pdgNo
