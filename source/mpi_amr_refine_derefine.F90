@@ -51,7 +51,7 @@
 !!
 !!   Does not return anything.  Upon exit blocks marked for refinement have 
 !!   been created, blocks marked for derefinement have been eliminated, and 
-!!   the blocks have been reordered to acheive load balance.
+!!   the blocks have been reordered to achieve load balance.
 !!
 !! DESCRIPTION
 !! 
@@ -83,10 +83,14 @@
 !!
 !!  Kevin Olson (1997)
 !!
+!! HISTORY
+!!
+!!  force_rebalance and other tweaks   Tom Klosterman, Klaus Weide   2019-2022
 !!***
 
 #include "paramesh_preprocessor.fh"
 #include "Simulation.h"
+#include "constants.h"
 
       Subroutine amr_refine_derefine(force_rebalance)
 
@@ -103,10 +107,8 @@
       Use paramesh_mpi_interfaces, Only : mpi_amr_singular_line
       use Logfile_interface, ONLY:  Logfile_stamp, Logfile_stampMessage 
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-      Implicit None
 
-!-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       logical,intent(in),optional :: force_rebalance
 
@@ -233,7 +235,6 @@
           icontinue_deref == 0 .And.                                   &
           .Not.first_Call      .And.                                   &
           .Not.rebalance ) return
-      first_Call = .False.
 
       
 !-----NOW Actually refine and derefine the mesh
@@ -286,14 +287,16 @@
 #endif
       Do i = 1,lnblocks
          if (nodetype(i).eq.1) then
-            if(gr_btSortByWork.AND..NOT.gr_btCustomWork) &
+            if(gr_btSortByWork.AND. &
+                 (.NOT.gr_btCustomWork .OR. (first_Call .AND. work_block(i) < gr_btWorkBoundsLeaf(LOW)))) &
               work_block(i) = gr_btWorkDefaultLeaf
 #ifdef FLASH_DEBUG_AMR
             lnblocks_leaf = lnblocks_leaf + 1
 #endif
          endif
          if (nodetype(i) >= 2) then
-            if(gr_btSortByWork.AND..NOT.gr_btCustomWork) &
+            if(gr_btSortByWork.AND. &
+                 (.NOT.gr_btCustomWork .OR. (first_Call .AND. work_block(i) < gr_btWorkBoundsPar(LOW)))) &
               work_block(i) = gr_btWorkDefaultPar
          endif
       end do
@@ -484,6 +487,7 @@
       Call mpi_amr_boundary_block_info(mype,nprocs)
 #endif
 
+      first_Call = .False.
       Return
       End Subroutine amr_refine_derefine
 

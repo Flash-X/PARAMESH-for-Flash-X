@@ -1,6 +1,9 @@
 !----------------------------------------------------------------------
 ! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
+! Copyright (C) 2003, 2004 United States Government as represented by the
+! National Aeronautics and Space Administration, Goddard Space Flight
+! Center.  All Rights Reserved.
+! Copyright 2022 UChicago Argonne, LLC and contributors
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -69,6 +72,9 @@
 !!
 !!   Kevin Olson (1996-2004).
 !!
+!! HISTORY
+!!
+!!   Tweaks           Tom Klosterman, Klaus Weide    2019-2022
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -78,7 +84,7 @@
 
 !-----Use statements.
 #ifdef IMPROVED_SORT
-      use gr_sortByWorkTools, only: gr_sortByWorkConsolidated,gr_calcProcLocblk
+      use gr_sortByWorkTools, only: gr_sortByWorkDistributed,gr_calcProcLocblk
 #endif
       use paramesh_dimensions
       Use physicaldata
@@ -120,15 +126,10 @@
 
 !-----Begin executable code.
 
-!-----Initialize work arrary and temp work array.
-      Do i = 1,maxblocks_tr
-         work(i) = -1.
-         workt(i) = -1.
-      End Do 
-
+!-----Initialize temp work array.
 !-----Assign values to work array.
       Do i = 1,maxblocks_tr
-         work(i) = 0.
+         workt(i) = -1.
          work(i) = work_block(i)
       End Do 
 

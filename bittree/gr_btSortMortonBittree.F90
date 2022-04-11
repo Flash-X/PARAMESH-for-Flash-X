@@ -324,7 +324,7 @@
 
 !-----Local variables and arrays
       integer :: i,ii,j,ierr
-      real    :: worktemp(maxblocks_tr),worktempbuf(maxblocks_tr)
+      real    :: worktemp(maxblocks_tr)
       integer :: lnblockst, totblocks
       integer(c_int) :: totblocksc
       integer :: childrendone

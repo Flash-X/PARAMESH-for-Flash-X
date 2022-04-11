@@ -49,7 +49,6 @@ subroutine amr_build_bittree()
 
   use Driver_interface, only: Driver_abort
   use RuntimeParameters_interface, ONLY : RuntimeParameters_get
-  use Grid_interface, only : Grid_setWorkBounds
   use gr_specificData, ONLY : gr_gidIsValid
 
   use iso_c_binding, only: c_bool, c_int
