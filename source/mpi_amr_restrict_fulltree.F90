@@ -17,7 +17,7 @@
 
 ! This routine should be moved to 'utilities', not part of the PARAMESH kernal
 
-subroutine mpi_amr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc,pdgNo)
+subroutine mpiAmr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc,pdgNo)
   Use physicaldata, only: gr_thePdgs
   implicit none
   integer, intent(in)  :: mype,iopt
@@ -34,12 +34,12 @@ subroutine mpi_amr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc,pdgNo)
   end if
 
   do ig = sg,eg
-     call mpi_amr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,gr_thePdgs(ig),ig)
+     call mpiAmr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,gr_thePdgs(ig),ig)
   end do
 
 contains
 
-  subroutine mpi_amr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,pdg,ig)
+  subroutine mpiAmr_restrict_fulltree_onePdg(mype,iopt,lcc,lfc,lec,lnc,pdg,ig)
 
 
     use gr_pmPdgDecl, ONLY : pdg_t
@@ -74,8 +74,9 @@ contains
      &                                amr_restrict_ec_fun, & 
      &                                amr_restrict_work_fun, & 
      &                                amr_restrict_work_fun_recip, & 
-     &                                comm_int_max_to_all, & 
-     &                                comm_int_min_to_all & 
+                                      amr_1blk_nc_cp_remote,       &
+     &                                comm_int_max_to_all1, &
+     &                                comm_int_min_to_all1 &
      &                                ,amr_block_geometry
 
     use paramesh_mpi_interfaces, only :  & 
@@ -145,7 +146,7 @@ contains
 
 !------------------------------------
 #ifdef DEBUG_FLOW_TRACE
-      write(*,*) 'entered mpi_amr_restrict_fulltree: pe ',mype, & 
+      write(*,*) 'entered mpiAmr_restrict_fulltree: pe ',mype, &
      &           ' iopt ',iopt
 #endif /* DEBUG_FLOW_TRACE */
 
@@ -295,7 +296,7 @@ contains
 !          do iblk = strt_buffer,last_buffer
           do while(.not.lfound.and.iblk.le.last_buffer)
 #ifdef DEBUG
-             write(*,*) 'mpi_amr_restrict_fulltree: pe ', & 
+             write(*,*) 'mpiAmr_restrict_fulltree: pe ', &
      &       mype,' blk ',lb, & 
      &     ' searching buffer for ',ich,' child ', & 
      &     child(:,ich,lb),' current buffer entry ', & 
@@ -308,7 +309,7 @@ contains
               remote_pe    = mype
               lfound = .true.
 #ifdef DEBUG
-             write(*,*) 'mpi_amr_restrict_fulltree: pe ',mype, & 
+             write(*,*) 'mpiAmr_restrict_fulltree: pe ',mype, &
      &         ' child ', & 
      &          child(:,ich,lb),' located in buffer slot ', & 
      &          iblk
@@ -1103,7 +1104,7 @@ contains
      &                 mype,remote_pe,remote_block,iblock, & 
      &                 id,jd,kd,is,js,ks, & 
      &                 ilays,jlays,klays, & 
-     &                 ip1,jp1,kp1,ip3,jp3,kp3,0)
+     &                 ip1,jp1,kp1,ip3,jp3,kp3,0,ig)
 
              ng1 = nguard*(1-npgs)
              unk_n(:,id-ng1:id+ilays-ng1, & 
@@ -1148,11 +1149,11 @@ contains
       deallocate(sendf)
 
 #ifdef DEBUG_FLOW_TRACE
-      write(*,*) 'exiting mpi_amr_restrict_fulltree: pe ',mype, & 
+      write(*,*) 'exiting mpiAmr_restrict_fulltree: pe ',mype, &
      &           ' iopt ',iopt
 #endif /* DEBUG_FLOW_TRACE */
 
       return
-    end subroutine mpi_amr_restrict_fulltree_onePdg
+    end subroutine mpiAmr_restrict_fulltree_onePdg
 
-end subroutine mpi_amr_restrict_fulltree
+end subroutine mpiAmr_restrict_fulltree

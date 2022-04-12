@@ -1008,7 +1008,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                                 mype,remote_pe,remote_block,iblock,             &
                                                 id,jd,kd,is,js,ks,                              &
                                                 ilays,jlays,klays,                              &
-                                                ip1,jp1,kp1,ip3,jp3,kp3,0)
+                                                ip1,jp1,kp1,ip3,jp3,kp3,0,ig)
 
                                       ng1 = nguard*(1-npgs)
                                       unk_n(:,id-ng1:id+ilays-ng1,                              &
