@@ -82,7 +82,7 @@
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+
 #include "paramesh_preprocessor.fh"
 
 Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &

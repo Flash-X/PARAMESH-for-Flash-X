@@ -1,3 +1,7 @@
+
+!!REORDER(5): unk, unk1, flux_[xyz], tflux_[xyz]
+!!REORDER(4): recvar[xyz]f
+
 subroutine gr_pdgInitOne(pdg,pdgDimen, nfluxvar,nfluxes,maxblocksfl)
   use gr_pmPdgDecl, ONLY : pdg_t, pdgConst_t
   use paramesh_dimensions, ONLY: maxblocks, npblks

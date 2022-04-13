@@ -200,8 +200,6 @@
 !!
 !!***
 
-!!REORDER(5): facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine amr_1blk_guardcell(                                   & 
