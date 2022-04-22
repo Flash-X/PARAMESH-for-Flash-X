@@ -770,6 +770,18 @@
       end subroutine amr_initialize
       end interface
 
+      interface
+         subroutine gr_pdgDimenInitOne(pdgDimen, nvar,nguard,nx,ny,nz, npgsArg,k2dArg,k3dArg)
+           use gr_pmPdgDecl, ONLY : pdgConst_t
+           implicit none
+           type(pdgConst_t), intent(OUT) :: pdgDimen
+           integer, intent(IN) :: nvar
+           integer, intent(IN) :: nguard
+           integer, intent(IN) :: nx,ny,nz
+           integer, intent(IN),OPTIONAL :: npgsArg,k2dArg,k3dArg
+         end subroutine gr_pdgDimenInitOne
+      end interface
+
 
       interface
       subroutine amr_migrate_tree_data(new_loc,nprocs,mype)

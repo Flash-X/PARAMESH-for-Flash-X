@@ -90,7 +90,8 @@
       Use paramesh_comm_data
 
       Use paramesh_interfaces, only : amr_1blk_guardcell_reset,        & 
-                                      amr_prolong_fun_init
+                                      amr_prolong_fun_init,            &
+                                      gr_pdgDimenInitOne
 
       Implicit None
 
@@ -246,6 +247,7 @@
       gc_off_y     = Mod(nyb,2)
       gc_off_z     = Mod(nzb,2)
 #ifdef LIBRARY
+      call gr_pdgDimenInitOne(gr_thePdgDimens(1), nvar,nguard,nxb,nyb,nzb, npgs,k2d,k3d)
       il_bnd       = 1
       jl_bnd       = 1
       kl_bnd       = 1

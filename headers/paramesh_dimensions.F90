@@ -291,10 +291,7 @@
 !---------------------------------
 
       public :: gr_thePdgDimens
-#if 0
-      type(pdgConst_t),save, dimension(NUM_PDGS) :: gr_thePdgDimens
-      target :: gr_thePdgDimens
-#else
+#ifndef LIBRARY
       integer, private :: i
       type(pdgConst_t),parameter,dimension(NUM_PDGS) :: gr_thePdgDimens = &
            (/(pdgConst_t( &
@@ -311,7 +308,9 @@
            jl_bnd1,ju_bnd1, &
            kl_bnd1,ku_bnd1  &
            ), i=1,NUM_PDGS)/)
-!!$      type(pdgConst_t),parameter, dimension(NUM_PDGS) :: gr_thePdgDimens = {0,0,0}
+#else
+      type(pdgConst_t),save, dimension(NUM_PDGS) :: gr_thePdgDimens
+      target :: gr_thePdgDimens
 #endif
 
       End Module paramesh_dimensions
