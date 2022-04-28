@@ -292,6 +292,8 @@
        ledge     = .False.
        lrestrict = .False.
        lfulltree = .False.
+       ! getter nodetype: LEAF (and newchild)
+       ! getter level   : lreflevel
        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,            & 
                                lflux,ledge,lrestrict,lfulltree,        & 
                                iopt,lcc,lfc,lec,lnc,tag_offset)

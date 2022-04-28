@@ -58,7 +58,7 @@
       integer, intent(in)    :: lb,ioptw,buffer_size
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
-      real,    intent(IN)    :: R_buffer(buffer_size)
+      real,    intent(IN),ASYNCHRONOUS :: R_buffer(buffer_size)
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

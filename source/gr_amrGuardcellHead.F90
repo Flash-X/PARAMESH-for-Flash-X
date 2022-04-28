@@ -14,11 +14,14 @@
 !!
 !! SYNOPSIS
 !!
-!!   call amr_guarcell(mype, iopt, nlayers)
-!!   call amr_guarcell(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz)
-!!   call amr_guarcell(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz, maxNodetype_gcWanted)
+!!  use gr_itParam_mod, ONLY: gr_itParam_t
+!!  use gr_pmBlockGetter, ONLY: gr_pmBlockGetter_t
 !!
-!!   call amr_guarcell(integer, integer, integer, 
+!!   call gr_amrGuardcellHead(mype, iopt, nlayers)
+!!   call gr_amrGuardcellHead(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz)
+!!   call gr_amrGuardcellHead(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz, maxNodetype_gcWanted)
+!!
+!!   call gr_amrGuardcellHead(integer, integer, integer, 
 !!                     optional integer, optional integer, optional integer, optional integer)
 !!
 !! ARGUMENTS
@@ -86,7 +89,10 @@
 #include "paramesh_preprocessor.fh"
 #include "constants.h"
 
-    Subroutine amr_guardcell(mype,iopt,nlayers,         & 
+Module gr_amrGuardcellHead_mod
+
+contains
+    Subroutine gr_amrGuardcellHead(itContext, getter,mype,iopt,nlayers,         & 
                                nlayersx,nlayersy,nlayersz, &
                                maxNodetype_gcWanted)
 
@@ -104,6 +110,8 @@
 
 !!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
       Use gr_mpiAmrComm_mod,   only : gr_mpiAmrComm
+      use gr_itParam_mod, ONLY: gr_itParam_t
+      use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterDestroy
 
       use gr_pmFlashHookData, ONLY : alwaysFcAtBC => gr_pmAlwaysFillFcGcAtDomainBC
 
@@ -113,6 +121,8 @@
       Include 'mpif.h'
 
 !-----Input/Output Arguments
+      type(gr_itParam_t), intent(INOUT) :: itContext
+      type(gr_pmBlockGetter_t),intent(INOUT), TARGET :: getter
       Integer, intent(in) :: mype,iopt,nlayers
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       Integer, intent(in), optional :: maxNodetype_gcWanted
@@ -137,7 +147,7 @@
 !------------------------------------
 
       If ((.not.diagonals) .and. (iopt .ne. 2)) Then
-         Write(*,*) 'amr_guardcell:  diagonals off'
+         Write(*,*) 'gr_amrGuardcellHead:  diagonals off'
       End if
 
       If (present(maxNodetype_gcWanted)) Then
@@ -200,7 +210,7 @@
       If (no_permanent_guardcells) Then
 
        If (mype == 0) Then
-         Write(*,*) 'amr_guardcell call ignored!'
+         Write(*,*) 'gr_amrGuardcellHead call ignored!'
          Write(*,*) 'NO_PERMANENT_GUARDCELLS is defined'
        End if
        Return
@@ -247,6 +257,7 @@
          iempty = 0
          call amr_restrict(mype,iopt,iempty,.True.)
          call amr_1blk_guardcell_reset
+         Call MPI_BARRIER(amr_mpi_meshComm, ierr)
       End if
 
 
@@ -295,204 +306,22 @@
       else
          ntype = ACTIVE_BLKS
       end if
-      call Timers_start("gr_mpiAmrComm s")
+      call Timers_start("gr_mpiAmrComm")
       Call gr_mpiAmrComm(mype,nprocs,                             &
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         &
-                              ntype=ntype, level=lev,                  &
+                              getter,                                  &
+                              ntype, level=lev,                        &
                               nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
-      call Timers_stop("gr_mpiAmrComm s")
+      call Timers_stop("gr_mpiAmrComm")
 
-      If (lnblocks > 0) Then
-      Do lb = 1,lnblocks
-
-      If ((maxNodetype_gcWanted_loc > 0 .AND. (nodetype(lb) <= maxNodetype_gcWanted_loc)) .or.   &
-          (maxNodetype_gcWanted_loc <=0 .AND. (nodetype(lb) == 1 .or. nodetype(lb) == 2)) .or.   &
-         advance_all_levels) Then
-
-!-------Copy this blocks data into the working block, and fill its guardcells
-        ldiag = diagonals
-        l_srl_only = .False.                     ! fill srl and coarse
-        icoord = 0                               ! fill in all coord directions
-        Call amr_1blk_guardcell(mype,iopt,nlayers,lb,mype,             & 
-                                lcc,lfc,lec,lnc,                       & 
-                                l_srl_only,icoord,ldiag,               & 
-                                nlayersx,nlayersy,nlayersz)
-
-        Do k = 1,1+2*k3d
-         klp = 0
-         kup = 0
-         If (k == 1) Then
-           klays = nlayers0z*k3d
-           kd = nguard0*k3d+1 - klays
-           kp1 = 0
-           kp2 = 0
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,5,lb) .le. -20))) kup = k3d
-         Else if (k == 2) Then
-           klays = nzb*k3d
-           kd = nguard0*k3d+1
-           kp1 = 0
-           kp2 = k3d
-         Else if (k == 3) Then
-           klays = nlayers0z*k3d
-           kd = (nguard0+nzb)*k3d + 1
-           kp1 = k3d
-           kp2 = k3d
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,6,lb) .le. -20))) klp = -k3d
-         End if
-         ku = kd + klays - k3d
-        Do j = 1,1+2*k2d
-         jlp = 0
-         jup = 0
-         If (j == 1) Then
-           jlays = nlayers0y*k2d
-           jd = nguard0*k2d+1 - jlays
-           jp1 = 0
-           jp2 = 0
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,3,lb) .le. -20))) jup = k2d
-         Else if (j == 2) Then
-           jlays = nyb*k2d
-           jd = nguard0*k2d+1
-           jp1 = 0
-           jp2 = k2d
-         Else if (j == 3) Then
-           jlays = nlayers0y*k2d
-           jd = (nguard0+nyb)*k2d + 1
-           jp1 = k2d
-           jp2 = k2d
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,4,lb) .le. -20))) jlp = -k2d
-         End if
-         ju = jd + jlays - k2d
-       Do i = 1,3
-         ilp = 0
-         iup = 0
-         If (i == 1) Then
-           ilays = nlayers0x
-           id = nguard0+1 - ilays
-           ip1 = 0
-           ip2 = 0
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,1,lb) .le. -20))) iup = 1
-         Else if (i == 2) Then
-           ilays = nxb
-           id = nguard0+1
-           ip1 = 0
-           ip2 = 1
-         Else if (i == 3) Then
-           ilays = nlayers0x
-           id = nguard0+nxb + 1
-           ip1 = 1
-           ip2 = 1
-           If ((l_force_consist) .or. (alwaysFcAtBC .AND. (neigh(1,2,lb) .le. -20))) ilp = -1
-         End if
-         iu = id + ilays - 1
-
-         If (i  ==  2 .and. j  ==  1+k2d .and. k  ==  1+k3d) Then
-
-         Else
-
-          If (lcc) Then
-           If (iopt == 1) Then
-             Do ivar=1,nvar
-               If (int_gcell_on_cc(ivar)) Then
-                 unk(ivar,id:iu,jd:ju,kd:ku,lb) =                      & 
-                  unk1(ivar,id:iu,jd:ju,kd:ku,1)
-               Endif
-             Enddo
-           Else
-            iopt0 = iopt-1
-            work(id:iu,jd:ju,kd:ku,lb,iopt0) =                         & 
-              work1(id:iu,jd:ju,kd:ku,1)
-           End if   ! end if iopt == 1
-          End if    ! end if (lcc)
-
-          If (lfc) Then
-           Do ivar = 1,nfacevar
-            If (int_gcell_on_fc(1,ivar)) Then
-             facevarx( ivar,id+ip1+ilp:iu+ip2+iup,                     & 
-                            jd:ju,kd:ku,lb) =                          & 
-             facevarx1( ivar,id+ip1+ilp:iu+ip2+iup,                    & 
-                             jd:ju,kd:ku,1)
-            End if
-            If (ndim > 1) Then
-             If (int_gcell_on_fc(2,ivar)) Then
-              facevary( ivar,id:iu,jd+jp1+jlp:ju+jp2+jup,              & 
-                             kd:ku,lb) =                               & 
-              facevary1(ivar,id:iu,jd+jp1+jlp:ju+jp2+jup,              & 
-                              kd:ku,1)
-             End if
-             If (ndim == 3) Then
-              If (int_gcell_on_fc(3,ivar)) Then
-               facevarz( ivar,id:iu,jd:ju,kd+kp1+klp:ku+kp2+kup,lb) =  & 
-                facevarz1(ivar,id:iu,jd:ju,kd+kp1+klp:ku+kp2+kup,1)
-              End if
-             End if  ! end if (ndim == 3)
-            End if   ! end if (ndim > 1)
-           End do    ! end do ivar = 1, nfacevar
-          End if     ! end if (lfc)
-
-#ifdef FLASH_PMFEATURE_UNUSED
-          If (lec) Then
-           Do ivar = 1, nvaredge
-            If (ndim > 1) Then
-             If (int_gcell_on_ec(1,ivar)) Then
-              unk_e_x( ivar,id:iu,jd+jp1:ju+jp2,kd+kp1:ku+kp2,lb) =    & 
-              unk_e_x1(ivar,id:iu,jd+jp1:ju+jp2,kd+kp1:ku+kp2,1)
-             End if
-             If (int_gcell_on_ec(2,ivar)) Then
-              unk_e_y( ivar,id+ip1:iu+ip2,jd:ju,kd+kp1:ku+kp2,lb) =    & 
-              unk_e_y1(ivar,id+ip1:iu+ip2,jd:ju,kd+kp1:ku+kp2,1)
-             End If
-             If (ndim == 3) Then
-              If (int_gcell_on_ec(3,ivar)) Then
-               unk_e_z( ivar,id+ip1:iu+ip2,jd+jp1:ju+jp2,kd:ku,lb) =   & 
-               unk_e_z1(ivar,id+ip1:iu+ip2,jd+jp1:ju+jp2,kd:ku,1)
-              End If
-             End If ! End If (ndim == 3)
-            End If  ! End If (ndim > 1)
-           End Do   ! End Do ivar = 1, nvaredge
-          End If    ! End If (lec)
-
-          If (lnc) Then
-           Do ivar = 1, nvarcorn
-            If (int_gcell_on_nc(ivar)) Then
-             unk_n( ivar,                                              & 
-                 id+ip1:iu+ip2,                                        & 
-                 jd+jp1:ju+jp2,                                        & 
-                 kd+kp1:ku+kp2,lb) =                                   & 
-                  unk_n1(ivar,                                         & 
-                         id+ip1:iu+ip2,                                & 
-                         jd+jp1:ju+jp2,                                & 
-                         kd+kp1:ku+kp2,1)
-            End If ! End If (int_gcell_on_nc(ivar))
-           End Do  ! End Do ivar = 1, nvarcorn
-          End If   ! Dnd If (lnc)
-#endif
-
-        End If     ! end if (i  ==  2 .and. j  ==  1+k2d .and. k  ==  1+k3d)
-
-      End Do  ! End Do i = 1,3
-      End Do  ! End Do j = 1,1+2*k2d
-      End Do  ! End Do k = 1,1+2*k3d
-
-      End If  ! End If (nodetype(lb) == 1 .or. nodetype(lb) == 2 .or. 
-              !         advance_all_levels) 
-
-      End Do  ! End Do lb = 1, lnblocks
-      End if  ! End If (lnblocks >= 1)
-
-!-----reinitialize addresses of cached parent blocks
-      Call amr_1blk_guardcell_reset
-
-!-----reset selections of guardcell variables to default
-      int_gcell_on_cc(:) = .True.
-      int_gcell_on_fc(:,:) = .True.
-      int_gcell_on_ec(:,:) = .True.
-      int_gcell_on_nc(:) = .True.
 
       Endif ! If (no_permanent_guardcells)
 
+      itContext % mype = mype
+      itContext % iopt = iopt
+
       Return
-    End Subroutine amr_guardcell
-
-
+    End Subroutine gr_amrGuardcellHead
+end Module gr_amrGuardcellHead_mod

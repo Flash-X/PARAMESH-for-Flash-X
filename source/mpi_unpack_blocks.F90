@@ -18,9 +18,6 @@
 !------------------------------------------------------------------------
 !
 ! This subroutine unpacks all blocks which are to be received on mype.
-! It further stores the local (receiving) block id, the neighboring remote 
-! (sending) block id, and the local guard block id into the array laddress 
-! which is to be used in the subroutine mpi_1blk_guardcell.
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
@@ -175,7 +172,7 @@
                                    ! unpack all arrays from buffer into lb
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' iblk ',iblk,' unpacking starting ', & 
-     &        ' at index ',index,' buf_dim ',buf_dim
+     &        ' at index ',index,' block_sections ',block_sections
 #endif /* DEBUG */
 
                   if (block_sections) then

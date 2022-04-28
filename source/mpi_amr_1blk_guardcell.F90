@@ -54,10 +54,10 @@
 !!   logical, intent(in) :: lfc            
 !!        A logical switch controlling whether facevarx(y)(z) data is filled.
 !!
-!!   logical, intent(in) :: lec            
+!!   logical, intent(in) :: lec     (FLASH: unused)
 !!        A logical switch controlling whether unk_e_x(y)(z) data is filled.
 !!
-!!   logical, intent(in) :: lnc            
+!!   logical, intent(in) :: lnc     (FLASH: unused)
 !!        A logical switch controlling whether unk_n data is filled.
 !!
 !!   logical, intent(in) :: l_srl_only     
@@ -208,7 +208,8 @@
                                     mype,iopt,nlayers,lb,pe,           & 
                                     lcc,lfc,lec,lnc,                   & 
                                     l_srl_only,icoord,ldiag,           & 
-                                    nlayersx,nlayersy,nlayersz)
+                                    nlayersx,nlayersy,nlayersz,        &
+                                    parentPresentRegions)
 !-----Use statements.
       Use paramesh_dimensions
       Use physicaldata
@@ -236,6 +237,7 @@
       Logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       Integer, intent(in) :: mype,lb,pe,iopt,nlayers,icoord
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      integer(kind=i27b), intent(in), optional :: parentPresentRegions
 
 !-----Local arrays and variables
       Integer :: nprocs
@@ -244,7 +246,8 @@
       Integer :: ij,ijk
       Integer :: surrblks(3,3,3,3), tsurrblks(3,3,3,3)
       Integer :: psurrblks(3,3,3,3)
-      Integer :: pcache_pe,pcache_blk
+      Integer :: pcache_pe,pcache_blk,pcache_gcregions
+      integer(kind=i27b) :: p_gcregions_eff
       Integer :: ierrorcode,ierr
       Integer :: ipolar(2)
       Integer :: ippolar(2)
@@ -471,6 +474,12 @@
          End If
       End If  ! End If (iopt == 1 .And. ...)
 
+      if (present(parentPresentRegions)) then
+         p_gcregions_eff = parentPresentRegions
+      else
+         p_gcregions_eff = -1
+      end if
+
       If (pe.Ne.mype) Then
           Write(*,*) 'Error : trying to fill guardcells for a ',       & 
                      'remote block - not supported with the mpi ',     & 
@@ -646,9 +655,11 @@
       If (iopt == 1) Then
           pcache_pe  = pcache_pe_u
           pcache_blk = pcache_blk_u
+          pcache_gcregions = pcache_gcregions_u
       ElseIf (iopt >= 2) Then
           pcache_pe  = pcache_pe_w
           pcache_blk = pcache_blk_w
+          pcache_gcregions = pcache_gcregions_w
       End If
 
       If (lcoarse) Then
@@ -659,13 +670,15 @@
           parent_pe = parent(2,lb)
 
         If ( (parent_lb > 0) .And.                                     & 
-            ((parent_lb.Ne.pcache_blk).Or.(parent_pe.Ne.pcache_pe) )   & 
+            ((parent_lb.Ne.pcache_blk).Or.(parent_pe.Ne.pcache_pe) .or.&
+             (p_gcregions_eff.ne.pcache_gcregions))                    &
             ) Then
 
 !---------record id of new parent block placed in cache
           lnew_parent = .True.
           pcache_blk = parent_lb
           pcache_pe  = parent_pe
+          pcache_gcregions = p_gcregions_eff
 
         If (lcc) Then
            If (first_cc) Then
@@ -674,6 +687,7 @@
               first_cc = .False.
            End If
         End If
+#ifdef FLASH_PMFEATURE_UNUSED
         If (lnc) Then
            If (first_nc) Then
               unk_n1(:,:,:,:,2) = 0.
@@ -688,6 +702,7 @@
              first_ec = .False.
            End If
         End If
+#endif
         If (lfc) Then
            If (first_fc) Then
              facevarx1(:,:,:,:,2) = 0.
@@ -741,12 +756,28 @@
                                     icoord_loc,ldiag_loc,              & 
                                     nlayers0x,                         &
                                     nlayers0y,                         &
-                                    nlayers0z,ippolar,curBlock=lb)
-         if (lcc .and. iopt.eq.1)  & 
-     &        call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, & 
-     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
+                                    nlayers0z,ippolar,curBlock=lb,     &
+                                    presentRegions=p_gcregions_eff)
+        if (lcc .and. iopt.eq.1) then
+#ifdef DEBUG_GRID
+99         format(A8,4(I6),A3,3(9(2x,I3,':',I3,':',I3),:,' |'))
+           print 99,'mype...',mype,lb,parent_pe,parent_lb,' ::',(psurrblks(:,1:3,2-k2d:2+k2d,2-k3d:2+k3d))
+#endif
+           if (.NOT. present(parentPresentRegions)) then
+              call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
+     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
      &         why=gr_callReason_PROLONG)
-
+           else if (any(psurrblks(1,1:3,2-k2d:2+k2d,2-k3d:2+k3d) <= -20)) then
+              call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
+     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
+     &         why=gr_callReason_PROLONG)
+           else
+              call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
+     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
+     &         why=gr_callReason_PROLONG, &
+               presentRegions=parentPresentRegions)
+           end if
+        end if                  ! if (lcc
 
         End If  ! End If ( (parent_lb > 0) .And. ...)
 
@@ -792,9 +823,11 @@
       If (iopt == 1) Then
         pcache_pe_u  = pcache_pe
         pcache_blk_u = pcache_blk
+        pcache_gcregions_u = pcache_gcregions
       ElseIf (iopt >= 2) Then
         pcache_pe_w  = pcache_pe
         pcache_blk_w = pcache_blk
+        pcache_gcregions_w = pcache_gcregions
       End If
 
       If (timing_mpi) Then

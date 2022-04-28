@@ -32,7 +32,7 @@
 !!     List of the surrounding blocks which is returned.
 !!
 !!   logical, intent(in) :: l_parent
-!!     Logical flag which indicates of parents of surrounding blocks are
+!!     Logical flag which indicates if parents of surrounding blocks are
 !!     also to be found and returned.
 !!   
 !!   integer, intent(in) :: psurrblks
@@ -62,9 +62,9 @@
 !!
 !! DESCRIPTION
 !!
-!!   This routine finds the addresses of surrounding blocks of
-!!   the block lb on the local processor, and of its parent, from the
-!!   metainformation array surr_blks maintained by PARAMESH.
+!!   This routine finds the addresses of surrounding blocks of the block lb
+!!   on the local processor, and optionally also of its parent block, from
+!!   the metainformation array surr_blks that is maintained by PARAMESH.
 !!   This routine finds these block addresses by searching the list of
 !!   off-processor blocks which have previously been communicated.
 !!

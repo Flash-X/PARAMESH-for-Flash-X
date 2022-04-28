@@ -345,10 +345,12 @@
       subroutine amr_1blk_guardcell(mype,iopt,nlayers,lb,pe,             & 
      &                              lcc,lfc,lec,lnc,                     & 
      &                              l_srl_only,icoord,ldiag,             & 
-     &                              nlayersx, nlayersy, nlayersz)
+     &                              nlayersx, nlayersy, nlayersz,        &
+     &                              parentPresentRegions)
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
       logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      integer(kind=selected_int_kind(9)), intent(in), optional :: parentPresentRegions
       end subroutine amr_1blk_guardcell
       end interface
 
@@ -375,13 +377,16 @@
       subroutine amr_1blk_guardcell_srl(mype,pe,lb,iblock,iopt,nlayers,  & 
      &                         surrblks,lcc,lfc,lec,lnc,icoord,ldiag,    & 
      &                         nlayers0x,nlayers0y,nlayers0z, & 
-     &                         ipolar,curBlock)
+     &                         ipolar,curBlock,presentRegions)
+      use gr_flashHook_interfaces, ONLY : i27b
+      implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,iblock,icoord
       integer, intent(in) :: surrblks(:,:,:,:)
       logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
       integer, intent(in) :: nlayers0x, nlayers0y, nlayers0z
       integer, intent(in) :: ipolar(2)
       integer,OPTIONAL, intent(in) :: curBlock
+      integer(kind=i27b),OPTIONAL, intent(in) :: presentRegions
       end subroutine amr_1blk_guardcell_srl
       end interface
 
@@ -391,6 +396,11 @@
       integer, intent(in)  :: mype,iopt
       logical, intent(in)  :: lcc,lfc,lec,lnc
       end subroutine amr_1blk_restrict
+      subroutine gr_amr1blkRestrict(mype,lb,iopt,lcc,lfc,lec,lnc)
+        implicit none
+        Integer, Intent(in)  :: mype,lb,iopt
+        Logical, Intent(in)  :: lcc,lfc,lec,lnc
+      end subroutine gr_amr1blkRestrict
       end interface
 
 
@@ -412,6 +422,14 @@
       integer, intent(in) :: lb,iopt,idest
       logical, intent(in) :: lcc,lfc,lec,lnc
       end subroutine amr_1blk_to_perm
+      subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         &
+                                    lcc,lfc,lec,lnc,              &
+                                    nlayersx,nlayersy,nlayersz)
+        implicit none
+        Integer, intent(in) :: mype,iopt,nlayers,lb
+        Logical, VALUE      :: lcc,lfc,lec,lnc
+        Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      end subroutine gr_amr1blkGcToPerm
       end interface
 
 
@@ -760,6 +778,12 @@
       integer, intent(out) :: dtype,index
       logical, intent(out) :: lfound
       end subroutine amr_mpi_find_blk_in_buffer
+      subroutine gr_amrMpiFindBlkInBufferSimpl( &
+     &       mype,remote_block,remote_pe,idest,segNo,index0,lfound)
+        integer, intent(in)  :: mype,remote_pe,remote_block,idest
+        integer, intent(out) :: segNo,index0
+        logical, intent(out) :: lfound
+      end subroutine gr_amrMpiFindBlkInBufferSimpl
       end interface
 
 
