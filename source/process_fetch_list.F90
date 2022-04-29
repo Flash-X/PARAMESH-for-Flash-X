@@ -51,6 +51,11 @@
                                 n_to_left)
       End If
 
+#ifdef DEBUG
+99    format('@',I12,'  process_fetch_list (tag',I4,') after compress has',/,('@',I12,20x,I3,': (',3I7,')'))
+      print 99,mype,tag_offset,(mype,i,fetch_list(:,i),i=1,no_of_remote_neighs)
+#endif
+
       Do i = 1, no_of_remote_neighs
         fetch_list(2,i) = fetch_list(2,i) + 1
       End Do
@@ -130,6 +135,10 @@
       to_be_sent = -1
       to_be_received = -1
       laddress = 0
+      DO CONCURRENT (ii = 1:lnblocks)
+         laddress(1,ii) = ii
+         laddress(2,ii) = mype
+      END DO
 
 !-----Set up the array to_be_received on each processor
       If (no_of_remote_neighs > 0) Then

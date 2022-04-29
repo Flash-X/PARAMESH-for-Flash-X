@@ -159,6 +159,8 @@
       ledge     = .False.
       lrestrict = .True.
       lfulltree = .False.
+      ! getter nodetype: PARENT
+      ! getter level   : UNSPEC_LEVEL
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         & 
@@ -175,6 +177,8 @@
       ledge     = .False.
       lrestrict = .False.
       lfulltree = .False.
+      ! getter nodetype: LEAF (w/ missing neighbors)
+      ! getter level   : UNSPEC_LEVEL
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         & 

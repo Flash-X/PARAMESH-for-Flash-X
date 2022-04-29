@@ -55,11 +55,11 @@
 !!        A logical switch controlling whether 'facevarx1, y1, and z' have 
 !!        their guardcells filled.
 !!
-!!   logical, intent(in) :: lec
+!!   logical, intent(in) :: lec     (FLASH: unused)
 !!        A logical switch controlling whether 'unk_e_x1, y1, and z1' have 
 !!        their guardcells filled.
 !!
-!!   logical, intent(in) :: lnc
+!!   logical, intent(in) :: lnc     (FLASH: unused)
 !!        A logical switch controlling whether 'unk_n' has its guardcells filled.
 !!
 !!   integer, intent(in) :: icoord
@@ -97,8 +97,8 @@
 !!   amr_1blk_cc_prol_gen_work_fun
 !!   amr_1blk_cc_prol_gen_unk_fun
 !!   amr_1blk_fc_prol_gen_fun
-!!   amr_1blk_ec_prol_gen_fun
-!!   amr_1blk_nc_prol_gen_fun
+!!   amr_1blk_ec_prol_gen_fun     (FLASH: unused)
+!!   amr_1blk_nc_prol_gen_fun     (FLASH: unused)
 !!   amr_1blk_fc_prol_dbz
 !!   amr_1blk_fc_clean_divb
 !!
@@ -377,6 +377,7 @@
 
           endif
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (ndim > 1) Then
           If (lec .and. iopt == 1) Then
 
@@ -441,6 +442,7 @@
                           ioff,joff,koff,mype)
 
           End If  ! End If (lnc .and. iopt == 1)
+#endif
 
         End If  ! End If (remote_blk > -20 .and. remote_blk < 0)
 
@@ -567,6 +569,7 @@
 
           End If  ! End If (lfc .and. iopt == 1)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (ndim > 1) Then
           If (lec .and. iopt == 1) Then
 
@@ -617,6 +620,7 @@
                           ioff,joff,koff,mype)
 
           End If  ! End If (lnc .and. iopt == 1)
+#endif
 
         End If  ! End If (remote_blk > -20 .and. remote_blk < 0)
 
@@ -742,6 +746,7 @@
 
           End If  ! End If (lfc.and.iopt == 1)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (ndim > 1) Then
           If (lec .and. iopt == 1) Then
 
@@ -790,6 +795,7 @@
                           ka+kmod,kb+kmod,1,                           & 
                           ioff,joff,koff,mype)
           End If
+#endif
 
         End If  ! End If (remote_blk > -20 .and. remote_blk < 0)
 
@@ -909,6 +915,7 @@
 
           End If  ! End (lfc.and.iopt == 1)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (ndim > 1) then
           If (lec.and.iopt == 1) then
 
@@ -955,6 +962,7 @@
                           ka+kmod,kb+kmod,1,                           & 
                           ioff,joff,koff,mype)
           End If
+#endif
 
         End If  ! End If (remote_blk > -20.and.remote_blk < 0)
 
@@ -1075,6 +1083,7 @@
 
           End If  ! End If (lfc.and.iopt == 1)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (ndim > 1) Then
           If (lec.and.iopt == 1) Then
 
@@ -1123,6 +1132,7 @@
                           ka+kmod,kb+kmod,1,                           & 
                           ioff,joff,koff,mype)
           End If
+#endif
 
         End If  ! End If (remote_blk > -20 .and. remote_blk < 0)
 

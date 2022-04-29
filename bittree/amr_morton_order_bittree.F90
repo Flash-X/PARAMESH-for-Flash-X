@@ -20,7 +20,7 @@
 !!
 !! DESCRIPTION
 !!
-!!  Replaces funciton of amr_refine_blocks, amr_derefine_blocks, and 
+!!  Replaces function of amr_refine_blocks, amr_derefine_blocks, and
 !!  amr_morton_order. Computes the tree data for new list of local blocks,
 !!  Calculates new_loc to control where physical data of old blocks will go,
 !!  and finally calls redist_blk to actually move physical data.

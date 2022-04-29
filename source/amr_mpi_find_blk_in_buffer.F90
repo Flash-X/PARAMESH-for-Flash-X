@@ -37,7 +37,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -67,6 +67,7 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          May 2001
+!!   Tweaks  :     Klaus Weide             February 2021
 !!
 !!***
 
@@ -82,12 +83,12 @@
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      implicit none
+!-----Implicit and Include statements.
+#include "Flashx_mpi_implicitNone.fh"
 
-!-----Include statements.
-      Include 'mpif.h'
+      ASYNCHRONOUS :: temprecv_buf
 
-!-----Input/Output arguments.
+      !-----Input/Output arguments.
       Integer, Intent(in)  :: mype,remote_pe,remote_block,idest
       Integer, Intent(out) :: dtype,index0
       Logical, Intent(out) :: lfound
@@ -98,6 +99,8 @@
       integer :: rem_pe,rem_blk,seg_offset
       integer :: iseg_no,jj
       logical :: llfound
+
+      real :: dtypeReal
 
 !-----Begin executable code.
 
@@ -223,6 +226,29 @@
         iaddress = mess_segment_loc(seg_no)
 
 !-------Read out message into appropriate part of unk1 or work1
+        dtypeReal = temprecv_buf(iaddress+2)
+        if (.NOT.(dtypeReal .GE. 14.0 - 0.5*(Real(3**(N_DIM)-1.0)) .AND. &
+                  dtypeReal .LE. 14.0 + 0.5*(Real(3**(N_DIM)-1.0)))) then
+#if defined(DEBUG) || defined(DEBUG_STATEMACHINE)
+           Write(*,*) 'amr_mpi_find_blk_in_buffer: pe ',mype,          &
+           ' message segment with unexpected dtype ',dtypeReal,        &
+           ' remote_block ',remote_block,                              &
+           ' remote_pe ',remote_pe,                                    &
+           ' rem_blk ',rem_blk,                                        &
+           ' rem_pe ',rem_pe,                                          &
+           ' seg_no ',seg_no,' idest',idest,                           &
+           ' pe_source ',pe_source,                                    &
+           ' to_be_received ',                                         &
+           to_be_received(:,:,:),' mpi_pattern_id ',mpi_pattern_id
+#endif
+           dtype = 0
+           index0 = iaddress+2
+           lfound = .FALSE.
+           If (idest == 2) return
+           ierrorcode = 12345
+           dtype = anint(dtypeReal)
+           call MPI_ABORT(amr_mpi_meshComm,ierrorcode,ierr)
+        end if
         dtype = anint(temprecv_buf(iaddress+2))
 
 !-------We must Write the message into recv first in case it is larger

@@ -393,6 +393,11 @@
 
       End Do  ! End Do lb = 1, lnblocks
 
+#ifdef DEBUG
+99    format('@',I12,'  mpi_morton_bnd has fetchlist',/,('@',I12,20x,I3,': (',3I7,')'))
+      print 99,mype,(mype,i,fetch_list(:,i),i=1,istack)
+#endif
+
 !-----Compress 'fetch_list' and eliminate any redundances
 !-----Also, if a block appears in the list more than once this routine
 !-----will adjust which section of the block is requested (i.e. corner, 

@@ -69,6 +69,28 @@
       end subroutine mpi_amr_comm_setup
       end interface
 
+#if 0
+      ! The following is now implemented in a Module gr_mpiAmrComm_mod of its own
+!!$      interface
+!!$         subroutine gr_mpiAmrComm(mype,nprocs,lguard,lprolong, &
+!!$     &                              lflux,ledge,lrestrict,lfulltree, &
+!!$     &                              iopt,lcc,lfc,lec,lnc,tag_offset, &
+!!$                                    getter, &
+!!$     &                              nlayersx,nlayersy,nlayersz, &
+!!$     &                              flux_dir)
+!!$           use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t
+!!$           implicit none
+!!$           integer, intent(in)    :: mype,nprocs,iopt
+!!$           integer, intent(inout) :: tag_offset
+!!$           logical, intent(in)    :: lcc,lfc,lec,lnc,lfulltree
+!!$           logical, intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+!!$           type(gr_pmBlockGetter_t), intent(OUT), OPTIONAL, TARGET :: getter
+!!$           integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+!!$           integer, intent(in), optional :: flux_dir
+!!$         end subroutine gr_mpiAmrComm
+!!$      end interface
+#endif
+
       interface
       subroutine mpi_amr_comm_setup_res(mype,nprocs,lguard,lprolong, & 
      &                              lflux,ledge,lrestrict, & 
@@ -307,7 +329,7 @@
       integer, intent(in)    :: lb,ioptw,buffer_size
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
-      real,    intent(IN)    :: R_buffer(buffer_size)
+      real,    intent(IN),ASYNCHRONOUS :: R_buffer(buffer_size)
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_put_buffer
       end interface

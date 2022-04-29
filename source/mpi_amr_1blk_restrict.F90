@@ -35,8 +35,8 @@
 !!        Logical switches which indicate which data is to be restricted.
 !!         lcc -> cell centered
 !!         lfc -> face centered
-!!         lec -> edge centered
-!!         lnc -> node centered
+!!         lec -> edge centered     (FLASH: unused)
+!!         lnc -> node centered     (FLASH: unused)
 !!
 !!   logical, intent(in) :: lfulltree
 !!        A switch to indicate if the entire tree is to be restricted.  If true the
@@ -73,12 +73,12 @@
 !!   amr_perm_to_1blk,
 !!   amr_1blk_guardcell,
 !!   amr_restrict_unk_fun,
-!!   amr_restrict_nc_fun,
+!!   amr_restrict_nc_fun,     (FLASH: unused)
 !!   amr_restrict_fc_fun,
-!!   amr_restrict_ec_fun,
+!!   amr_restrict_ec_fun,     (FLASH: unused)
 !!   amr_restrict_work_fun,
 !!   amr_restrict_work_fun_recip,
-!!   amr_1blk_nc_cp_remote,
+!!   amr_1blk_nc_cp_remote,     (FLASH: unused)
 !!   comm_int_max_to_all,
 !!   comm_int_min_to_all
 !!   amr_block_geometry
@@ -108,15 +108,16 @@
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(5): unk, facevar[xyz]
 #include "paramesh_preprocessor.fh"
+#include "constants.h"
 
 Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                        lfulltree,filling_guardcells)
 
 
 !-----Use Statements
+  use Timers_interface, ONLY : Timers_start, Timers_stop
   Use paramesh_dimensions
   Use physicaldata
   Use tree
@@ -137,8 +138,9 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                       comm_int_max_to_all,             & 
                                       comm_int_min_to_all,             & 
                                       amr_block_geometry
-  Use paramesh_mpi_interfaces, Only :                              &
-                                      mpi_amr_comm_setup
+!!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
+  Use gr_mpiAmrComm_mod,  ONLY : gr_mpiAmrComm
+  use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterDestroy
   use gr_flashHook_interfaces
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
@@ -168,6 +170,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: remote_pe0,remote_block0
   integer :: remote_pe,remote_block,icoord,nprocs,ierr
   Integer :: lb,level,ich,jchild,ioff,joff,koff
+  integer :: ntype,lev
   Integer :: idest,i,j,k,ii,jj,kk,ivar,iopt0,jface,ng0
   Integer :: ia,ja,ka,ib,jb,kb,isa,isb,jsa,jsb,ksa,ksb
   Integer :: tag_offset
@@ -176,18 +179,18 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: ip1, jp1, kp1, ip3, jp3, kp3
   Integer :: ng1, ndel
   Integer :: i1,i2,j1,j2,k1,k2
-  Integer,Save :: cnodetype,cempty
+  Integer :: cempty
+  Integer,Save :: cnodetype
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
-  Logical :: l_srl_only,ldiag
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
 
 !-----Include Statements
   include 'mpif.h'
 
-!-----Begin Executable Code
+  !-----Begin Executable Code
   nguard0 = nguard*npgs
   nguard1 = nguard - nguard0
   nguard_work0 = nguard_work*npgs
@@ -259,11 +262,20 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
         lflux     = .False.
         ledge     = .False.
         lrestrict = .True.
-        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
-                              lflux,ledge,lrestrict,.False.,           & 
-                              iopt,lcc,lfc,lec,lnc,                    & 
-                              tag_offset,                              & 
-                              1,1,1)
+        ntype = PARENT_BLK
+        if (filling_guardcells) then
+           lev = UNSPEC_LEVEL
+        else
+           lev = level
+        end if
+        call Timers_start("gr_mpiAmrComm s")
+        Call gr_mpiAmrComm(mype,nprocs,lguard,lprolong,             &
+                            lflux,ledge,lrestrict,.False.,           &
+                            iopt,lcc,lfc,lec,lnc,                    &
+                            tag_offset,                              &
+                            ntype=ntype, level=lev,                  &
+                            nlayersx=1,nlayersy=1,nlayersz=1)
+        call Timers_stop("gr_mpiAmrComm s")
 
         If (lnblocks > 0) Then
            Do lb = 1,lnblocks
