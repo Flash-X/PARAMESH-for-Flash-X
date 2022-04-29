@@ -20,7 +20,7 @@
 !!  need to use data that are in danger of being overwritten).
 
 #include "constants.h"
-#include "Flash.h"
+#include "Simulation.h"
 
 module gr_pmBlockGetter
     use Grid_data, ONLY: nprocs => gr_meshNumProcs
@@ -103,7 +103,7 @@ contains
                                    lcc,lfc,lec,lnc, & 
                                    buf_dim,         &
                                    nlayersx,nlayersy,nlayersz)
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
         type(gr_pmBlockGetter_t), intent(OUT) :: getter
         integer,                  intent(IN)  :: nodetype
@@ -157,7 +157,7 @@ contains
   end subroutine gr_pmBlockGetterBuild
 
   subroutine gr_pmBlockGetterDestroy(getter)
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
         type(gr_pmBlockGetter_t), intent(INOUT) :: getter
 
@@ -292,7 +292,7 @@ contains
   function pmBlockGet_(this, commCtl) result(blockID)
     use mpi_morton,           ONLY: temprecv_buf
 
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
     integer ::                     blockID
     type(gr_pmBlockGetter_t),intent(inout) :: this
@@ -1094,13 +1094,13 @@ contains
             end if
 
             if (.NOT. receivedAll) then
-!               call Driver_abortFlash('BlockGetter reached S_shutdown but receivedAll is FALSE!')
+!               call Driver_abort('BlockGetter reached S_shutdown but receivedAll is FALSE!')
             end if
             if (allReceivedCount < ij) then
-               call Driver_abortFlash('BlockGetter reached S_shutdown but (allReceivedCount < ij)!')
+               call Driver_abort('BlockGetter reached S_shutdown but (allReceivedCount < ij)!')
             end if
             if (.NOT. inputsExhausted) then
-!               call Driver_abortFlash('BlockGetter reached S_shutdown but inputsExhausted is FALSE!')
+!               call Driver_abort('BlockGetter reached S_shutdown but inputsExhausted is FALSE!')
             end if
 #elif defined(DEBUG_ASYNC_COMM)
 !!$            associate(ji               => commCtl % numSReq,          &
@@ -1125,7 +1125,7 @@ contains
 
          case(S_error)
 
-            call Driver_abortFlash('gr_pmBlockGetter: State machine reached state S_error')
+            call Driver_abort('gr_pmBlockGetter: State machine reached state S_error')
 
          end select
       end do
@@ -1644,7 +1644,7 @@ contains
                      'remote block ',parent(:,lb),                     &
                      ' not located on pe ',mype,                       &
                      ' while processing blk ',lb,mype
-                Call Driver_abortFlash('gr_pmBlockGetter: surr_blks_lkup for parent failed')
+                Call Driver_abort('gr_pmBlockGetter: surr_blks_lkup for parent failed')
              End If
 
              call neighinfo_surr(surr_blks(1,1,1,1,remote_block),in-n1,neighBlk,neighProc)
@@ -1798,7 +1798,7 @@ contains
       case(GRID_PAT_RESTRICT)
          call gr_amr1blkRestrict(mype,blk,iopt,lcc,lfc,lec,lnc)
       case default
-         call Driver_abortFlash("gr_pmBlockGetter: unsupported pattern family!")
+         call Driver_abort("gr_pmBlockGetter: unsupported pattern family!")
       end select
     end associate
   end subroutine update_perm_griddata
@@ -1893,7 +1893,7 @@ contains
 
     use paramesh_mpi_interfaces, only : mpi_put_buffer
 
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
     integer, intent(in) :: sproc,buf_dim,iopt
     logical, intent(in) :: lcc,lfc,lec,lnc

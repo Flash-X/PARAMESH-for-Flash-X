@@ -37,7 +37,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   Flash_mpi_implicitNone.fh
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -84,7 +84,7 @@
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
 !-----Implicit and Include statements.
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
       ASYNCHRONOUS :: temprecv_buf
 

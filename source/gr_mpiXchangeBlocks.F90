@@ -39,7 +39,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
   use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, gr_pmCommCtl_t, &
                                 gr_pmCommShaped_t
 
-#include "Flash_mpi_implicitNone.fh"
+#include "Flashx_mpi_implicitNone.fh"
 
   integer, intent(in)    :: mype,nprocs,buf_dim_send,buf_dim_recv
   integer, intent(inout) :: tag_offset

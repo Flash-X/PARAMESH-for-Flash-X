@@ -373,7 +373,7 @@
                                     ', temprecv_buf(indx)=',REAL_FORMAT)
                print 9983,mype,indx,ngcell_on_cc,indx+ngcell_on_cc,size(temprecv_buf,1),dtype,lfound,&
                     temprecv_buf(indx)
-               !call Driver_abortFlash("I have had enough!")
+               !call Driver_abort("I have had enough!")
             end if
             Do ivar = 1, ngcell_on_cc
               ivar_next = gcell_on_cc_pointer(ivar)
