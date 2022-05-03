@@ -11,6 +11,8 @@
 !!  usage agreement which can be found in the file
 !!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
+!!REORDER(5): facevar[xyz]1
+!!REORDER(4): recv[uvw], recvf[xyz]
 
 #include "paramesh_preprocessor.fh"
 
