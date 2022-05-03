@@ -101,6 +101,16 @@
       end interface
 
       interface
+      subroutine amr_1blk_cc_prol_dg(recv,ia,ib,ja,jb,ka,kb,          &
+     &       idest,ioff,joff,koff,mype,ivar)
+      integer, intent(in) :: ia,ib,ja,jb,ka,kb
+      integer, intent(in) :: idest,ioff,joff,koff,mype
+      integer, intent(in) :: ivar
+      real,    intent(inout) :: recv(:,:,:,:)
+      end subroutine amr_1blk_cc_prol_dg
+      end interface
+
+      interface
       subroutine amr_1blk_cc_prol_gen_work_fun(recv,                     & 
      &       ia,ib,ja,jb,ka,kb,                                          & 
      &       idest,ioff,joff,koff,mype,lb,pe_p,lb_p,interp)
@@ -954,6 +964,14 @@
       interface
       subroutine amr_restrict_unk_user()
       end subroutine amr_restrict_unk_user
+      end interface
+
+      interface
+      subroutine amr_restrict_unk_dg(datain,dataout,ivar)
+      real, intent(in)    :: datain(:,:,:,:)
+      real, intent(inout) :: dataout(:,:,:,:)
+      integer, intent(in) :: ivar
+      end subroutine amr_restrict_unk_dg
       end interface
 
       interface
