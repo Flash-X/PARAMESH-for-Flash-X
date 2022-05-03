@@ -67,6 +67,7 @@ subroutine gr_initParameshArrays(restart,&
    use gr_interface, ONLY : gr_pmIoTreeMetadataIsValid
    use Logfile_interface, ONLY : Logfile_stampMessage
    use Driver_interface, only: Driver_abort
+   use Simulation_interface, ONLY : Simulation_mapIntToStr
 
    implicit none
 #include "constants.h"
@@ -75,6 +76,9 @@ subroutine gr_initParameshArrays(restart,&
    integer,intent(IN) :: xlboundary, xrboundary
    integer,intent(IN) :: ylboundary, yrboundary
    integer,intent(IN) :: zlboundary, zrboundary
+
+   integer :: i
+   character(len=4) :: vname
 
 #if defined(BITTREE)
    call mpi_amr_global_domain_limits
@@ -123,8 +127,16 @@ subroutine gr_initParameshArrays(restart,&
     end if
   ! reset for quadratic interpolation
   
-  interp_mask_unk(:) = 1
   interp_mask_work(:) = 1
+
+  ! AH: do not reset interp_mask_unk, but warn if not one
+  !interp_mask_unk(:) = 1
+  do i = 1, nvar
+     if (interp_mask_unk(i) .NE. 1) then
+        call Simulation_mapIntToStr(i,vname,MAPBLOCK_UNK)
+        call Logfile_stampMessage("WARNING: interp_mask_unk  is not 1 for variable "//vname)
+     end if
+  end do
   
   return
 end subroutine gr_initParameshArrays

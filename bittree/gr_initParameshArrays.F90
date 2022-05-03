@@ -61,7 +61,7 @@ subroutine gr_initParameshArrays(restart,&
                                      &  ylboundary, yrboundary, &
                                      &  zlboundary, zrboundary)
 
-   use paramesh_dimensions, ONLY: ndim
+   use paramesh_dimensions, ONLY: ndim, nvar
    use physicaldata, ONLY : surr_blks_valid, interp_mask_unk,&
                             lsingular_line, spherical_pm, polar_pm,&
                             use_flash_surr_blks_fill
@@ -73,14 +73,20 @@ subroutine gr_initParameshArrays(restart,&
    use paramesh_interfaces, ONLY : amr_refine_derefine
    use Grid_data, ONLY : gr_meshMe, gr_meshNumProcs
    use gr_interface, ONLY : gr_pmIoTreeMetadataIsValid
+   use Logfile_interface, ONLY : Logfile_stampMessage
    use Driver_interface, only: Driver_abort
+   use Simulation_interface, ONLY : Simulation_mapIntToStr
 
    implicit none
+#include "constants.h"
 
    logical,intent(IN) :: restart
    integer,intent(IN) :: xlboundary, xrboundary
    integer,intent(IN) :: ylboundary, yrboundary
    integer,intent(IN) :: zlboundary, zrboundary
+
+   integer :: i
+   character(len=4) :: vname
 
    call mpi_amr_global_domain_limits()
 
@@ -127,8 +133,16 @@ subroutine gr_initParameshArrays(restart,&
   end if
   ! reset for quadratic interpolation
   
-  interp_mask_unk(:) = 1
   interp_mask_work(:) = 1
+
+  ! AH: do not reset interp_mask_unk, but warn if not one
+  !interp_mask_unk(:) = 1
+  do i = 1, nvar
+     if (interp_mask_unk(i) .NE. 1) then
+        call Simulation_mapIntToStr(i,vname,MAPBLOCK_UNK)
+        call Logfile_stampMessage("WARNING: interp_mask_unk  is not 1 for variable "//vname)
+     end if
+  end do
   
   return
 
