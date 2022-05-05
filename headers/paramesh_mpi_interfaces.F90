@@ -513,7 +513,7 @@
      &                              buf_dim_recv, R_buffer)
       integer, intent(in)    ::  mype,nprocs,buf_dim_send,buf_dim_recv
       integer, intent(inout) ::  tag_offset
-      real,    intent(in)   ,ASYNCHRONOUS :: S_buffer(buf_dim_send)
+      real,    intent(in)    :: S_buffer(buf_dim_send)
       real,    intent(out)  ,ASYNCHRONOUS :: R_buffer(buf_dim_recv)
       end subroutine mpi_xchange_blocks
       end interface

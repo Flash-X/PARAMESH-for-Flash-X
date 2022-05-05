@@ -56,9 +56,6 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
   integer :: i,j
   integer :: istrt,ilast,isize
   integer :: isrc,idest, itag
-  integer :: recvrequest(nprocs), sendRequest(nprocs)
-  integer :: recvstatus(MPI_STATUS_SIZE,nprocs)
-      integer :: sendStatus(MPI_STATUS_SIZE,nprocs)
   integer :: ierrorcode,ierr
   integer :: ij, ji
   integer :: receivedCount, sentCount

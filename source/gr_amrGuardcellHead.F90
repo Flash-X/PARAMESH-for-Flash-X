@@ -257,7 +257,9 @@ contains
          iempty = 0
          call amr_restrict(mype,iopt,iempty,.True.)
          call amr_1blk_guardcell_reset
+#ifdef USEBARS
          Call MPI_BARRIER(amr_mpi_meshComm, ierr)
+#endif
       End if
 
 

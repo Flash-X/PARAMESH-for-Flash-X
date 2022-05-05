@@ -179,7 +179,7 @@ contains
                     allSentCount => commCtl % allSentCount)
             if (allocated(commCtl % sendRequest)) then
                do while (allSentCount < ji)
-#define DEBUG_ASYNC_COMM
+
 180               format('GetterDestroy(',I2,') @',I5,1x,A,I3,' of',I3,1x,A,' requests',A)
 #ifdef DEBUG_ASYNC_COMM_MORE
                   print 180,patFam,mype,'Waiting for',(ji-allSentCount),ji,'send','...'

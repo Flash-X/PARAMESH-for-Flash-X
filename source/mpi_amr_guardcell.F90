@@ -91,7 +91,6 @@
                                maxNodetype_gcWanted)
 
 !-----Use Statements
-      use Timers_interface, ONLY : Timers_start, Timers_stop
       Use paramesh_dimensions
       Use physicaldata
       Use workspace
@@ -102,8 +101,7 @@
                                       amr_restrict,             & 
                                       amr_1blk_guardcell
 
-!!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
-      Use gr_mpiAmrComm_mod,   only : gr_mpiAmrComm
+      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
 
       use gr_pmFlashHookData, ONLY : alwaysFcAtBC => gr_pmAlwaysFillFcGcAtDomainBC
 
@@ -130,7 +128,6 @@
       Integer :: ilp,iup,jlp,jup,klp,kup
       Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
       Integer :: maxNodetype_gcWanted_loc
-      integer :: ntype,lev
 
 !------------------------------------
 !-----Begin Executable code section
@@ -281,28 +278,12 @@
       ledge     = .False.
       lrestrict = .False.
       lfulltree = .False.
-      lev = UNSPEC_LEVEL        ! or as requested??
-      if (maxNodetype_gcWanted_loc < 0) then
-         ntype = ACTIVE_BLKS
-      else if (maxNodetype_gcWanted_loc == 1) then
-         ntype = LEAF
-      else if (maxNodetype_gcWanted_loc == 2) then
-         ntype = ACTIVE_BLKS
-      else if (maxNodetype_gcWanted_loc .GE. 3) then
-         ntype = ALL_BLKS
-      else if (advance_all_levels) then
-         ntype = ALL_BLKS
-      else
-         ntype = ACTIVE_BLKS
-      end if
-      call Timers_start("gr_mpiAmrComm s")
-      Call gr_mpiAmrComm(mype,nprocs,                             &
+      Call mpi_amr_comm_setup(mype,nprocs,                             &
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         &
-                              ntype=ntype, level=lev,                  &
                               nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
-      call Timers_stop("gr_mpiAmrComm s")
+
 
       If (lnblocks > 0) Then
       Do lb = 1,lnblocks

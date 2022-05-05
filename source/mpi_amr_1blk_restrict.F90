@@ -110,14 +110,12 @@
 
 !!REORDER(5): unk, facevar[xyz]
 #include "paramesh_preprocessor.fh"
-#include "constants.h"
 
 Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                        lfulltree,filling_guardcells)
 
 
 !-----Use Statements
-  use Timers_interface, ONLY : Timers_start, Timers_stop
   Use paramesh_dimensions
   Use physicaldata
   Use tree
@@ -138,9 +136,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                       comm_int_max_to_all,             & 
                                       comm_int_min_to_all,             & 
                                       amr_block_geometry
-!!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
-  Use gr_mpiAmrComm_mod,  ONLY : gr_mpiAmrComm
-  use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterDestroy
+  Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
   use gr_flashHook_interfaces
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
@@ -170,7 +166,6 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: remote_pe0,remote_block0
   integer :: remote_pe,remote_block,icoord,nprocs,ierr
   Integer :: lb,level,ich,jchild,ioff,joff,koff
-  integer :: ntype,lev
   Integer :: idest,i,j,k,ii,jj,kk,ivar,iopt0,jface,ng0
   Integer :: ia,ja,ka,ib,jb,kb,isa,isb,jsa,jsb,ksa,ksb
   Integer :: tag_offset
@@ -262,20 +257,11 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
         lflux     = .False.
         ledge     = .False.
         lrestrict = .True.
-        ntype = PARENT_BLK
-        if (filling_guardcells) then
-           lev = UNSPEC_LEVEL
-        else
-           lev = level
-        end if
-        call Timers_start("gr_mpiAmrComm s")
-        Call gr_mpiAmrComm(mype,nprocs,lguard,lprolong,             &
-                            lflux,ledge,lrestrict,.False.,           &
-                            iopt,lcc,lfc,lec,lnc,                    &
-                            tag_offset,                              &
-                            ntype=ntype, level=lev,                  &
-                            nlayersx=1,nlayersy=1,nlayersz=1)
-        call Timers_stop("gr_mpiAmrComm s")
+        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
+                              lflux,ledge,lrestrict,.False.,           &
+                              iopt,lcc,lfc,lec,lnc,                    &
+                              tag_offset,                              &
+                              nlayersx=1,nlayersy=1,nlayersz=1)
 
         If (lnblocks > 0) Then
            Do lb = 1,lnblocks

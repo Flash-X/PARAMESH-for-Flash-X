@@ -903,7 +903,7 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
-! Modified to use MPI_Isend:   Klaus Weide              October 2021
+! Modified to use MPI_Send:   Klaus Weide               November 2021
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -930,7 +930,7 @@
 
       integer, intent(in)    :: mype,nprocs,buf_dim_send,buf_dim_recv
       integer, intent(inout) :: tag_offset
-      real,    intent(in)   ,ASYNCHRONOUS :: S_buffer(buf_dim_send)
+      real,    intent(in)    :: S_buffer(buf_dim_send)
       real,    intent(out)  ,ASYNCHRONOUS :: R_buffer(buf_dim_recv)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -939,9 +939,9 @@
       integer :: i,j
       integer :: istrt,ilast,isize
       integer :: isrc,idest, itag
-      integer :: recvrequest(nprocs), sendRequest(nprocs)
+      integer :: recvrequest(nprocs)
       integer :: ierrorcode,ierr
-      integer :: ij, ji
+      integer :: ij
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -963,7 +963,6 @@
       endif
 
       ij = 0
-      ji = 0
 
       do i = 1,nprocs
          isrc = i-1
@@ -1007,7 +1006,6 @@
 #endif
          ! send from mype=i
          if(commatrix_send(j).gt.0) then
-            ji = ji+1
             istrt = is_buf(1,j)
             ilast = is_buf(2,j)
             isize = ilast-istrt+1
@@ -1019,10 +1017,9 @@
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
              endif
              endif
-             call MPI_Isend(S_buffer(istrt),isize, &
+             call MPI_Send(S_buffer(istrt),isize, & 
      &                      amr_mpi_real, & 
-     &                      idest,itag,amr_mpi_meshComm, &
-                            sendRequest(ji),ierr)
+     &                      idest,itag,amr_mpi_meshComm,ierr)
         endif
       enddo
 
@@ -1036,7 +1033,6 @@
 #endif
                                 ! send from mype=i
          if(commatrix_send(j).gt.0) then
-            ji = ji+1
             istrt = is_buf(1,j)
             ilast = is_buf(2,j)
             isize = ilast-istrt+1
@@ -1048,16 +1044,12 @@
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
              endif
              endif
-             call MPI_Isend(S_buffer(istrt),isize, &
+             call MPI_Send(S_buffer(istrt),isize, & 
      &                      amr_mpi_real, & 
-     &                      idest,itag,amr_mpi_meshComm, &
-                            sendRequest(ji),ierr)
+     &                      idest,itag,amr_mpi_meshComm,ierr)
         endif
       enddo
 
-      if(ji.gt.0) &
-     &   call MPI_Waitall(ji,sendRequest,MPI_STATUSES_IGNORE, &
-     &                    ierrorcode)
       if(ij.gt.0) & 
      &   call MPI_Waitall(ij,recvrequest,MPI_STATUSES_IGNORE, &
      &                    ierrorcode)
@@ -1113,7 +1105,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
 
-      integer :: i,j, ij, ji
+      integer :: i,j, ij
       integer :: istrt,ilast,isize
       integer :: isrc,idest, itag
       integer :: ierr,errcode
@@ -1132,7 +1124,6 @@
 !!      R_buffer = 0
 
       ij = 0
-      ji = 0
 
       do i = 1,nprocs
          isrc = i-1
@@ -1172,7 +1163,6 @@
 #endif
                                 ! send from mype=i
          if(commatrix_send(j).gt.0) then
-            ji = ji+1
             istrt = is_buf(1,j)
             ilast = is_buf(2,j)
             isize = ilast-istrt+1
