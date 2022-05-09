@@ -70,6 +70,7 @@
 !!   amr_1blk_cc_prol_inject
 !!   amr_1blk_cc_prol_linear
 !!   amr_1blk_cc_prol_genorder
+!!   amr_1blk_cc_prol_dg
 !!   amr_1blk_cc_prol_user
 !!
 !! RETURNS
@@ -80,6 +81,7 @@
 !!
 !!  Written by Peter MacNeice January 2002.
 !!  Modified for GRID_WITH_MONOTONIC variant - Klaus Weide 2022-02-20
+!!  Changes to call amr_1blk_cc_prol_dg for Thornado - Austin Harris 2021-12-06
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -101,6 +103,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
                        amr_1blk_cc_prol_inject,    & 
                        amr_1blk_cc_prol_linear,    & 
                        amr_1blk_cc_prol_genorder,  & 
+                       amr_1blk_cc_prol_dg,    &
                        amr_1blk_cc_prol_user
 #endif
 
@@ -161,6 +164,15 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 !--------User defined interpolation to be used for prolocation
 
            Call amr_1blk_cc_prol_user()
+
+        Elseif (interp_mask_unk(ivar) == 40) Then
+
+!--------User defined interpolation to be used for
+!prolongation/restriction from Thornado
+
+           Call amr_1blk_cc_prol_dg                      &
+           (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
+           mype,ivar)
 
         End If  ! End If (interp_mask_unk(ivar) < 20
 
