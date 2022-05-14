@@ -8,8 +8,8 @@ module gr_pmCommPatternData
   ! node type (not specific refinement level):
   !  DEFAULT; LEAF; ACTIVE_BLKS; PARENT; ALL_BLKS
   integer,parameter,dimension(NUM_COMM_PATTERN_FAMILIES) :: &
-       NUM_COMM_PATTERN_VARIANTS = (/5,5,5,5/)
-  integer,parameter :: MAX_COMM_PATTERN_VARIANTS = maxval(NUM_COMM_PATTERN_VARIANTS)
+       NUM_COMM_PATTERN_VARIANTS = (/1,1,1,1/)
+  integer,parameter :: MAX_COMM_PATTERN_VARIANTS = 1 ! maxval(NUM_COMM_PATTERN_VARIANTS)
 
   ! There is going to be one of the following for each pattern family:
   type gr_pmCommPattFamSet_t
