@@ -74,9 +74,9 @@
       public :: largest_no_of_blocks_prol_mg
       public :: largest_no_of_blocks_flux_mg
       public :: largest_restrict_mg
-      public :: max_no_to_send_guard_mg
-      public :: max_no_to_send_prol_mg,max_no_to_send_flux_mg
-      public :: max_no_to_send_restrict_mg
+      public :: num_recipient_pes_guard_mg
+      public :: num_recipient_pes_prol_mg,num_recipient_pes_flux_mg
+      public :: num_recipient_pes_restrict_mg
       public :: strt_guard_mg,strt_prol_mg,strt_flux_mg
       public :: strt_restrict_mg
       integer,dimension(:),allocatable,save :: & 
@@ -87,11 +87,11 @@
      & largest_no_of_blocks_flux_mg
       integer,dimension(:),allocatable,save :: & 
      & largest_restrict_mg
-      integer,dimension(:),allocatable,save :: max_no_to_send_guard_mg
-      integer,dimension(:),allocatable,save :: max_no_to_send_prol_mg
-      integer,dimension(:),allocatable,save :: max_no_to_send_flux_mg
+      integer,dimension(:),allocatable,save :: num_recipient_pes_guard_mg
+      integer,dimension(:),allocatable,save :: num_recipient_pes_prol_mg
+      integer,dimension(:),allocatable,save :: num_recipient_pes_flux_mg
       integer,dimension(:),allocatable,save :: & 
-     & max_no_to_send_restrict_mg
+     & num_recipient_pes_restrict_mg
       integer,dimension(:),allocatable,save :: strt_guard_mg
       integer,dimension(:),allocatable,save :: strt_prol_mg
       integer,dimension(:),allocatable,save :: strt_flux_mg

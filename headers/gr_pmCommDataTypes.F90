@@ -7,8 +7,6 @@ module gr_pmCommDataTypes
      integer,dimension(:),allocatable :: commatrix_recv !set: process_fetch_list, SWAPINOUT (commatrix_guard(:,1)(etc.))
      ! For each other pe, how many pp blocks will I receive from it?
      integer,dimension(:),allocatable :: commatrix_send !set: process_fetch_list, SWAPINOUT (commatrix_guard(:,2)(etc.))
-     ! TO HOW MANY procs will I send? (minimum 1) - misleading name! SAVING IT SEEMS UNNECESSARY.
-     Integer                          :: max_no_to_send !set: process_fetch_list, SWAPINOUT
 
      ! For each remote pe from which I receive data:
      !     For each pp block to receive:
@@ -20,11 +18,16 @@ module gr_pmCommDataTypes
      !         of the fragment to send
      Integer,dimension(:,:,:),allocatable :: to_be_sent !set: process_fetch_list, SWAPINOUT, use: mpi_pack_blocks(etc.)
 
-     ! Guard block starting index, MUST SATISFY lnblocks < strt_buffer <= maxblocks_alloc :
-     Integer                          :: strt_buffer !set: process_fetch_list, SWAPINOUT (strt_guard(etc.))
      ! For each pp block (to be) received, its global identifier (blockID,pe):
      Integer, Allocatable :: laddress(:,:) ! tree.F90, set: process_fetch_list, use: mpi_amr_1blk_guardcell etc., SWAPINOUT
      ! COMMUNICATION PATTERN PROPER END !
+
+     ! TO HOW MANY procs will I send? (minimum 0?) ! Can be easily recomputed bu counting nonzeros in  commatrix_send
+     Integer                          :: num_recipient_pes !set: process_fetch_list, SWAPINOUT
+     ! Guard block starting index, MUST SATISFY lnblocks < strt_buffer <= maxblocks_alloc :
+     Integer                          :: strt_buffer !set: process_fetch_list, SWAPINOUT (strt_guard(etc.))
+
+     logical :: valid = .FALSE.
   end type gr_pmCommPattern_t
 
 
@@ -47,7 +50,7 @@ module gr_pmCommDataTypes
 
   type gr_pmCommExtra_t
      Integer,dimension(:),allocatable :: pe_remote ! unused
-     Integer,dimension(:),allocatable :: pe_source ! :=-1, set: mpi_amr_store_comm_info, use: mpi_unpack_tree_info, SWAPINOUT
+     Integer,dimension(:),allocatable :: pe_source ! unused, was set: mpi_amr_store_comm_info, used: mpi_unpack_tree_info
      Integer,dimension(:),allocatable :: pe_destination ! unused
 
 

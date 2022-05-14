@@ -1,0 +1,294 @@
+2022-05-13  Klaus Weide  <kweide@uchicago.edu>
+
+	* utilities/multigrid/mpi_amr_store_comm_info_mg.F90: kept
+	around, but not compiled or used by any Flash-X code.
+	(mpi_amr_write_guard_comm_mg): obsolete version, could be updated
+	to use gr_pmCommPatternData, kept for reference.
+	(mpi_amr_read_guard_comm_mg): ditto.
+	(mpi_amr_write_prol_comm_mg): ditto.
+	(mpi_amr_read_prol_comm_mg): ditto.
+	(mpi_amr_write_flux_comm_mg): ditto.
+	(mpi_amr_read_flux_comm_mg): ditto.
+	(mpi_amr_write_restrict_comm_mg): ditto.
+	(mpi_amr_read_restrict_comm_mg): ditto.
+
+	* utilities/multigrid/amr_mg_common.F90 (amr_mg_common): kept
+	around, but not compiled or used by any Flash-X code.
+	(amr_mg_common):  renamed "max_no_to_send_*" to "num_recipient_pes_*"
+	because	this better expresses the meaning.
+
+	* source/process_fetch_list.F90: added ONLY to many
+	USE statements. included "Flashx_mpi_implicitNone.fh".
+	added "pattern" first dummy argument with intent(inout).
+	(process_fetch_list): renamed "max_no_to_be_received" to
+	"num_sending_pes", "max_no_to_send" to "num_recipient_pes" because
+	it better expresses the meaning.
+	(process_fetch_list): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv",
+	"to_be_received", "num_recipient_pes", "strt_buffer".
+	(process_fetch_list): use local strtBuffer, with copy of the value
+	in the pattern.
+
+	* source/mpi_unpack_fluxes.F90: 
+	(mpi_unpack_fluxes): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_fluxes): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_fluxes): use "commatrixRecv" instead of global array.
+
+	* source/mpi_unpack_edges.F90: 
+	(mpi_unpack_edges): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_edges): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_edges): use "commatrixRecv" instead of global array.
+
+	* source/mpi_unpack_blocks.F90: 
+	(mpi_unpack_blocks): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_blocks): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_blocks): use "commatrixRecv" instead of global array.
+	(mpi_Rbuffer_size): new "pattern" first dummy argument.
+	(mpi_Rbuffer_size): added "use gr_pmCommDataTypes", removed unnecessary "use mpi_morton".
+	Removed "Include 'mpif.h'". sanitized some indentation.
+	(mpi_Rbuffer_size): use "pattern" for references to
+	"commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_fluxes.F90: 
+	(mpi_pack_fluxes): new "pattern" first dummy argument.
+	(mpi_pack_fluxes): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_fluxes): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_edges.F90: 
+	(mpi_pack_edges): new "pattern" first dummy argument.
+	(mpi_pack_edges): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_edges): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_blocks.F90: 
+	(mpi_pack_blocks): new "pattern" first dummy argument.
+	(mpi_pack_blocks): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_blocks): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+	(mpi_Sbuffer_size): new "pattern" first dummy argument.
+	(mpi_Sbuffer_size): removed unnecessary "use mpi_morton". included
+	"Flashx_mpi_implicitNone.fh". sanitized some indentation.
+	(mpi_Sbuffer_size): use "pattern" for references to
+	"commatrix_send", "to_be_sent".
+
+	* source/mpi_pack_fluxes.F90: 
+	(mpi_pack_fluxes): new "pattern" first dummy argument.
+	(mpi_pack_fluxes): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_fluxes): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_edges.F90: 
+	(mpi_pack_edges): new "pattern" first dummy argument.
+	(mpi_pack_edges): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_edges): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_blocks.F90: 
+	(mpi_pack_blocks): new "pattern" first dummy argument.
+	(mpi_pack_blocks): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_blocks): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+	(mpi_Sbuffer_size): new "pattern" first dummy argument.
+	(mpi_Sbuffer_size): removed unnecessary "use mpi_morton". included
+	"Flashx_mpi_implicitNone.fh". sanitized some indentation.
+	(mpi_Sbuffer_size): use "pattern" for references to
+	"commatrix_send", "to_be_sent".
+
+	* source/mpi_morton_bnd_restrict.F90: updated RoboDocs text.
+	removed unnecessary REORDER directives.
+	(mpi_morton_bnd_restrict): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd_prolong.F90: updated RoboDocs text.
+	removed unnecessary REORDER directives.
+	(mpi_morton_bnd_prolong): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd_fluxcon.F90: updated RoboDocs text.
+	(mpi_morton_bnd_fluxcon): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd.F90: updated RoboDocs text.
+	(mpi_morton_bnd): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+	* source/mpi_lib.F90 (mpi_array_allocate): removed "pe_source" allocation.
+	(mpi_array_allocate): removed global allocations now handled by "gr_pmCommPatternData".
+	(mpi_array_deallocate): removed some allocations.
+	(mpi_array_deallocate): instead, call gr_pmDeallocateCommPatterns.
+	(mpi_xchange_blocks): new "pattern" dummy argument.
+	(mpi_xchange_blocks): added ONLY to "use mpi_morton".
+	(mpi_xchange_blocks): use "pattern" for references to
+	"commatrix_send" and "commatrix_recv".
+	(mpi_xchange_tree_info): disabled.
+
+	* source/mpi_get_buffer.F90 (mpi_get_buffer): include
+	"Flashx_mpi_implicitNone.fh". removed unnecessary "use mpi_morton".
+	(mpi_get_Sbuffer_size): ditto.
+
+	* source/mpi_amr_store_comm_info.F90.save: saved a copy of
+	(partially modfied) original "mpi_amr_store_comm_info.F90" here.
+
+	* source/mpi_amr_store_comm_info.F90: shortened a lot, taking
+	advantage of new functionality in gr_pmCommPatternData.
+	"mpi_amr_write_*_comm" sobroutines are now no-ops.
+	(mpi_amr_read_guard_comm): essentially just activates the proper
+	comm pattern by calling the new "gr_pmActivateCommPattern", then
+	assigns the proper value to "strt_buffer" (still a global in
+	"tree" module).
+	(mpi_amr_read_prol_comm): ditto.
+	(mpi_amr_read_flux_comm): ditto.
+	(mpi_amr_read_restrict_comm): ditto.
+
+	* source/mpi_amr_comm_setup.F90: include
+	"Flashx_mpi_implicitNone.fh". added ONLY to "use tree". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	(mpi_amr_comm_setup): moved and updated  some code producing DEBUG output.
+	(mpi_amr_comm_setup): introduced local pointer "pat". activate the
+	appropriate comm pattern, and have "pat" point to it. pass "pat" to
+	various called subroutines.
+
+	* source/amr_mpi_find_blk_in_buffer.F90
+	(amr_mpi_find_blk_in_buffer): adjusted DEBUG code, since global
+	"pe_source" is now gone.
+
+	* source/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+	* source/amr_close.F90 (amr_close): nullify instead of deallocate "laddress".
+	(amr_close): removed some more deallocations.
+
+	* source/amr_1blk_guardcell_reset.F90 (amr_1blk_guardcell_reset):
+	removed unused USE.
+
+	* source/amr_1blk_cc_cp_remote.F90: tweaked RoboDoc info.
+	(amr_1blk_cc_cp_remote): include "Flashx_mpi_implicitNone.fh".
+	added ONLY for "use mpi_morton".
+
+	* source/UNUSED/mpi_unpack_tree_info.F90: moved to UNUSED.
+
+	* source/UNUSED/mpi_pack_tree_info.F90: moved to UNUSED.
+
+	* headers/tree.F90 (tree): laddress is now a POINTER instead of an
+	ALLOCATABLE array.
+
+	* headers/paramesh_mpi_interfaces.F90: include "FortranLangFeatures.fh".
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_pack_blocks", "mpi_Sbuffer_size", "mpi_pack_edges",
+	"mpi_pack_fluxes", "mpi_Rbuffer_size", "mpi_xchange_blocks",
+	"process_fetch_list" now have "pattern" first arguments".
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_unpack_blocks", "mpi_unpack_edges", "mpi_unpack_fluxes" now
+	have "commatrixRecv" first arguments.
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_pack_tree_info", "mpi_unpack_tree_info"  disabled by default.
+	(paramesh_mpi_interfaces): subroutine interface
+	"process_fetch_list" removed.
+
+	* headers/mpi_morton.F90 (mpi_morton): removed lots of (mostly)
+	array variables, most now unused because replaced by
+	gr_pmCommPattern_t structures, some unused even before.
+	including arrays named "commatrix_*", "to_be_*", etc.
+
+	* headers/gr_pmCommPatternData.F90: created.
+
+	* headers/gr_pmCommDataTypes.F90: added.
+	(gr_pmCommDataTypes): changed order of some elements in gr_pmCommPattern_t.
+	renamed "max_no_to_send" to "num_recipient_pes". added "valid" flag.
+	(gr_pmCommDataTypes): changed comment on unused "pe_source".
+
+	* headers/Makefile (Grid): created.
+
+	* flash_avoid_orrery/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+	* bittree/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+2022-02-21  Klaus Weide  <kweide>
+
+	* Reorganize source under Paramesh4 so that PARAMESH and derived
+	software that should be subject to the PARAMESH_USERS_AGREEMENT is
+	located in and under the PM4_package subdirectory.
+
+2022-02-16  Klaus Weide  <kweide>
+
+	* updated copyright and license notices in some source files
+
+2004 - 2020-06-30  University of Chicago
+
+	* Customizations of PARAMESH code for FLASH versions 2, 3, and 4
+
+2016-09     Marcos Vanella
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Adapted for INS
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/amr_restrict_fc_ins.F90:
+	Named _ins
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: 
+	Named _ins
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90:
+	handle interp=30..32
+
+2010        Chris Daley
+
+	* Paramesh4/flash_avoid_orrery/mpi_amr_exchange_nodetype.F90: created
+
+3/27/07 K. Olson removed ALL reference to 'LIBRARY'.
+
+
+2/1/07  K. Olson removed ALL references to 'shmem'.
+
+
+1/24/07 K. Olson removed all references to MPI_USED in the PARAMESH source tree
+
+
+2006-09     Klaus Weide  <kweide>
+
+	* Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90: Modified
+
+2004-02     Kevin Olson
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Written
+

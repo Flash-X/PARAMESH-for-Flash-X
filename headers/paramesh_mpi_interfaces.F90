@@ -9,6 +9,7 @@
 
       module paramesh_mpi_interfaces
 
+#include "FortranLangFeatures.fh"
 
       interface
       subroutine mpi_setup(mype,nprocs)
@@ -183,10 +184,13 @@
       end interface
 
       interface
-      subroutine mpi_pack_blocks(mype,nprocs,iopt, & 
+      subroutine mpi_pack_blocks(pattern,mype,nprocs,iopt, &
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,S_buffer,offset, & 
      &                           nlayersx,nlayersy,nlayersz)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(in)  ::  buf_dim,offset
@@ -196,12 +200,15 @@
       end interface
 
       interface
-      subroutine mpi_Sbuffer_size(mype,nprocs,iopt, & 
+      subroutine mpi_Sbuffer_size(pattern,mype,nprocs,iopt, &
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,offset, & 
      &                           block_sections, fluxes, edges, &
      &                           flux_dir, &
      &                           nlayersx,nlayersy,nlayersz)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(out) ::  buf_dim
@@ -213,8 +220,11 @@
       end interface
 
       interface
-      subroutine mpi_pack_edges(mype,nprocs, & 
+      subroutine mpi_pack_edges(pattern,mype,nprocs, &
      &                          buf_dim,S_buffer,offset)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
@@ -223,8 +233,11 @@
 
 
       interface
-      subroutine mpi_pack_fluxes(mype,nprocs, & 
+      subroutine mpi_pack_fluxes(pattern,mype,nprocs, &
      &                          buf_dim,S_buffer,offset,flux_dir)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
       integer, intent(in)  ::  mype,nprocs
@@ -232,6 +245,7 @@
       end subroutine mpi_pack_fluxes
       end interface
 
+#ifdef FLASH_PMFEATURE_UNUSED
       interface
       subroutine mpi_pack_tree_info(mype,nprocs, & 
      &                          buf_dim_bytes,buf_dim,S_buffer)
@@ -240,13 +254,16 @@
       real,    intent(out) ::  S_buffer(buf_dim)
       end subroutine mpi_pack_tree_info
       end interface
+#endif
 
 
       interface
-      subroutine mpi_unpack_blocks(mype,iopt, & 
+      subroutine mpi_unpack_blocks(commatrixRecv,mype,iopt, &
      &                             lcc,lfc,lec,lnc, & 
      &                             buf_dim,R_buffer, & 
      &                             nlayersx,nlayersy,nlayersz)
+        implicit none
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in) :: mype,buf_dim,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
       real,    intent(IN) ::  R_buffer(buf_dim)
@@ -255,11 +272,14 @@
       end interface
 
       interface
-      subroutine mpi_Rbuffer_size(mype,nprocs,iopt, & 
+      subroutine mpi_Rbuffer_size(pattern,mype,nprocs,iopt, &
      &                            lcc,lfc,lec,lnc, & 
      &                            buf_dim, & 
      &                            block_sections, fluxes, edges, flux_dir, &
      &                            nlayersx,nlayersy,nlayersz)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  :: mype, nprocs, iopt
       integer, intent(out) :: buf_dim
       logical, intent(in)  :: lcc,lfc,lec,lnc
@@ -270,8 +290,10 @@
       end interface
 
       interface
-      subroutine mpi_unpack_edges(mype, & 
+      subroutine mpi_unpack_edges(commatrixRecv,mype, &
      &                          buf_dim,R_buffer)
+        implicit none
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in)  ::  mype
       integer, intent(in)  ::  buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
@@ -279,8 +301,10 @@
       end interface
 
       interface
-      subroutine mpi_unpack_fluxes(mype, & 
+      subroutine mpi_unpack_fluxes(commatrixRecv,mype, &
      &                          buf_dim,R_buffer,flux_dir)
+        implicit none
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in)  ::  mype
       integer, intent(in)  ::  buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
@@ -288,6 +312,7 @@
       end subroutine mpi_unpack_fluxes
       end interface
 
+#ifdef FLASH_PMFEATURE_UNUSED
       interface
       subroutine mpi_unpack_tree_info(mype,nprocs, & 
      &                          buf_dim_bytes,buf_dim,R_buffer)
@@ -296,7 +321,7 @@
       real,    intent(inout) ::  R_buffer(buf_dim)
       end subroutine mpi_unpack_tree_info
       end interface
-
+#endif
 
 
       interface
@@ -486,9 +511,12 @@
       end interface
 
       interface
-      subroutine mpi_xchange_blocks(mype,nprocs, tag_offset, & 
+      subroutine mpi_xchange_blocks(pattern,mype,nprocs, tag_offset, &
      &                              buf_dim_send, S_buffer, &
      &                              buf_dim_recv, R_buffer)
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)    ::  mype,nprocs,buf_dim_send,buf_dim_recv
       integer, intent(inout) ::  tag_offset
       real,    intent(in)   ,ASYNCHRONOUS :: S_buffer(buf_dim_send)
@@ -496,6 +524,7 @@
       end subroutine mpi_xchange_blocks
       end interface
 
+#ifdef FLASH_PMFEATURE_UNUSED
       interface
       subroutine mpi_xchange_tree_info(mype,nprocs, tag_offset, & 
      &                              buf_dim, S_buffer, R_buffer)
@@ -504,6 +533,7 @@
       real,    intent(inout) :: S_buffer(buf_dim), R_buffer(buf_dim)
       end subroutine mpi_xchange_tree_info
       end interface
+#endif
 
       interface
       subroutine morton_number( & 
@@ -530,20 +560,6 @@
       end interface      
 
       interface
-      subroutine compress_list(neigh_morts, & 
-     &                         istack,no_of_remote_neighs, & 
-     &                         mype,nprocs,l_on_pe)
-
-      integer, intent(inout) :: istack
-      integer, intent(inout), dimension(:,:,:) :: neigh_morts
-      integer, intent(out) :: no_of_remote_neighs
-      integer, intent(in)  :: mype, nprocs
-      logical, intent(in)  :: l_on_pe
-
-      end subroutine compress_list
-      end interface
-
-      interface
       subroutine compress_fetch_list(fetch_list, & 
      &                               istack,no_of_remote_neighs, & 
      &                                mype,nprocs,n_to_left)
@@ -558,10 +574,12 @@
 
       interface
 
-      subroutine process_fetch_list(fetch_list,                        & 
+      subroutine process_fetch_list(pattern,fetch_list,                &
                                     istack,mype,nprocs,n_to_left,      &
                                     tag_offset)
-
+        use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+        implicit none
+        TYPE(gr_pmCommPattern_t),intent(inout) :: pattern
       Integer, Intent(inout), dimension(:,:) :: fetch_list
       Integer, Intent(in)  :: istack, mype, nprocs
       Integer, Intent(in)  :: n_to_left(0:nprocs-1)

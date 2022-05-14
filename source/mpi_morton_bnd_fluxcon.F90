@@ -26,7 +26,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -36,11 +36,14 @@
 !!   timings
 !!   mpi_morton
 !!   constants
+!!   gr_pmCommDataTypes
+!!   gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_guard_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -65,11 +68,13 @@
       Subroutine mpi_morton_bnd_fluxcon(mype,nprocs,tag_offset)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, GRID_PAT_FCORR
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh, no_of_diagonal_edges, edge_mark
       Use constants
 
       Use paramesh_interfaces, only : amr_abort
@@ -78,10 +83,8 @@
       use Driver_interface, ONLY : Driver_abort
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       integer, intent(in)    ::  mype,nprocs
@@ -107,6 +110,7 @@
       Integer,Dimension(:,:),Allocatable :: recvstatus
       Integer,Dimension(:,:),Allocatable :: fetch_list
       Integer,Dimension(:,:),Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
 
 !-----Begin executable code.
 
@@ -341,7 +345,10 @@
       End Do  ! End Do lb = 1, lnblocks
       End If  ! End If (nedgevar1 > 0)
 
-      Call process_fetch_list(fetch_list,                              &
+      pattern => gr_pmCommPatternPtr(GRID_PAT_FCORR)
+
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &

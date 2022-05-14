@@ -10,7 +10,7 @@
 #include "paramesh_preprocessor.fh"
 !#define DEBUGX
 
-      subroutine mpi_pack_edges(mype,nprocs,buf_dim,S_buffer, & 
+      subroutine mpi_pack_edges(pattern,mype,nprocs,buf_dim,S_buffer, &
      &                          offset)
 
 !------------------------------------------------------------------------
@@ -19,28 +19,31 @@
 !
 !
 ! Written :     Peter MacNeice, Maharaj Bhat & Michael Gehmeyr    July 2000
+! Modified for pattern arg : Klaus Weide                          May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      pattern        current communication pattern
 !      mype           current processor id
 !      nprocs         number of processors
 !      buf_dim        dimension of buffer
 !      S_buffer       send buffer 
 !
 !------------------------------------------------------------------------
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use paramesh_comm_data
 
-      use mpi_morton
+      use mpi_morton, ONLY: is_buf, ir_buf, &
+                            mess_segment_loc
 
       use paramesh_mpi_interfaces, only : mpi_get_edge_buffer
 
       implicit none
 
-      include 'mpif.h'
-
+      TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
@@ -131,13 +134,14 @@
 
       index = 0
       jrpe = 0
+    ASSOCIATE(p => pattern)
       do irpe = 1,nprocs      ! define send buffer indices
-        if (commatrix_send(irpe).gt.0) then
+        if (p% commatrix_send(irpe).gt.0) then
 
            jrpe = jrpe + 1
            isize = 0
-           do iblk = 1,commatrix_send(irpe)
-            itype = to_be_sent(3,iblk,jrpe)
+           do iblk = 1,p% commatrix_send(irpe)
+            itype = p% to_be_sent(3,iblk,jrpe)
             isize = isize + loc_message_size(itype)
 #ifdef DEBUGX
        write(*,*) 'edge: pe ',mype,' sizing send buf to pe ',irpe, & 
@@ -156,7 +160,7 @@
 
 ! set up a pointer list to the start address in recv_buffer for each
 ! block of information in the received messages
-      tot_no_blocks_to_be_received = sum(commatrix_recv(:))
+      tot_no_blocks_to_be_received = sum(p% commatrix_recv(:))
       if(allocated(mess_segment_loc)) deallocate(mess_segment_loc)
       allocate(mess_segment_loc(tot_no_blocks_to_be_received))
       mess_segment_loc = 0
@@ -164,12 +168,12 @@
       lindex = 0
       jrpe =  0
       do irpe = 1,nprocs      ! define recv buffer indices
-        if (commatrix_recv(irpe).gt.0) then
+        if (p% commatrix_recv(irpe).gt.0) then
 
            jrpe = jrpe + 1
            isize = 0
-           do iblk = 1,commatrix_recv(irpe)
-             itype = to_be_received(3,iblk,jrpe)
+           do iblk = 1,p% commatrix_recv(irpe)
+             itype = p% to_be_received(3,iblk,jrpe)
              isize = isize + loc_message_size(itype)
              iseg = iseg+1
              mess_segment_loc(iseg) = lindex+1
@@ -208,16 +212,16 @@
 #ifdef DEBUG
         edgepack_debug(irpe) = index
         write(*,*) 'pe ',mype,' irpe ',irpe,' commatrix_send ', &
-     &        commatrix_send(irpe)
+     &        p% commatrix_send(irpe)
 #endif /* DEBUG */
-        if (commatrix_send(irpe).gt.0) then
+        if (p% commatrix_send(irpe).gt.0) then
           next_pe = next_pe+1
-          do iblk = 1,commatrix_send(irpe)
-            if(to_be_sent(1,iblk,next_pe).gt.0) then
+          do iblk = 1,p% commatrix_send(irpe)
+            if(p% to_be_sent(1,iblk,next_pe).gt.0) then
 
 
-              lb = to_be_sent(1,iblk,next_pe)
-              dtype = to_be_sent(3,iblk,next_pe)
+              lb = p% to_be_sent(1,iblk,next_pe)
+              dtype = p% to_be_sent(3,iblk,next_pe)
 
 #ifdef DEBUGX
         write(*,*) 'pe ',mype,' :edgepack for rempe ',irpe, & 
@@ -232,6 +236,7 @@
           enddo
         endif
       enddo
+   end ASSOCIATE
 
 
 #ifdef DEBUGX

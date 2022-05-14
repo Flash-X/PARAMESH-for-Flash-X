@@ -95,7 +95,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -158,15 +158,17 @@
                                     flux_dir)
 
 !-----Use statements.
+      use gr_pmCommDataTypes, ONLY: GRID_PAT_GC, GRID_PAT_FCORR, &
+                                    GRID_PAT_PROLONG, GRID_PAT_RESTRICT,&
+                                    gr_pmCommPattern_t
+      use gr_pmCommPatternData, ONLY: gr_pmActivateCommPattern, &
+                                      gr_theActiveCommPattern
       Use paramesh_dimensions
       Use physicaldata
       Use workspace
-      Use tree
+      Use tree, ONLY: laddress, strt_buffer, last_buffer
       Use mpi_morton, ONLY: temprecv_buf,                              &
                             ladd_strt, ladd_end
-#ifdef DEBUG
-      Use mpi_morton, ONLY: commatrix_send, commatrix_recv, max_no_to_send
-#endif
       Use paramesh_mpi_interfaces, Only :                              & 
                                       mpi_pack_blocks,                 & 
                                       mpi_Sbuffer_size,                & 
@@ -190,11 +192,11 @@
       use Logfile_interface, ONLY: Logfile_stamp
 #endif
 
+#ifndef DEBUG
       Implicit None
-
+#else
 !-----Include statements.
-#ifdef DEBUG
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 #endif
 
 !-----Input/Output arguments.
@@ -222,6 +224,7 @@
       Integer :: buffer_dim
       Logical, Save :: first_Call = .True.
 #endif
+      TYPE(gr_pmCommPattern_t),pointer :: pat
 
 #ifdef DEBUG_DAT
       character(len=32), dimension(2,2) :: block_buff
@@ -260,13 +263,6 @@
 #endif
 
 
-#ifdef DEBUG
-      write(*,*) 'pe ',mype,' entered mpi_amr_comm_setup: ' & 
-     &           ,' max_no_to_send ', &
-     &           max_no_to_send,' tag_offset ',tag_offset, &
-     &           ' nprocs ',nprocs, & 
-     &           '  gcell_on_cc ', gcell_on_cc,' iopt ',iopt
-#endif /* DEBUG */
       If (iopt == 1) Then
 
 
@@ -406,23 +402,35 @@
       If (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
 
          Call mpi_amr_read_guard_comm(nprocs)
+!!$         call gr_pmActivateCommPattern(GRID_PAT_GC)
 
       ElseIf (lprolong) Then
 
          Call mpi_amr_read_prol_comm(nprocs)
+!!$         call gr_pmActivateCommPattern(GRID_PAT_PROLONG)
 
       ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
 
-        Call mpi_amr_read_flux_comm(nprocs)
+         Call mpi_amr_read_flux_comm(nprocs)
+!!$         call gr_pmActivateCommPattern(GRID_PAT_FCORR)
 
       ElseIf (lrestrict) Then
 
-        Call mpi_amr_read_restrict_comm(nprocs)
+         Call mpi_amr_read_restrict_comm(nprocs)
+!!$         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT)
 
       End If
 
+      pat => gr_theActiveCommPattern
+
 #ifdef DEBUG
-      itemp = max(sum(commatrix_send), sum(commatrix_recv))
+      write(*,*) 'pe ',mype,' entered mpi_amr_comm_setup: ' &
+     &           ,' num_recipient_pes ', &
+     &           pat % num_recipient_pes,' tag_offset ',tag_offset, &
+     &           ' nprocs ',nprocs, &
+     &           '  gcell_on_cc ', gcell_on_cc,' iopt ',iopt
+
+      itemp = max(sum(pat % commatrix_send), sum(pat % commatrix_recv))
       Call MPI_ALLREDUCE (itemp,                                       & 
                           max_blks_sent,                               & 
                           1,                                           & 
@@ -440,36 +448,36 @@
 #ifndef AIX
       If (lguard.or.lprolong) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .True., .False., .False., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .True.,.False., .False., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .False., .True., .False., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .False.,.True., .False., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (ledge) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .False., .False., .True., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .False.,.False., .True., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
@@ -512,41 +520,44 @@
 
       If (lguard.or.lprolong) Then
 
-        Call mpi_pack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         & 
+        Call mpi_pack_blocks(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,     &
                              buffer_dim_send,send_buf,offset_tree,     & 
                              nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_pack_fluxes(mype,nprocs,buffer_dim_send,send_buf,     & 
+        Call mpi_pack_fluxes(pat,mype,nprocs,buffer_dim_send,send_buf, &
                              offset_tree,flux_dir)
 
       ElseIf (ledge) Then
 
-        Call mpi_pack_edges(mype,nprocs,buffer_dim_send,send_buf,      & 
+        Call mpi_pack_edges(pat,mype,nprocs,buffer_dim_send,send_buf,  &
                             offset_tree)
 
       End If  ! End If (lguard.or.lprolong)
 
-      Call mpi_xchange_blocks(mype,nprocs,tag_offset,                  & 
+      Call mpi_xchange_blocks(pat,mype,nprocs,tag_offset,              &
                               buffer_dim_send,send_buf,                &
                               buffer_dim_recv,temprecv_buf)
 
 
       If (lguard.or.lprolong) Then
 
-         Call mpi_unpack_blocks(mype,iopt,lcc,lfc,lec,lnc,             & 
+         Call mpi_unpack_blocks(pat % commatrix_recv,                  &
+                                mype,iopt,lcc,lfc,lec,lnc,             &
                                 buffer_dim_recv,temprecv_buf,          & 
                                 nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
          
-         Call mpi_unpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     & 
+         Call mpi_unpack_fluxes(pat % commatrix_recv,                  &
+                                mype,buffer_dim_recv,temprecv_buf,     &
                                 flux_dir)
 
       ElseIf (ledge) Then
 
-         Call mpi_unpack_edges(mype,buffer_dim_recv,temprecv_buf)
+         Call mpi_unpack_edges(pat % commatrix_recv,                  &
+                               mype,buffer_dim_recv,temprecv_buf)
 
       End If  ! End If (lguard.or.lprolong)
 

@@ -9,37 +9,44 @@
 
 #include "paramesh_preprocessor.fh"
 
-      Subroutine process_fetch_list(fetch_list,                        &
+Subroutine process_fetch_list(pattern, fetch_list,                     &
                                     istack,                            &
                                     mype,                              &
                                     nprocs,                            &
                                     n_to_left,                         &
                                     tag_offset)
 
+   use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
+   use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
+   Use tree, ONLY: lnblocks, last_buffer
+   Use paramesh_Dimensions, ONLY: maxblocks_alloc
+   Use paramesh_mpi_interfaces, only : compress_fetch_list
+   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Use tree
-      Use paramesh_Dimensions
-      Use mpi_morton
-      Use paramesh_mpi_interfaces, only : compress_fetch_list 
-      Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
+#include "Flashx_mpi_implicitNone.fh"
 
-      Implicit None
+   TYPE(gr_pmCommPattern_t),intent(INOUT) :: pattern
+   Integer, Intent(inout), Dimension(:,:) :: fetch_list
+   Integer, Intent(in)    :: istack, mype, nprocs
+   Integer, Intent(in)    :: n_to_left(0:nprocs-1)
+   Integer, Intent(inout) :: tag_offset
 
-      Include 'mpif.h'
-
-      Integer, Intent(inout), Dimension(:,:) :: fetch_list
-      Integer, Intent(in)    :: istack, mype, nprocs
-      Integer, Intent(in)    :: n_to_left(0:nprocs-1)
-      Integer, Intent(inout) :: tag_offset
-
-      Integer :: no_of_remote_neighs, max_no_to_be_received
-      Integer,Dimension (:),  allocatable :: recvrequest
-      Integer,Dimension (:,:),allocatable :: recvstatus
-      Integer :: i, j, k, ierror, ierrorcode, iprocs, ii, jj, jm1, jp
-      Integer :: ll, kk, isrc, idest, itag, isize
+   Integer :: no_of_remote_neighs, num_sending_pes
+   integer :: strtBuffer
+   Integer,Dimension (:),  allocatable :: recvrequest
+   Integer,Dimension (:,:),allocatable :: recvstatus
+   Integer :: i, j, k, ierror, ierrorcode, iprocs, ii, jj, jm1, jp
+   Integer :: ll, kk, isrc, idest, itag, isize
 
 !-----Compress the list of possible off processor blocks by eliminating 
 !-----redundant entries (this routine also sorts the list)
+
+!!$   associate(commatrix_send => pattern % commatrix_send, &
+!!$                commatrix_recv => pattern % commatrix_recv, &
+!!$                to_be_sent => pattern % to_be_sent, &
+!!$                to_be_received => pattern % to_be_received &
+!!$                )
+   associate(p => pattern)
 
       no_of_remote_neighs = 0
       If (istack > 0) Then
@@ -58,19 +65,19 @@
 !-----Construct commatrix_recv (the number of blocks to receive from each
 !-----processor)
 
-      commatrix_send(:) = 0
-      commatrix_recv(:) = 0
+      p % commatrix_send(:) = 0
+      p % commatrix_recv(:) = 0
       do i = 1,no_of_remote_neighs
-         commatrix_recv(fetch_list(2,i)) =                             &
-            commatrix_recv(fetch_list(2,i)) + 1
+         p % commatrix_recv(fetch_list(2,i)) =                             &
+            p % commatrix_recv(fetch_list(2,i)) + 1
       End Do
       
 !-----Constrcut commatrix_send (the of blocks to send to each other processor) 
 !-----by providing the complete commatrix_recv to all processors
 
 
-      Call MPI_ALLTOALL (commatrix_recv,1,MPI_INTEGER,                 & 
-                         commatrix_send,1,MPI_INTEGER,                 & 
+      Call MPI_ALLTOALL (p % commatrix_recv,1,MPI_INTEGER,                 &
+                         p % commatrix_send,1,MPI_INTEGER,                 &
                          amr_mpi_meshComm,ierror)
 
 !-----Compute the maximum no. of bloacks which any processor
@@ -78,18 +85,18 @@
 
        iprocs = 0
        do i = 1,nprocs
-          iprocs = iprocs + min(1,commatrix_recv(i))
+          iprocs = iprocs + min(1,p % commatrix_recv(i))
        End Do
-       max_no_to_be_received = max(1,iprocs)
+       num_sending_pes = iprocs ! max(1,iprocs)
 
 !------Compute the maximum no. of bloacks which any processor
 !------is going to receive.
 
        iprocs = 0
        do i = 1,nprocs
-          iprocs = iprocs + min(1,commatrix_send(i))
+          iprocs = iprocs + min(1,p % commatrix_send(i))
        End Do
-       max_no_to_send = max(1,iprocs)
+       p % num_recipient_pes = iprocs ! max(1,iprocs)
 
 !-----Evaluate smallest guard block starting index over all pe
 !-----store this into variable strt_buffer which is Used in amr_1blk_guardcell
@@ -98,14 +105,15 @@
 
       k = maxblocks_alloc + 1
       Do i = 0,nprocs-1
-         k = k - commatrix_recv(i+1)
+         k = k - p % commatrix_recv(i+1)
       End Do
-      strt_buffer = min(k,last_buffer)
+      strtBuffer = min(k,last_buffer)
+      p % strt_buffer = strtBuffer
 
-      If (strt_buffer <= lnblocks) Then
+      If (strtBuffer <= lnblocks) Then
         Write(*,*)  & 
         'ERROR in process_fetch_list : guard block starting index',    & 
-        strt_buffer,' not larger than lnblocks',lnblocks,              & 
+        strtBuffer,' not larger than lnblocks',lnblocks,               &
         ' processor no. ',mype,' maxblocks_alloc ',                    & 
         maxblocks_alloc
         Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierror)
@@ -114,22 +122,22 @@
 !-----Dynamically allocate memory to store the lists of blocks to be
 !-----sent and received.
 
-      If (Allocated(to_be_sent))     Deallocate(to_be_sent)
-      If (Allocated(to_be_received)) Deallocate(to_be_received)
+      If (Allocated(p % to_be_sent))     Deallocate(p % to_be_sent)
+      If (Allocated(p % to_be_received)) Deallocate(p % to_be_received)
 
-      Allocate ( to_be_sent(3,                                         & 
-                            max(1,maxval(commatrix_send)),             & 
-                            max(1,max_no_to_send) ) )
-      Allocate ( to_be_received(3,                                     & 
-                                max(1,maxval(commatrix_recv)),         & 
-                                max(1,max_no_to_be_received) ) )
+      Allocate ( p % to_be_sent(3,                                         &
+                            max(1,maxval(p % commatrix_send)),             &
+                            max(1,p % num_recipient_pes) ) )
+      Allocate ( p % to_be_received(3,                                     &
+                                max(1,maxval(p % commatrix_recv)),         &
+                                max(1,num_sending_pes) ) )
 
 !-----Construct arrays to_be_sent and to_be_received which contain
 !-----the lists of blocks to be packaged.
 
-      to_be_sent = -1
-      to_be_received = -1
-      laddress = 0
+      p % to_be_sent(:,:,:) = -1
+      p % to_be_received(:,:,:) = -1
+      p % laddress(:,:) = 0
 
 !-----Set up the array to_be_received on each processor
       If (no_of_remote_neighs > 0) Then
@@ -145,13 +153,13 @@
                jp = jp + 1
                ii = 1
             End If
-            to_be_received(:,ii,jp) = fetch_list(:,jj)
+            p % to_be_received(:,ii,jp) = fetch_list(:,jj)
             jm1 = jj
          End Do
 
          jj = no_of_remote_neighs
-         laddress(1,strt_buffer:strt_buffer+jj-1) = fetch_list(1,1:jj)
-         laddress(2,strt_buffer:strt_buffer+jj-1) = fetch_list(2,1:jj)-1
+         p % laddress(1,strtBuffer:strtBuffer+jj-1) = fetch_list(1,1:jj)
+         p % laddress(2,strtBuffer:strtBuffer+jj-1) = fetch_list(2,1:jj)-1
          
       End If
 
@@ -172,10 +180,10 @@
          itag = tag_offset !OK because 1 msg per process.
 #endif
                                 ! receive to pe=j
-         If (commatrix_send(i).gt.0) Then
+         If (p % commatrix_send(i).gt.0) Then
             kk = kk+1
-            isize = 3*commatrix_send(i)
-            call MPI_IRECV(to_be_sent(1,1,kk),isize,                   & 
+            isize = 3*p % commatrix_send(i)
+            call MPI_IRECV(p % to_be_sent(1,1,kk),isize,                 &
                  MPI_INTEGER,isrc ,itag,amr_mpi_meshComm,                & 
                  recvrequest(kk),ierror)
          End If
@@ -194,10 +202,10 @@
          itag = tag_offset !OK because 1 msg per process.
 #endif
                                 ! send from mype=i
-         If (commatrix_recv(j).gt.0) Then
+         If (p % commatrix_recv(j).gt.0) Then
             ll = ll+1
-            isize = 3*commatrix_recv(j)
-            Call MPI_SSEND(to_be_received(1,1,ll),isize,MPI_INTEGER,   & 
+            isize = 3*p % commatrix_recv(j)
+            Call MPI_SSEND(p % to_be_received(1,1,ll),isize,MPI_INTEGER, &
                            idest,itag,amr_mpi_meshComm,ierror)
          End If
       End Do
@@ -213,5 +221,6 @@
       If (Allocated(recvrequest)) Deallocate( recvrequest )
       If (Allocated(recvstatus)) Deallocate( recvstatus )
 
+      end associate
       End Subroutine process_fetch_list
 

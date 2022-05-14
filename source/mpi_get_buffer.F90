@@ -50,13 +50,9 @@
       use workspace
       use paramesh_comm_data
 
-      use mpi_morton
-
       use paramesh_mpi_interfaces, only : mpi_set_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 
@@ -532,13 +528,10 @@
       use tree
       use workspace
       use paramesh_comm_data
-      use mpi_morton
 
       use paramesh_mpi_interfaces, only : mpi_set_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 

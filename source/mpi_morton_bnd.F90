@@ -26,7 +26,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -36,11 +36,14 @@
 !!    timings
 !!    mpi_morton
 !!    constants
+!!    gr_pmCommDataTypes
+!!    gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_guard_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -65,21 +68,21 @@
       Subroutine mpi_morton_bnd(mype,nprocs,tag_offset)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, GRID_PAT_GC
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh
       Use constants
 
       Use paramesh_mpi_interfaces, only : mpi_amr_write_guard_comm,    & 
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Integer, intent(in)    ::  mype,nprocs
@@ -103,6 +106,7 @@
       Integer,Dimension (:,:),     Allocatable :: recvstatus
       Integer,Dimension (:,:),     Allocatable :: fetch_list
       Integer,Dimension (:,:),     Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
 
 !-----Begin Executable Code
 
@@ -393,11 +397,14 @@
 
       End Do  ! End Do lb = 1, lnblocks
 
+      pattern => gr_pmCommPatternPtr(GRID_PAT_GC)
+
 !-----Compress 'fetch_list' and eliminate any redundances
 !-----Also, if a block appears in the list more than once this routine
 !-----will adjust which section of the block is requested (i.e. corner, 
 !-----face, or entire block)
-      Call process_fetch_list(fetch_list,                              &
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &

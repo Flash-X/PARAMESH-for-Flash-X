@@ -99,6 +99,10 @@
       integer :: iseg_no,jj
       logical :: llfound
 
+#ifdef DEBUG
+      integer :: pe_source(size(commatrix_recv))
+#endif
+
 !-----Begin executable code.
 
       If (remote_pe.ne.mype) Then
@@ -138,7 +142,8 @@
 
 #ifdef DEBUG
 !-------locate rem_pe in the list of sending processors
-        no_of_comms = size(pe_source)
+        pe_source(:) = -1
+        no_of_comms = size(commatrix_recv)
         DO CONCURRENT (jpe0 = 1:no_of_comms)
            if (commatrix_recv(jpe0) > 0) pe_source(jpe0) = jpe0-1
         END DO
@@ -169,7 +174,6 @@
            ' remote_pe ',remote_pe,                                    & 
            ' rem_blk ',rem_blk,                                          & 
            ' rem_pe ',rem_pe,                                          & 
-           ' pe_source ',pe_source,                                          & 
            ' laddress ',laddress
           Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
         End If

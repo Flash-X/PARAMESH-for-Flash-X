@@ -65,7 +65,7 @@
 !! INCLUDES
 !! 
 !!  paramesh_preprocessor.fh
-!!  mpif.h
+!!  Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -116,15 +116,13 @@
       Use physicaldata
       Use tree
       Use workspace
-      Use mpi_morton
+      Use mpi_morton, ONLY: temprecv_buf
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
       Use paramesh_mpi_interfaces, only : mpi_set_message_limits
       Use timings
 
-      Implicit None
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Integer, Intent(in) :: mype,remote_pe,remote_block

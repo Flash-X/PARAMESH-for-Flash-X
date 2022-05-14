@@ -50,7 +50,6 @@
 
       Subroutine amr_1blk_guardcell_reset
 
-      Use paramesh_dimensions
       Use physicaldata
 
       Implicit None
