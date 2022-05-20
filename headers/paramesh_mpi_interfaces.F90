@@ -7,6 +7,11 @@
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
 
+!! MODIFICATIONS
+!!
+!!  2022-05-13 K. Weide  Added pattern args of type gr_pmCommPattern_t
+!!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces
+
       module paramesh_mpi_interfaces
 
 #include "FortranLangFeatures.fh"
@@ -26,9 +31,11 @@
       end interface
 
       interface
-      subroutine mpi_morton_bnd(mype,nprocs,tag_offset)
+      subroutine mpi_morton_bnd(mype,nprocs,tag_offset,subPatNo)
+        implicit none
       integer, intent(in)    :: mype,nprocs
       integer, intent(inout) :: tag_offset
+      integer,OPTIONAL,intent(in) :: subPatNo
       end subroutine mpi_morton_bnd
       end interface
 
@@ -109,9 +116,11 @@
 
       interface
       subroutine mpi_morton_bnd_restrict(mype,nprocs, & 
-     &                                  tag_offset)
+     &                                  tag_offset,subPatNo)
+        implicit none
       integer, intent(in)    :: mype,nprocs
       integer, intent(inout) :: tag_offset
+      integer,OPTIONAL,intent(in) :: subPatNo
       end subroutine mpi_morton_bnd_restrict
       end interface
 
