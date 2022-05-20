@@ -97,6 +97,7 @@
 
 !-----Input/Output Variables
       Integer, Intent(in)    ::  mype,nprocs
+      Integer, Intent(inout) ::  tag_offset
       Integer,OPTIONAL, intent(in) ::  subPatNo
 
 !-----Local variables
