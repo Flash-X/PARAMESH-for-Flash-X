@@ -373,7 +373,7 @@
         ka = 1; kb = 1+2*k3d
         ja = 1; jb = 1+2*k2d
         ia = 1; ib = 3
-!!#ifdef PM_OPTIMIZE_MORTONBND_FETCHLIST
+#ifdef PM_OPTIMIZE_MORTONBND_FETCHLIST
         ! Do this optimization only if parent does not touch a domain boundary
         ! anywhere (otherwise boundary condition can be called with invalid
         ! input data):
@@ -391,7 +391,7 @@
               ia = 1+ioff; ib = 2+ioff
            end if
         end if
-!!#endif
+#endif
 
         Do k = ka,kb
         Do j = ja,jb
