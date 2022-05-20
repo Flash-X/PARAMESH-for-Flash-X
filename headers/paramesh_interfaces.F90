@@ -385,13 +385,16 @@
       subroutine amr_1blk_guardcell_srl(mype,pe,lb,iblock,iopt,nlayers,  & 
      &                         surrblks,lcc,lfc,lec,lnc,icoord,ldiag,    & 
      &                         nlayers0x,nlayers0y,nlayers0z, & 
-     &                         ipolar,curBlock)
+     &                         ipolar,curBlock,presentRegions)
+      use gr_flashHook_interfaces, ONLY : i27b
+      implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,iblock,icoord
       integer, intent(in) :: surrblks(:,:,:,:)
       logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
       integer, intent(in) :: nlayers0x, nlayers0y, nlayers0z
       integer, intent(in) :: ipolar(2)
       integer,OPTIONAL, intent(in) :: curBlock
+      integer(kind=i27b),OPTIONAL, intent(in) :: presentRegions
       end subroutine amr_1blk_guardcell_srl
       end interface
 

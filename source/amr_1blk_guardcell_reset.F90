@@ -60,8 +60,10 @@
           lnew_parent = .True.
           pcache_blk_u = -1
           pcache_pe_u  =  -1
+          pcache_gcregions_u  =  -1
           pcache_blk_w = -1
           pcache_pe_w  =  -1
+          pcache_gcregions_w  =  -1
 
 
       Return

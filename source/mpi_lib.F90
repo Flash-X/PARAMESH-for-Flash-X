@@ -981,7 +981,7 @@
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-            if(isize.gt.buf_dim_recv) then
+            if(isize > buf_dim_recv - istrt + 1) then
                write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 1:', & 
      &                    ' message is bigger than buffer space  ' & 
      &           ,' isrc ',isrc,' idest ',idest,' i ',i, & 
@@ -1013,7 +1013,7 @@
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-             if(isize.gt.buf_dim_send) then
+             if(isize > buf_dim_send - istrt + 1) then
                  write(*,*) 'PARAMESH ERROR : ', & 
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
@@ -1042,7 +1042,7 @@
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-             if(isize.gt.buf_dim_send) then
+             if(isize > buf_dim_send - istrt + 1) then
                write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 2:', & 
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)

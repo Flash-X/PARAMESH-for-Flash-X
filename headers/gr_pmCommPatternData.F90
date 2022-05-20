@@ -8,8 +8,9 @@ module gr_pmCommPatternData
   ! node type (not specific refinement level):
   !  DEFAULT; LEAF; ACTIVE_BLKS; PARENT; ALL_BLKS
   integer,parameter,dimension(NUM_COMM_PATTERN_FAMILIES) :: &
-       NUM_COMM_PATTERN_VARIANTS = (/1,1,1,1/)
-  integer,parameter :: MAX_COMM_PATTERN_VARIANTS = 1 ! maxval(NUM_COMM_PATTERN_VARIANTS)
+       NUM_COMM_PATTERN_VARIANTS = (/2,1,1,2/)
+  ! Unused now:
+  integer,parameter :: MAX_COMM_PATTERN_VARIANTS = 2 ! maxval(NUM_COMM_PATTERN_VARIANTS)
 
   ! There is going to be one of the following for each pattern family:
   type gr_pmCommPattFamSet_t
@@ -71,7 +72,7 @@ contains
   end subroutine gr_pmResetCommPatterns
 
   subroutine gr_pmDeallocateCommPatterns()
-    integer :: f,p
+    integer :: f
 
     call gr_pmResetCommPatterns()
     do f = 1,NUM_COMM_PATTERN_FAMILIES
@@ -98,6 +99,7 @@ contains
 !!$          allocate(gr_pmTheCommPatterns(f) % pat(p) %  to_be_sent)
           allocate(gr_pmTheCommPatterns(f) % pat(p) %  laddress(1:2,1:maxblocksAlloc))
           gr_pmTheCommPatterns(f) % pat(p) %  strt_buffer = -1
+          gr_pmTheCommPatterns(f) % pat(p) % id = f * 10 + (p-1)
           gr_pmTheCommPatterns(f) % pat(p) % valid = .FALSE.
        end do
     end do
@@ -133,4 +135,118 @@ contains
     gr_theActiveCommPattern => gr_pmCommPatternPtr(family,variant)
     laddress => gr_theActiveCommPattern % laddress
   end subroutine gr_pmActivateCommPattern
+
+#include "FortranLangFeatures.fh"
+  subroutine gr_pmPrintCommPattern(pattern,str,i)
+    TYPE(gr_pmCommPattern_t),POINTER_INTENT_IN :: pattern
+    character(len=*),intent(in) :: str
+    integer,intent(in) :: i
+    print*,'> pe', i,' ',str
+    if (.NOT. associated(pattern)) then
+       print*,'(NULL pattern)'
+       return
+    end if
+
+#define MAXPRINT 22
+    if(allocated(pattern % commatrix_send)) then
+       if (size(pattern % commatrix_send,1) <= MAXPRINT) then
+          print*,'| commatrix_send:',pattern % commatrix_send
+       else
+          print*,'| commatrix_send:', &
+               pattern % commatrix_send(1:MAXPRINT),&
+               ' ... #',MAXPRINT,' of',&
+               size(pattern % commatrix_send,1)
+       end if
+    else
+       print*,'| (commatrix_send unallocated)'
+    end if
+    if(allocated(pattern % commatrix_recv)) then
+       if (size(pattern % commatrix_recv,1) <= MAXPRINT) then
+          print*,'| commatrix_recv:',pattern % commatrix_recv
+       else
+          print*,'| commatrix_recv:', &
+               pattern % commatrix_recv(1:MAXPRINT),&
+               ' ... #',MAXPRINT,' of',&
+               size(pattern % commatrix_recv,1)
+       end if
+    else
+       print*,'| (commatrix_recv unallocated)'
+    end if
+
+    if(allocated(pattern % to_be_sent)) then
+       if (size(pattern % to_be_sent,3) <= MAXPRINT) then
+          if (size(pattern % to_be_sent,2) <= MAXPRINT) then
+             print*,'| 2be_s',pattern % to_be_sent
+          else
+             print*,'| 2be_s', &
+                  pattern % to_be_sent(:,1:MAXPRINT,:),&
+                  ' ... # (1..3,1..',&
+                  MAXPRINT,',1..',size(pattern % to_be_sent,3),') of (',&
+                  size(pattern % to_be_sent,1),&
+                  size(pattern % to_be_sent,2),&
+                  size(pattern % to_be_sent,3),')'
+          end if
+       else
+          if (size(pattern % to_be_sent,2) <= MAXPRINT) then
+             print*,'| 2be_s', &
+                  pattern % to_be_sent(:,:,1:MAXPRINT),&
+                  ' ... # (1..3,1..',size(pattern % to_be_sent,2),&
+                  ',1..',MAXPRINT,') of (',&
+                  size(pattern % to_be_sent,1),&
+                  size(pattern % to_be_sent,2),&
+                  size(pattern % to_be_sent,3),')'
+          end if
+
+       end if
+    else
+       print*,'| (to_be_sent unallocated)'
+    end if
+    if(allocated(pattern % to_be_received)) then
+       if (size(pattern % to_be_received,3) <= MAXPRINT) then
+          if (size(pattern % to_be_received,2) <= MAXPRINT) then
+             print*,'| 2be_r',pattern % to_be_received
+          else
+             print*,'| 2be_r', &
+                  pattern % to_be_received(:,1:MAXPRINT,:),&
+                  ' ... # (1..3,1..',&
+                  MAXPRINT,',1..',size(pattern % to_be_received,3),') of (',&
+                  size(pattern % to_be_received,1),&
+                  size(pattern % to_be_received,2),&
+                  size(pattern % to_be_received,3),')'
+          end if
+       else
+          if (size(pattern % to_be_received,2) <= MAXPRINT) then
+             print*,'| 2be_r', &
+                  pattern % to_be_received(:,:,1:MAXPRINT),&
+                  ' ... # (1..3,1..',size(pattern % to_be_received,2),&
+                  ',1..',MAXPRINT,') of (',&
+                  size(pattern % to_be_received,1),&
+                  size(pattern % to_be_received,2),&
+                  size(pattern % to_be_received,3),')'
+          end if
+
+       end if
+    else
+       print*,'| (to_be_received unallocated)'
+    end if
+
+    if(allocated(pattern % laddress)) then
+       if (size(pattern % laddress,2) <= MAXPRINT) then
+          print*,'| ladrs',pattern % laddress
+       else
+          print*,'| ladrs', &
+               pattern % laddress(:,&
+               size(pattern % laddress,2)-(MAXPRINT)+1 &
+              :size(pattern % laddress,2)),&
+               ' ... last #',MAXPRINT,' of',&
+               size(pattern % laddress,2)
+       end if
+    else
+       print*,'| (laddress unallocated)'
+    end if
+
+    print*,'| strt_buffer', pattern % strt_buffer
+    print*,'| num_recipient_pes', pattern % num_recipient_pes
+    print*,'| id', pattern % id
+  end subroutine gr_pmPrintCommPattern
 end module gr_pmCommPatternData

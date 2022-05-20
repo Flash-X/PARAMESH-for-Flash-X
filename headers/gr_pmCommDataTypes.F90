@@ -26,7 +26,7 @@ module gr_pmCommDataTypes
      Integer                          :: num_recipient_pes !set: process_fetch_list, SWAPINOUT
      ! Guard block starting index, MUST SATISFY lnblocks < strt_buffer <= maxblocks_alloc :
      Integer                          :: strt_buffer !set: process_fetch_list, SWAPINOUT (strt_guard(etc.))
-
+     integer :: id = -999
      logical :: valid = .FALSE.
   end type gr_pmCommPattern_t
 
@@ -71,5 +71,8 @@ module gr_pmCommDataTypes
   end type gr_pmCommBuf_t
 
   integer,parameter,public:: GRID_PAT_GC=10, GRID_PAT_PROLONG=20, GRID_PAT_FCORR=30, GRID_PAT_RESTRICT=40
+
+  integer,parameter,public:: GRID_SUBPAT_GC_DEFAULT=1, GRID_SUBPAT_GC_OPT=2
+  integer,parameter,public:: GRID_SUBPAT_RESTRICT_DEFAULT=1, GRID_SUBPAT_RESTRICT_ANC=2
 
 end module gr_pmCommDataTypes

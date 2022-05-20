@@ -98,6 +98,9 @@
 !!
 !!  Peter MacNeice, July 1998.
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-20 K. Weide  Added DEBUG_LITE code
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -123,6 +126,10 @@
 
 !-----Include statements
 #include "Flashx_mpi_implicitNone.fh"
+
+#if defined(DEBUG) || defined(DEBUG_ALL)
+#define DEBUG_LITE
+#endif
 
 !-----Input/Output Arguments
       Integer, Intent(in) :: mype,remote_pe,remote_block
@@ -348,6 +355,36 @@
             If (j >= js2.and. j <= js1)     Then
             If (i >= is .and. i <= is + il) Then
 
+#ifdef DEBUG_LITE
+            if (indx+ngcell_on_cc .GE. size(temprecv_buf,1)) then
+9980           format('*** WARNING *** on PE',I4,'  in amr_1blk_cc_cp_remote,', &
+                    ' copying to unk1 reaches or exceeds end of temprecv_buf!')
+               print 9980,mype
+9979           format(1x,'@',I12,'  remote_pe=',I4,', dtype=', I6, &
+                                 ', ia,ja,ka,ib,jb,kb=',6(I2,','), &
+                                 ' ill ,jll ,kll =',3(I2,','))
+               print 9979,mype,remote_pe,dtype, &
+                    ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+9981           format(1x,'@',I12,'  remote_pe=',I4,', remote_block=', I6, &
+                                 ', idest,iopt=',I1,',',I1,', id,jd,kd,is,js,ks=',6(I2,','), &
+                                 ' ilays,jlays,klays=',3(I2,','), &
+                                 ' nblk_ind,ipolar=',I2,',',2(I2:','))
+               print 9981,mype,remote_pe,remote_block, idest,iopt, &
+                    id,jd,kd,is,js,ks, ilays,jlays,klays, nblk_ind,ipolar
+9982           format(1x,'@',I12,1x, 12(1x,I3),' ngcell_on_cc=',I4)
+               print 9982,mype, kk, k,ka,kb, &
+                                jj, j,ja,jb, &
+                                ii, i,ia,ib, &
+                                ngcell_on_cc
+#define REAL_FORMAT ES20.13
+9983           format(1x,'@',I12,'  indx,ngcell_on_cc,indx+ngcell_on_cc,size(temprecv_buf,1)=', &
+                                    I6,1x,I3,1x,I6,1x,I7,'  dtype=',I3,', lfound=',L1, &
+                                    ', temprecv_buf(indx)=',REAL_FORMAT)
+               print 9983,mype,indx,ngcell_on_cc,indx+ngcell_on_cc,size(temprecv_buf,1),dtype,lfound,&
+                    temprecv_buf(indx)
+               !call Driver_abort("I have had enough!")
+            end if
+#endif
             Do ivar = 1, ngcell_on_cc
               ivar_next = gcell_on_cc_pointer(ivar)
               unk1(ivar_next,ii,jj,kk,idest) =                         & 

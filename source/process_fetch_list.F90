@@ -1,11 +1,23 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
+!!****if* source/process_fetch_list
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   process_fetch_list
+!!
+!! MODIFICATIONS
+!!
+!!  2022-05-20 K. Weide  Added pattern argument
+!!***
 
 #include "paramesh_preprocessor.fh"
 
@@ -17,15 +29,17 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
                                     tag_offset)
 
    use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-   use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
+   use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr, &
+        gr_pmPrintCommPattern
    Use tree, ONLY: lnblocks, last_buffer
    Use paramesh_Dimensions, ONLY: maxblocks_alloc
    Use paramesh_mpi_interfaces, only : compress_fetch_list
    Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
 #include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
-   TYPE(gr_pmCommPattern_t),intent(INOUT) :: pattern
+   TYPE(gr_pmCommPattern_t),POINTER_INTENT_IN :: pattern
    Integer, Intent(inout), Dimension(:,:) :: fetch_list
    Integer, Intent(in)    :: istack, mype, nprocs
    Integer, Intent(in)    :: n_to_left(0:nprocs-1)
@@ -109,6 +123,11 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
       End Do
       strtBuffer = min(k,last_buffer)
       p % strt_buffer = strtBuffer
+#ifdef DEBUG_XTRA
+      write(*,*) 'pe ',mype,' begin process_fetch_list: ' &
+           ,'p % strt_buffer',p % strt_buffer &
+           ,' p % commatrix_recv', p % commatrix_recv
+#endif
 
       If (strtBuffer <= lnblocks) Then
         Write(*,*)  & 
@@ -137,6 +156,10 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
 
       p % to_be_sent(:,:,:) = -1
       p % to_be_received(:,:,:) = -1
+#ifdef DEBUG_XTRA
+      write(*,*) 'pe ',mype,' in process_fetch_list: ' &
+           ,'p%laddres BEFORE:',p%laddress(:,max(1,size(p%laddress,2)-9):)
+#endif
       p % laddress(:,:) = 0
 
 !-----Set up the array to_be_received on each processor
@@ -163,6 +186,11 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
          
       End If
 
+#ifdef DEBUG_XTRA
+      write(*,*) 'pe ',mype,' in process_fetch_list: ' &
+           ,'no_of_remote_neighs',no_of_remote_neighs  &
+           , 'p%laddress AFTER:',p%laddress(:,max(1,size(p%laddress,2)-9):)
+#endif
       If (Allocated(recvrequest)) Deallocate( recvrequest )
       Allocate ( recvrequest(nprocs) )
       If (Allocated(recvstatus)) Deallocate( recvstatus )
@@ -222,5 +250,13 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
       If (Allocated(recvstatus)) Deallocate( recvstatus )
 
       end associate
-      End Subroutine process_fetch_list
+#ifdef DEBUG_XTRA
+      write(*,*) 'pe ',mype,' end process_fetch_list: ' &
+           ,'pattern % strt_buffer',pattern % strt_buffer &
+           ,' pattern % commatrix_recv', pattern % commatrix_recv
+#endif
+#ifdef DEBUG
+      call gr_pmPrintCommPattern(pattern,'p_f_l:pattern',mype)
+#endif
+End Subroutine process_fetch_list
 

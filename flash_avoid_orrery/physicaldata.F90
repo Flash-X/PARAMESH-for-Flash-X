@@ -1093,9 +1093,11 @@
 ! Variables used to control data caching. This helps to avoid unnecessary
 ! repetition of some guardcell and surrounding-block mapping operations
       Public ::  pcache_blk_u,pcache_pe_u,pcache_blk_w,pcache_pe_w
+      public ::  pcache_gcregions_u,pcache_gcregions_w
       Public ::  lnew_parent
       Integer, Save :: pcache_blk_u,pcache_pe_u
       Integer, Save :: pcache_blk_w,pcache_pe_w
+      integer(kind=selected_int_kind(9)), save :: pcache_gcregions_u,pcache_gcregions_w
       Logical, Save :: lnew_parent
 
 !-----------------------------------------------------------------

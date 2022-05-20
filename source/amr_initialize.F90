@@ -69,7 +69,7 @@
 !!
 !!   Peter MacNeice and Kevin Olson
 !!
-!!***     
+!!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
