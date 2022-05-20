@@ -579,7 +579,7 @@
                                     tag_offset)
         use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
         implicit none
-        TYPE(gr_pmCommPattern_t),intent(inout) :: pattern
+        TYPE(gr_pmCommPattern_t),POINTER_INTENT_IN :: pattern
       Integer, Intent(inout), dimension(:,:) :: fetch_list
       Integer, Intent(in)  :: istack, mype, nprocs
       Integer, Intent(in)  :: n_to_left(0:nprocs-1)

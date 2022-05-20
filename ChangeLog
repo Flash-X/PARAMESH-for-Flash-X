@@ -1,5 +1,8 @@
 2022-05-20  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
 
+	* headers/paramesh_mpi_interfaces.F90: 
+	(process_fetch_list): changed "pattern" argument to POINTER_INTENT_IN.
+
 	* source/process_fetch_list.F90: edited Robodoc header.
 	(process_fetch_list): changed "pattern" argument to POINTER_INTENT_IN.
 	(process_fetch_list): added some debug output of questionable use,
