@@ -66,12 +66,16 @@
       subroutine mpi_amr_comm_setup(mype,nprocs,lguard,lprolong, & 
      &                              lflux,ledge,lrestrict,lfulltree, & 
      &                              iopt,lcc,lfc,lec,lnc,tag_offset, & 
+                                    ntypeMin,ntypeMax,levelMin,levelMax,&
      &                              nlayersx,nlayersy,nlayersz, & 
      &                              flux_dir)
+        implicit none
       integer, intent(in)    :: mype,nprocs,iopt
       integer, intent(inout) :: tag_offset
       logical, intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       logical, intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      integer, intent(IN), optional :: ntypeMin, ntypeMax
+      integer, intent(IN), optional :: levelMin, levelMax
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       integer, intent(in), optional :: flux_dir
       end subroutine mpi_amr_comm_setup

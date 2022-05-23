@@ -11,7 +11,7 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, & 
+subroutine mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype, &
      &                                  nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -21,6 +21,9 @@
 !
 !
 ! Written :     Peter MacNeice          April 2001
+!
+!! MODIFICATIONS
+!!  2022-05-23 K. Weide  Warnings/fallbacks if remote sent less  data
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -121,38 +124,79 @@
 !
 ! define starting end ending indices for the send and recv buffers
 
+#ifdef DEBUG_LITE
+999   format(1x,'mpi_set_message_limits: Suspicious extent of block segment in ',&
+           A1,'-direction:'I3,':',I3,', dtype',I3,&
+           ', nlayers0x..0z:',3(1x,I4))
+#endif
 ! set x index extent
         if(mod(i,3).eq.1) then
           ia = 1
           ib = nlayers0x
+#ifdef DEBUG_LITE
+          if (ib > nguard0) then
+             print 999,'I',ia,ib,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          ib = min(ib,nguard0)
         elseif(mod(i,3).eq.2) then
           ia = 1
           ib = nxb
         elseif(mod(i,3).eq.0) then
           ia = nxb - nlayers0x + 1
           ib = nxb
+#ifdef DEBUG_LITE
+          if (nlayers0x > nguard0) then
+             print 999,'I',ia,ib,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          ia = max(ia,nxb - nguard0 + 1)
         endif
 ! set y index extent
         if(mod((i-1)/3,3).eq.0) then
           ja = 1
           jb = (nlayers0y-1)*k2d+1
+#ifdef DEBUG_LITE
+          if (jb > nguard0) then
+             print 999,'J',ja,jb,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          jb = min(jb,nguard0)
         elseif(mod((i-1)/3,3).eq.1) then
           ja = 1
           jb = nyb
         elseif(mod((i-1)/3,3).eq.2) then
           ja = (nyb - nlayers0y)*k2d + 1
           jb = nyb
+#ifdef DEBUG_LITE
+          if (nlayers0y > nguard0) then
+             print 999,'J',ja,jb,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          ja = max(ja,nyb - nguard0 + 1)
         endif
 ! set z index extent
         if(i.le.9) then
           ka = 1
           kb = (nlayers0z-1)*k3d+1
+#ifdef DEBUG_LITE
+          if (kb > nguard0) then
+             print 999,'K',ka,kb,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          kb = min(kb,nguard0)
         elseif(i.ge.10.and.i.le.18) then
           ka = 1
           kb = nzb
         elseif(i.ge.19) then
           ka = (nzb - nlayers0z)*k3d + 1
           kb = nzb
+#ifdef DEBUG_LITE
+          if (nlayers0z > nguard0) then
+             print 999,'K',ka,kb,dtype,nlayers0x,nlayers0y,nlayers0z
+          end if
+#endif
+          ka = max(ka,nzb - nguard0 + 1)
         endif
 
 !  Now adjust bounds appropriately for the variable being
@@ -197,4 +241,4 @@
        end if
 
       return
-      end subroutine mpi_set_message_limits
+end subroutine mpi_set_message_limits

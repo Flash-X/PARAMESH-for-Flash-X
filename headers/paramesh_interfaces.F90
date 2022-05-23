@@ -355,10 +355,12 @@
       subroutine amr_1blk_guardcell(mype,iopt,nlayers,lb,pe,             & 
      &                              lcc,lfc,lec,lnc,                     & 
      &                              l_srl_only,icoord,ldiag,             & 
-     &                              nlayersx, nlayersy, nlayersz)
+     &                              nlayersx, nlayersy, nlayersz,        &
+     &                              parentPresentRegions)
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
       logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      integer(kind=selected_int_kind(9)), intent(in), optional :: parentPresentRegions
       end subroutine amr_1blk_guardcell
       end interface
 

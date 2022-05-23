@@ -1,4 +1,4 @@
-!!!#define DEBUG
+#define DEBUG
 
 !----------------------------------------------------------------------
 ! PARAMESH - an adaptive mesh library.
@@ -37,7 +37,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -68,6 +68,9 @@
 !!
 !!   Written :     Peter MacNeice          May 2001
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-23 K. Weide  error and corner case handling
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -76,16 +79,19 @@
               mype,remote_block,remote_pe,idest,dtype,index0,lfound)
 
 !-----Use statements.
+#ifdef DEBUG_LITE
+      use Grid_data, ONLY: nprocs => gr_meshNumProcs
+      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
+#endif
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      implicit none
+!-----Implicit and Include statements.
+#include "Flashx_mpi_implicitNone.fh"
 
-!-----Include statements.
-      Include 'mpif.h'
 
 !-----Input/Output arguments.
       Integer, Intent(in)  :: mype,remote_pe,remote_block,idest
@@ -99,8 +105,12 @@
       integer :: iseg_no,jj
       logical :: llfound
 
-#ifdef DEBUG
-      integer :: pe_source(size(commatrix_recv))
+      real :: dtypeReal
+
+#if defined(DEBUG) || defined(DEBUG_LITE)
+!!$      integer :: pe_source(nprocs)
+      integer,ALLOCATABLE :: pe_source(:)
+      intrinsic pack
 #endif
 
 !-----Begin executable code.
@@ -140,16 +150,15 @@
 
       If (rem_pe.ne.mype) Then
 
-#ifdef DEBUG
+#ifdef DEBUG_LITE
+      ASSOCIATE(p => gr_theActiveCommPattern)
 !-------locate rem_pe in the list of sending processors
-        pe_source(:) = -1
-        no_of_comms = size(commatrix_recv)
-        DO CONCURRENT (jpe0 = 1:no_of_comms)
-           if (commatrix_recv(jpe0) > 0) pe_source(jpe0) = jpe0-1
-        END DO
+!!$        pe_source(:) = -1
+        no_of_comms = count(p%commatrix_recv /= 0)
+        pe_source = pack(p%commatrix_recv, p%commatrix_recv /= 0)
         jpe0 = 0
-        do jj = 1,no_of_comms
-           if (commatrix_recv(jj) > 0) then
+        do jj = 1,nprocs
+           if (p%commatrix_recv(jj) > 0) then
               jpe0 = jpe0 + 1
               pe_source(jpe0) = jj
            end if
@@ -177,15 +186,15 @@
            ' laddress ',laddress
           Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
         End If
-        no_of_segments = size(to_be_received,2)
+        no_of_segments = size(p%to_be_received,2)
         lfound = .False.
         jseg = 0
         seg_no = jseg
         Do While((.Not.lfound).and.(jseg < no_of_segments))
           jseg = jseg+1
-          If (to_be_received(1,jseg,jpe) == rem_blk .and.              & 
-              (to_be_received(2,jseg,jpe) == -1     .OR.               &
-               to_be_received(2,jseg,jpe) == rem_pe+1   ) ) Then
+          If (p%to_be_received(1,jseg,jpe) == rem_blk .and.              &
+              (p%to_be_received(2,jseg,jpe) == -1     .OR.               &
+               p%to_be_received(2,jseg,jpe) == rem_pe+1   ) ) Then
             lfound = .True.
             seg_no = jseg
           End If
@@ -193,7 +202,7 @@
 !-------Now compute where the list of segments from proc rem_pe actually begins
 !-------in the complete list of message segments received on this processor
         seg_offset = 0
-        If (rem_pe > 0) seg_offset = sum(commatrix_recv(1:rem_pe))
+        If (rem_pe > 0) seg_offset = sum(p%commatrix_recv(1:rem_pe))
         seg_no = seg_no + seg_offset
 #ifdef DEBUGX
         If (seg_no.ne.iseg_no) Then
@@ -202,7 +211,8 @@
           Call amr_abort()
         End If
 #endif /* DEBUGX */
-#endif /* DEBUG */
+      end ASSOCIATE
+#endif /* DEBUG_LITE */
 
         seg_no = iseg_no
         lfound = llfound
@@ -210,11 +220,13 @@
 !-------If the requested segment is not located stop with error message
         If (seg_no == 0) Then
           If (idest == 2) return
-#ifdef DEBUG
+#ifdef DEBUG_LITE
+          ASSOCIATE(p => gr_theActiveCommPattern)
           Write(*,*) 'Paramesh error : ',                              & 
            'message segment required is not in the list of ',          & 
            'segments received.: proc ',mype,' to_be_received ',        & 
-           to_be_received(:,:,jpe),' mpi_pattern_id ',mpi_pattern_id
+           p%to_be_received(:,:,jpe),' mpi_pattern_id ',mpi_pattern_id
+          end ASSOCIATE
 #else
           Write(*,*) 'Paramesh error : ',                              & 
            'message segment required is not in the list of ',          & 
@@ -227,6 +239,31 @@
         iaddress = mess_segment_loc(seg_no)
 
 !-------Read out message into appropriate part of unk1 or work1
+        dtypeReal = temprecv_buf(iaddress+2)
+        if (.NOT.(dtypeReal .GE. 14.0 - 0.5*(Real(3**(N_DIM)-1.0)) .AND. &
+                  dtypeReal .LE. 14.0 + 0.5*(Real(3**(N_DIM)-1.0)))) then
+#ifdef DEBUG_LITE
+          ASSOCIATE(p => gr_theActiveCommPattern)
+           Write(*,*) 'amr_mpi_find_blk_in_buffer: pe ',mype,          &
+           ' message segment with unexpected dtype ',dtypeReal,        &
+           ' remote_block ',remote_block,                              &
+           ' remote_pe ',remote_pe,                                    &
+           ' rem_blk ',rem_blk,                                        &
+           ' rem_pe ',rem_pe,                                          &
+           ' seg_no ',seg_no,' idest',idest,                           &
+           ' pe_source ',pe_source,                                    &
+           ' to_be_received ',                                         &
+           p%to_be_received(:,:,:),' mpi_pattern_id ',mpi_pattern_id
+           end ASSOCIATE
+#endif
+           dtype = 0
+           index0 = iaddress+2
+           lfound = .FALSE.
+           If (idest == 2) return
+           ierrorcode = 12345
+           dtype = anint(dtypeReal)
+           call MPI_ABORT(amr_mpi_meshComm,ierrorcode,ierr)
+        end if
         dtype = anint(temprecv_buf(iaddress+2))
 
 !-------We must Write the message into recv first in case it is larger

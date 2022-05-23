@@ -1,4 +1,73 @@
-2022-05-20  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
+2022-05-23  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_set_message_limits.F90 (mpi_set_message_limits):
+	added (1) warnings (ifdef DEBUG_LITE) and (2) attempted sane
+	fallback if a call is detected where the requested extent of the
+	data buffer in a dimension is larger than what the message segment
+	contains according to its "dtype".
+
+	* source/mpi_amr_restrict.F90 (amr_restrict): set lfulltree True
+	for "call mpi_amr_1blk_restrict" UNLESS filling guardcells.
+
+	* source/mpi_amr_guardcell.F90 (amr_guardcell): pass proper
+	"ntypeMax" argument in "mpi_amr_comm_setup" call, so the callee
+	can activate a LEAF(-and-neccessary-parents)-only comm pattern if,
+	for example, Grid_fillGuardCells was called with selectBlockType=.TRUE.
+
+	* source/mpi_amr_comm_setup.F90 (mpi_amr_comm_setup): additional
+	optional arguments for selecting (ranges of) node types and/or
+	refinement levels; only partially implemented.
+	(mpi_amr_comm_setup): activate the proper comm pattern in the new
+	way, i.e., by calling gr_pmActivateCommPattern (directly or via
+	the old-style calls like "mpi_amr_read_guard_comm" than now
+	basically do the same thing.
+	(mpi_amr_comm_setup): set the current "strt_buffer", still a
+	global variable, from the active comm pattern.
+
+	* source/mpi_amr_1blk_restrict.F90: minor cleanups througout.
+	(mpi_amr_1blk_restrict): updated the "call mpi_amr_comm_setup"
+	statement. Now pass the value of received "lfulltree" flag on to
+	"mpi_amr_comm_setup", so the latter can use it for determining
+	whether full or ancillary restriction is called for.
+	(mpi_amr_1blk_restrict): skip unneeded blocks in the post-comm
+	processing loop if we are dealing with ancillary restriction.
+
+	* source/mpi_amr_1blk_guardcell.F90: 
+	(amr_1blk_guardcell): added optional "parentPresentRegions" argument.
+	(amr_1blk_guardcell): added code to create a set of bit flags that
+	mark guard cell regions than MUST be filled (in additions to ones
+	that CAN be locally filled), if "parentPresentRegions" is not present.
+	(amr_1blk_guardcell): modified the code that checks for the need to
+	fill guard cells of the parent block.
+	(amr_1blk_guardcell): added debugging statements, mostly commented out.
+	(amr_1blk_guardcell): the effective gcregion flag mask gets cached.
+	(amr_1blk_guardcell): disabled some code for edge and node
+	variables using FLASH_PMFEATURE_UNUSED.
+	(amr_1blk_guardcell): pass effective gcregion flag mask to
+	subroutines "amr_1blk_guardcell_srl", "flash_convert_cc_hook"
+	called for the parent block where necessary to allow callees to
+	skip acting on some gc regions.
+
+	* source/amr_mpi_find_blk_in_buffer.F90: 
+	(amr_mpi_find_blk_in_buffer): updated error and corner case handling.
+
+	* source/amr_1blk_fc_cp_remote.F90: 
+	(amr_1blk_fc_cp_remote): added warnings and possible recovery in
+	case the data segment found in temprecv_buf holds less data than
+	expected.
+
+	* source/amr_1blk_cc_cp_remote.F90: 
+	(amr_1blk_cc_cp_remote): added warnings and possible recovery in
+	case the data segment found in temprecv_buf holds less data than
+	expected.
+
+	* headers/paramesh_mpi_interfaces.F90 (mpi_amr_comm_setup):
+	updated explicit interface for subroutine.
+
+	* headers/paramesh_interfaces.F90 (amr_1blk_guardcell): 
+	updated explicit interface for subroutine.
+
+2022-05-20  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/amr_morton_process.F90: 
 	(amr_morton_process): added one variant pattern each for gc and restrict comms.

@@ -154,19 +154,25 @@
                                     lguard,lprolong,                   & 
                                     lflux,ledge,lrestrict,lfulltree,   & 
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   & 
+                                    ntypeMin,ntypeMax,levelMin,levelMax,&
                                     nlayersx,nlayersy,nlayersz,        & 
                                     flux_dir)
 
 !-----Use statements.
       use gr_pmCommDataTypes, ONLY: GRID_PAT_GC, GRID_PAT_FCORR, &
                                     GRID_PAT_PROLONG, GRID_PAT_RESTRICT,&
+                                    GRID_SUBPAT_GC_OPT,                 &
+                                    GRID_SUBPAT_RESTRICT_DEFAULT,       &
+                                    GRID_SUBPAT_RESTRICT_ANC,           &
                                     gr_pmCommPattern_t
       use gr_pmCommPatternData, ONLY: gr_pmActivateCommPattern, &
-                                      gr_theActiveCommPattern
+                                      gr_theActiveCommPattern,  &
+                                      gr_pmPrintCommPattern
       Use paramesh_dimensions
       Use physicaldata
       Use workspace
       Use tree, ONLY: laddress, strt_buffer, last_buffer
+      Use paramesh_interfaces, Only : amr_1blk_guardcell_reset
       Use mpi_morton, ONLY: temprecv_buf,                              &
                             ladd_strt, ladd_end
       Use paramesh_mpi_interfaces, Only :                              & 
@@ -192,6 +198,7 @@
       use Logfile_interface, ONLY: Logfile_stamp
 #endif
 
+#include "constants.h"
 #ifndef DEBUG
       Implicit None
 #else
@@ -204,6 +211,8 @@
       Integer, Intent(inout) :: tag_offset
       Logical, Intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      integer, intent(IN), optional :: ntypeMin, ntypeMax
+      integer, intent(IN), optional :: levelMin, levelMax ! not used yet
       Integer, Intent(in), Optional :: nlayersx,nlayersy,nlayersz
       Integer, Intent(in), Optional :: flux_dir
 
@@ -218,6 +227,8 @@
       Integer :: ierror
 #endif
       Integer :: nlayerstx, nlayersty, nlayerstz
+      integer :: ntypeMinLoc, ntypeMaxLoc
+      integer :: patFam
       Integer :: flux_dirt
       Integer :: ii,jj
 #ifdef AIX
@@ -399,29 +410,83 @@
 
       Call mpi_set_message_sizes(iopt,nlayerstx,nlayersty,nlayerstz)
 
-      If (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
+      ! Much of the following is for future use - we later may want to have
+      ! comm patterns for specific ranges of node types (or even of levels).
+      ntypeMinLoc = 1; ntypeMaxLoc = ANCESTOR
+      if (present(ntypeMin)) then
+         ntypeMinLoc = ntypeMin
+      else if (lguard.and.(.not.lrestrict) ) Then
+         ntypeMinLoc = 1
+      ElseIf (lprolong) Then
+         ntypeMinLoc = 1
+      ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
+         ntypeMinLoc = 1
+      ElseIf (lrestrict) Then
+         ntypeMinLoc = PARENT_BLK
+      else
+         ntypeMinLoc = 1
+      end if
+      if (present(ntypeMax)) then
+         ntypeMaxLoc = ntypeMax
+      else if (lguard.and.(.not.lrestrict) ) Then
+         ntypeMaxLoc = PARENT_BLK
+      ElseIf (lprolong) Then
+         ntypeMaxLoc = PARENT_BLK
+      ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
+         ntypeMaxLoc = LEAF
+      ElseIf (lrestrict) Then
+         ntypeMaxLoc = PARENT_BLK
+      else
+         ntypeMaxLoc = PARENT_BLK
+      end if
 
-         Call mpi_amr_read_guard_comm(nprocs)
-!!$         call gr_pmActivateCommPattern(GRID_PAT_GC)
+      If (lguard.and.(.not.lrestrict)) Then
+         ! This is the case for communicating guard cell data proper.
+
+         patFam = GRID_PAT_GC
+         if (ntypeMaxLoc > 1) then
+            ! The following calls gr_pmActivateCommPattern(GRID_PAT_GC)
+            Call mpi_amr_read_guard_comm(nprocs)
+         else
+            call gr_pmActivateCommPattern(patFam,GRID_SUBPAT_GC_OPT)
+            mpi_pattern_id = 10
+            Call amr_1blk_guardcell_reset
+         end if
 
       ElseIf (lprolong) Then
 
+         patFam = GRID_PAT_PROLONG
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_PROLONG)
          Call mpi_amr_read_prol_comm(nprocs)
-!!$         call gr_pmActivateCommPattern(GRID_PAT_PROLONG)
 
       ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
 
+         patFam = GRID_PAT_FCORR
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_FCORR)
          Call mpi_amr_read_flux_comm(nprocs)
-!!$         call gr_pmActivateCommPattern(GRID_PAT_FCORR)
+
+      ElseIf (lrestrict .AND. (.NOT.lguard .OR. lfulltree)) Then
+
+         patFam = GRID_PAT_RESTRICT
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_RESTRICT)
+         Call mpi_amr_read_restrict_comm(nprocs)
 
       ElseIf (lrestrict) Then
+         ! We get here if we are dealing with an ancillary restriction operation
+         ! for guard cell filling.
 
-         Call mpi_amr_read_restrict_comm(nprocs)
-!!$         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT)
+         patFam = GRID_PAT_RESTRICT
+         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_ANC)
+         mpi_pattern_id = 41
+         Call amr_1blk_guardcell_reset
 
       End If
 
       pat => gr_theActiveCommPattern
+#ifdef DEBUG
+      call gr_pmPrintCommPattern(pat,'pat',mype)
+#endif
+      strt_buffer = pat % strt_buffer
 
 #ifdef DEBUG
       write(*,*) 'pe ',mype,' entered mpi_amr_comm_setup: ' &
