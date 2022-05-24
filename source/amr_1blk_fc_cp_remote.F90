@@ -414,7 +414,7 @@
                      ill,jll,kll)
 
           lessDataThanExpected = (ia>is .OR. ja>js .OR. ka>ks .OR. &
-               ib<is+il .OR. jb<js+jl .OR. kb>ks+kl)
+               ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
 #ifdef DEBUG_LITE
 800       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
                I5,' @',I5,' vtype',I3,' is,js,ks',3(1x,I5))
@@ -516,7 +516,7 @@
                      ill,jll,kll)
 
         ldte =(ia>is .OR. ja>js .OR. ka>ks .OR. &
-                ib<is+il .OR. jb<js+jl .OR. kb>ks+kl)
+                ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
 #ifdef DEBUG_LITE
           if (ldte) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
@@ -618,7 +618,7 @@
                      ill,jll,kll)
 
         ldte =(ia>is .OR. ja>js .OR. ka>ks .OR. &
-                ib<is+il .OR. jb<js+jl .OR. kb>ks+kl)
+                ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
 #ifdef DEBUG_LITE
           if (ldte) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
