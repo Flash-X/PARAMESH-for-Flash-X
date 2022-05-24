@@ -416,14 +416,16 @@
           lessDataThanExpected = (ia>is .OR. ja>js .OR. ka>ks .OR. &
                ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
 #ifdef DEBUG_LITE
-800       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
+800       format(1x,'@',I5,' amr_1blk_fc_cp_remote: Less data than expected from',&
                I5,' @',I5,' vtype',I3,' is,js,ks',3(1x,I5))
-9979           format(1x,'@',I5,'  remote_pe=',I4,', dtype=', I6, &
-                                 ', ia,ja,ka,ib,jb,kb=',6(I2,','), &
+9990      format(1x,'@',I5,' dtype=', I6, &
+                                 ', idest=',I1,',',I1,', id,jd,kd=',3(I2,','), &
+                                 ' ia,ja,ka,ib,jb,kb=',6(I2,','), &
                                  ' ill ,jll ,kll =',3(I2,','))
           if (lessDataThanExpected) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
-             print 9979,mype,remote_pe,dtype, &
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
                   ia,ja,ka,ib,jb,kb, ill ,jll ,kll
           end if
 #endif
@@ -520,7 +522,8 @@
 #ifdef DEBUG_LITE
           if (ldte) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
-             print 9979,mype,remote_pe,dtype, &
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
                   ia,ja,ka,ib,jb,kb, ill ,jll ,kll
           end if
 #endif
@@ -622,7 +625,8 @@
 #ifdef DEBUG_LITE
           if (ldte) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
-             print 9979,mype,remote_pe,dtype, &
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
                   ia,ja,ka,ib,jb,kb, ill ,jll ,kll
           end if
 #endif
@@ -710,7 +714,7 @@
         End If  ! End If (ndim == 3)
 
 #ifdef DEBUG_LITE
-810       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
+810       format(1x,'@',I5,' amr_1blk_fc_cp_remote: Less data than expected from',&
                I5,' @',I5,' is,js,ks',3(1x,I5),', THIS SHOULD NOT HAPPEN!')
         if (lessDataThanExpected) then
            If (idest .NE. 2) Then

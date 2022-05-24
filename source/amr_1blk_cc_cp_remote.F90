@@ -319,9 +319,14 @@
 #ifdef DEBUG_LITE
 800       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
                I5,' @',I5,' vtype',I3,' is,js,ks',3(1x,I5))
+9990      format(1x,'@',I5,' dtype=', I6, &
+                                 ', idest,iopt=',I1,',',I1,', id,jd,kd=',3(I2,','), &
+                                 ' ia,ja,ka,ib,jb,kb=',6(I2,','), &
+                                 ' ill ,jll ,kll =',3(I2,','))
           if (lessDataThanExpected) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
-             print 9979,mype,remote_pe,dtype, &
+             print 9990,mype,dtype, &
+                  idest,iopt, id,jd,kd, &
                   ia,ja,ka,ib,jb,kb, ill ,jll ,kll
           end if
 #endif
@@ -434,7 +439,8 @@
 #ifdef DEBUG_LITE
           if (lessDataThanExpected) then
              print 800,mype,remote_block,remote_pe,vtype,is,js,ks
-             print 9979,mype,remote_pe,dtype, &
+             print 9990,mype,dtype, &
+                  idest,iopt, id,jd,kd, &
                   ia,ja,ka,ib,jb,kb, ill ,jll ,kll
           end if
 #endif
