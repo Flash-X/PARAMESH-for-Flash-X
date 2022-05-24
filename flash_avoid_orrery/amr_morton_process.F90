@@ -58,14 +58,19 @@
 !!
 !!    Kevin Olson
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-20 K. Weide  Add one variant pattern each for gc and restrict comms
 !!***
 
 #include "constants.h"
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_morton_process()
+Subroutine amr_morton_process()
 
 !-----Use Statements
+  use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
+                                GRID_SUBPAT_RESTRICT_ANC
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -78,10 +83,8 @@
                                           mpi_setup
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Local Variables
       Integer :: nprocs,mype,tag_offset,ierr
@@ -113,6 +116,7 @@
 !-----Create guardcell filling communications information
       tag_offset = 100
       Call mpi_morton_bnd(mype,nprocs,tag_offset)
+      Call mpi_morton_bnd(mype,nprocs,tag_offset,subPatNo=GRID_SUBPAT_GC_OPT)
 !-----Create prolongation communications information
       tag_offset = 100
       Call mpi_morton_bnd_prolong(mype,nprocs,tag_offset)
@@ -122,6 +126,8 @@
 !-----Create restriction communications information
       tag_offset = 100
       Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
+      call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_ANC)
 
 
       End If CustomFlashVersion
@@ -139,6 +145,8 @@
 Subroutine amr_morton_process_flash()
 
   !-----Use Statements
+  use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
+                                GRID_SUBPAT_RESTRICT_ANC
   Use paramesh_dimensions
   Use physicaldata
   Use tree
@@ -245,6 +253,7 @@ Subroutine amr_morton_process_flash()
   !-----Create guardcell filling communications information
   tag_offset = 100
   Call mpi_morton_bnd(mype,nprocs,tag_offset)
+  call mpi_morton_bnd(mype,nprocs,tag_offset,subPatNo=GRID_SUBPAT_GC_OPT)
   !-----Create prolongation communications information
   tag_offset = 100
   Call mpi_morton_bnd_prolong(mype,nprocs,tag_offset)
@@ -254,6 +263,8 @@ Subroutine amr_morton_process_flash()
   !-----Create restriction communications information
   tag_offset = 100
   Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
+  call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_ANC)
 
   Return
 End Subroutine amr_morton_process_flash

@@ -67,6 +67,10 @@
 	* headers/paramesh_interfaces.F90 (amr_1blk_guardcell): 
 	updated explicit interface for subroutine.
 
+	* flash_avoid_orrery/amr_morton_process.F90 (amr_morton_process):
+	added one variant pattern each for gc and restrict comms.
+	(amr_morton_process_flash): ditto.
+
 2022-05-20  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/amr_morton_process.F90: 
