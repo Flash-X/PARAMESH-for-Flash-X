@@ -70,7 +70,8 @@ Subroutine amr_morton_process()
 
 !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
-                                GRID_SUBPAT_RESTRICT_ANC
+                                GRID_SUBPAT_RESTRICT_ANC, &
+                                GRID_SUBPAT_RESTRICT_FOR_FCORR
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -128,6 +129,8 @@ Subroutine amr_morton_process()
       Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
       call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
            subPatNo=GRID_SUBPAT_RESTRICT_ANC)
+      call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_FOR_FCORR)
 
 
       End If CustomFlashVersion
@@ -146,7 +149,8 @@ Subroutine amr_morton_process_flash()
 
   !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
-                                GRID_SUBPAT_RESTRICT_ANC
+                                GRID_SUBPAT_RESTRICT_ANC, &
+                                GRID_SUBPAT_RESTRICT_FOR_FCORR
   Use paramesh_dimensions
   Use physicaldata
   Use tree
@@ -265,6 +269,8 @@ Subroutine amr_morton_process_flash()
   Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
   call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
            subPatNo=GRID_SUBPAT_RESTRICT_ANC)
+  call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_FOR_FCORR)
 
   Return
 End Subroutine amr_morton_process_flash

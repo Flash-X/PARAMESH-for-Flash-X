@@ -12,7 +12,7 @@
 #include "paramesh_preprocessor.fh"
 
 
-      subroutine amr_restrict_bnd_data(mype,flux_dir)
+subroutine amr_restrict_bnd_data(mype,flux_dir)
 
 
 
@@ -81,7 +81,8 @@
 
       nguard0 = nguard*npgs
 
-      if(mpi_pattern_id.ne.40 .and. nprocs.gt.1) then
+      if(mpi_pattern_id.ne.40 .and. &
+         mpi_pattern_id.NE.42 .and. nprocs.gt.1) then
         write(*,*) 'Paramesh error : wrong pattern being', & 
      &' used for pre-communication for flux restriction :', & 
      &' Fix - insert appropriate call to mpi_amr_comm_setup'
@@ -95,6 +96,13 @@
 
 ! Is this a parent block of at least one leaf node?
       if(nodetype(lb).eq.2) then
+                 ! Skip this parent block (since we are here just in
+                 ! preparation for flux correction) IF this parent
+                 ! block has no LEAF face neighbors - i.e., this
+                 ! block is not at a fine-coarse boundary where its
+                 ! data may have to serve as a source for flux comm.
+         if ( .NOT. hasLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) &
+                      CYCLE
 
 ! If yes then cycle through its children.
         do ich=1,nchild
@@ -408,4 +416,29 @@
       endif
 
       return
-      end subroutine amr_restrict_bnd_data
+contains
+  logical function hasLeafFaceNeigh(surr)
+    implicit none
+    integer,intent(IN) :: surr(3,3,1+2*K2D,1+2*K3D)
+
+    hasLeafFaceNeigh = .FALSE.
+    if     (surr(1,1,1+K2D,1+K3D)>0 .AND. surr(3,1,1+K2D,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,3,1+K2D,1+K3D)>0 .AND. surr(3,3,1+K2D,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#if NDIM > 1
+    elseif (surr(1,2,1,1+K3D)>0 .AND. surr(3,2,1,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,2,3,1+K3D)>0 .AND. surr(3,2,3,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#if NDIM == 3
+    elseif (surr(1,2,2,1)>0 .AND. surr(3,2,2,1)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,2,2,3)>0 .AND. surr(3,2,2,3)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#endif
+#endif
+    end if
+  end function hasLeafFaceNeigh
+
+end subroutine amr_restrict_bnd_data

@@ -69,6 +69,7 @@
 !!***
 
 #include "paramesh_preprocessor.fh"
+#include "Simulation.h"
 
       Subroutine mpi_morton_bnd_restrict (mype,                        &
                                           nprocs,                      &
@@ -78,7 +79,8 @@
 !-----Use Statements
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, &
            GRID_PAT_RESTRICT, &
-           GRID_SUBPAT_RESTRICT_DEFAULT, GRID_SUBPAT_RESTRICT_ANC
+           GRID_SUBPAT_RESTRICT_DEFAULT, GRID_SUBPAT_RESTRICT_ANC, &
+           GRID_SUBPAT_RESTRICT_FOR_FCORR
       use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr, &
            gr_pmPrintCommPattern
       Use paramesh_dimensions
@@ -153,11 +155,14 @@
       Do lb = 1, lnblocks
 
       If (nodetype(lb) == 2 .or.                                       &
-          (advance_all_levels .and. nodetype(lb) == 3)) Then
+           (advance_all_levels .and. nodetype(lb) == 3)) Then
         if (advance_all_levels .OR. &
-            (subPatLoc.NE.GRID_SUBPAT_RESTRICT_ANC) .OR.        &
-            any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
-                surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1) ) then
+            (subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT) .OR.        &
+            (subPatLoc == GRID_SUBPAT_RESTRICT_ANC .AND.        &
+             any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
+                 surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) .OR.&
+            (subPatLoc == GRID_SUBPAT_RESTRICT_FOR_FCORR .AND.        &
+             hasLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) ) then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
         Do i = 1,nchild
@@ -199,7 +204,31 @@
 #endif
       Return
 
-      Contains
+Contains
+  logical function hasLeafFaceNeigh(surr)
+    implicit none
+    integer,intent(IN) :: surr(3,3,1+2*K2D,1+2*K3D)
+
+    hasLeafFaceNeigh = .FALSE.
+    if     (surr(1,1,1+K2D,1+K3D)>0 .AND. surr(3,1,1+K2D,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,3,1+K2D,1+K3D)>0 .AND. surr(3,3,1+K2D,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#if NDIM > 1
+    elseif (surr(1,2,1,1+K3D)>0 .AND. surr(3,2,1,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,2,3,1+K3D)>0 .AND. surr(3,2,3,1+K3D)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#if NDIM == 3
+    elseif (surr(1,2,2,1)>0 .AND. surr(3,2,2,1)==1) then
+       hasLeafFaceNeigh = .TRUE.
+    elseif (surr(1,2,2,3)>0 .AND. surr(3,2,2,3)==1) then
+       hasLeafFaceNeigh = .TRUE.
+#endif
+#endif
+    end if
+  end function hasLeafFaceNeigh
+
         Subroutine expand_fetch_list
 
                If (Allocated(tfetch_list)) deallocate(tfetch_list)

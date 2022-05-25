@@ -81,7 +81,7 @@
 !-----Use statements.
 #ifdef DEBUG_LITE
       use Grid_data, ONLY: nprocs => gr_meshNumProcs
-      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
+      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern, gr_pmPrintCommPattern
 #endif
       Use paramesh_dimensions
       Use physicaldata
@@ -176,6 +176,7 @@
 !-------If rem_pe is not located stop with error message
         If (jpe == 0) Then
           If (idest == 2) return
+          call gr_pmPrintCommPattern(p,"amr_mpi_find_blk_in_buffer",mype)
           Write(*,*) 'Paramesh error : pe ',mype,                      &  
            ' pe address of required data is not in the list of ',      & 
            'communicating pes. ',                                      & 

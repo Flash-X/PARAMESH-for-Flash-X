@@ -164,6 +164,7 @@
                                     GRID_SUBPAT_GC_OPT,                 &
                                     GRID_SUBPAT_RESTRICT_DEFAULT,       &
                                     GRID_SUBPAT_RESTRICT_ANC,           &
+                                    GRID_SUBPAT_RESTRICT_FOR_FCORR,     &
                                     gr_pmCommPattern_t
       use gr_pmCommPatternData, ONLY: gr_pmActivateCommPattern, &
                                       gr_theActiveCommPattern,  &
@@ -464,6 +465,12 @@
          patFam = GRID_PAT_FCORR
          ! The following calls gr_pmActivateCommPattern(GRID_PAT_FCORR)
          Call mpi_amr_read_flux_comm(nprocs)
+
+      ElseIf (lrestrict .AND. (lflux.or.ledge)) Then
+
+         patFam = GRID_PAT_RESTRICT
+         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_FOR_FCORR)
+         mpi_pattern_id = 42
 
       ElseIf (lrestrict .AND. (.NOT.lguard .OR. lfulltree)) Then
 

@@ -1,3 +1,36 @@
+2022-05-25  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_morton_bnd_restrict.F90: added internal function hasLeafFaceNeigh.
+	(mpi_morton_bnd_restrict): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(mpi_morton_bnd_restrict): If GRID_SUBPAT_RESTRICT_FOR_FCORR
+	passed, skip requesting child blocks if the parent has no LEAF face-neighbors.
+
+	* source/mpi_amr_restrict_bnd_data.F90: added internal function hasLeafFaceNeigh.
+	(amr_restrict_bnd_data): skip bnd-restriction to parent blocks
+	that have no LEAF face-neighbors.
+
+	* source/mpi_amr_comm_setup.F90 (mpi_amr_comm_setup): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(mpi_amr_comm_setup): use GRID_SUBPAT_RESTRICT_FOR_FCORR in
+	appropriate circumstances. Set mpi_pattern_id = 42 in that case.
+
+	* source/amr_mpi_find_blk_in_buffer.F90
+	(amr_mpi_find_blk_in_buffer): tweaked debug output.
+
+	* source/amr_morton_process.F90 (amr_morton_process): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process): added "call mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+
+	* headers/gr_pmCommPatternData.F90 (gr_pmCommPatternData):
+	increased room for restriction comm subpatterns to 3.
+
+	* headers/gr_pmCommDataTypes.F90 (gr_pmCommDataTypes): added
+	constant GRID_SUBPAT_RESTRICT_FOR_FCORR=3.
+
+	* flash_avoid_orrery/amr_morton_process.F90 (amr_morton_process):
+	reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process): added "call mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process_flash): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process_flash): added "call	mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+
 2022-05-23  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_set_message_limits.F90 (mpi_set_message_limits):

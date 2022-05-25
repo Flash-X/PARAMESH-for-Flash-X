@@ -73,6 +73,8 @@ module gr_pmCommDataTypes
   integer,parameter,public:: GRID_PAT_GC=10, GRID_PAT_PROLONG=20, GRID_PAT_FCORR=30, GRID_PAT_RESTRICT=40
 
   integer,parameter,public:: GRID_SUBPAT_GC_DEFAULT=1, GRID_SUBPAT_GC_OPT=2
+
   integer,parameter,public:: GRID_SUBPAT_RESTRICT_DEFAULT=1, GRID_SUBPAT_RESTRICT_ANC=2
+  integer,parameter,public:: GRID_SUBPAT_RESTRICT_FOR_FCORR=3
 
 end module gr_pmCommDataTypes
