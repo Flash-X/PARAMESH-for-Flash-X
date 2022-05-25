@@ -101,8 +101,8 @@ subroutine amr_restrict_bnd_data(mype,flux_dir)
                  ! block has no LEAF face neighbors - i.e., this
                  ! block is not at a fine-coarse boundary where its
                  ! data may have to serve as a source for flux comm.
-         if ( .NOT. hasLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) &
-                      CYCLE
+         if (.NOT. hasLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) &
+              CYCLE
 
 ! If yes then cycle through its children.
         do ich=1,nchild
@@ -142,6 +142,7 @@ subroutine amr_restrict_bnd_data(mype,flux_dir)
             enddo
           endif
 
+          if(remote_pe2.ne.mype) CYCLE
 
 ! Is this child a leaf block(nodetype=1)?
 ! If it is then fetch its data.

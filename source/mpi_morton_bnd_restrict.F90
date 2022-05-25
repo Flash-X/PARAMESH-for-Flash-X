@@ -113,6 +113,7 @@
       Integer,Dimension (:,:),Allocatable :: tfetch_list
       TYPE(gr_pmCommPattern_t),pointer :: pattern
       integer :: subPatLoc
+      integer :: jf,dtype,dir0,b0,bc0
 
 !-----Begin executable code.
       npts_neigh1 = npts_neigh
@@ -160,9 +161,7 @@
             (subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT) .OR.        &
             (subPatLoc == GRID_SUBPAT_RESTRICT_ANC .AND.        &
              any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
-                 surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) .OR.&
-            (subPatLoc == GRID_SUBPAT_RESTRICT_FOR_FCORR .AND.        &
-             hasLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) ) then
+                 surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) ) then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
         Do i = 1,nchild
@@ -178,6 +177,37 @@
 
          End If  ! End If child
          End Do  ! End Do i = 1,nchild
+
+        else if ((subPatLoc == GRID_SUBPAT_RESTRICT_FOR_FCORR .AND.        &
+             hasLeafFaceNeighs(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb))) ) then
+           childLoop:Do i = 1,nchild
+              If (child(1,i,lb) > 0 .and. &
+                  child(2,i,lb) .ne. mype) Then
+                 dtype = 0
+                 do jf = 1,nfaces
+                    if (isLeafFaceNeigh(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb),jf)) then
+                       dir0 = (jf-1) / 2
+                       b0 = mod(jf-1,2)
+                       bc0 = mod((i-1)/(2**dir0),2)
+!!$                       print*,'i,jf,dir0,b0,bc0,dtype:',i,jf,dir0,b0,bc0,dtype
+                       if (bc0 == b0) then
+                          if (dtype == 0) then
+                             dtype = 14 + (2*b0-1)*3**dir0
+                          else
+                             dtype = 14
+                          end if
+
+                          if (istack == 0 .OR. dtype .NE. 14) istack = istack + 1
+                          If (istack > npts_neigh1) Call expand_fetch_list
+                          fetch_list(1,istack) = child(1,i,lb)
+                          fetch_list(2,istack) = child(2,i,lb)
+                          fetch_list(3,istack) = dtype
+                          if(dtype == 14) cycle childLoop
+                       end if
+                    end if
+                 end do
+              End If  ! End If child
+           End Do childLoop  ! End Do i = 1,nchild
 
       end if  ! End if (advance_all_levels .OR. ...
       End If  ! End If (nodetype(lb) <= 2 .or. (advance_all_levels ...))
@@ -205,29 +235,55 @@
       Return
 
 Contains
-  logical function hasLeafFaceNeigh(surr)
+  logical function hasLeafFaceNeighs(surr)
     implicit none
     integer,intent(IN) :: surr(3,3,1+2*K2D,1+2*K3D)
 
-    hasLeafFaceNeigh = .FALSE.
+    hasLeafFaceNeighs = .FALSE.
     if     (surr(1,1,1+K2D,1+K3D)>0 .AND. surr(3,1,1+K2D,1+K3D)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
     elseif (surr(1,3,1+K2D,1+K3D)>0 .AND. surr(3,3,1+K2D,1+K3D)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
 #if NDIM > 1
     elseif (surr(1,2,1,1+K3D)>0 .AND. surr(3,2,1,1+K3D)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
     elseif (surr(1,2,3,1+K3D)>0 .AND. surr(3,2,3,1+K3D)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
 #if NDIM == 3
     elseif (surr(1,2,2,1)>0 .AND. surr(3,2,2,1)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
     elseif (surr(1,2,2,3)>0 .AND. surr(3,2,2,3)==1) then
-       hasLeafFaceNeigh = .TRUE.
+       hasLeafFaceNeighs = .TRUE.
 #endif
 #endif
     end if
-  end function hasLeafFaceNeigh
+  end function hasLeafFaceNeighs
+
+  logical function isLeafFaceNeigh(surr,jf)
+    implicit none
+    integer,intent(IN) :: surr(3,3,1+2*K2D,1+2*K3D)
+    integer,intent(IN) :: jf
+
+    isLeafFaceNeigh = .FALSE.
+    select case (jf)
+    case(1)
+       isLeafFaceNeigh = (surr(1,1,1+K2D,1+K3D)>0 .AND. surr(3,1,1+K2D,1+K3D)==1)
+    case(2)
+       isLeafFaceNeigh = (surr(1,3,1+K2D,1+K3D)>0 .AND. surr(3,3,1+K2D,1+K3D)==1)
+#if NDIM > 1
+    case(3)
+       isLeafFaceNeigh = (surr(1,2,1,1+K3D)>0 .AND. surr(3,2,1,1+K3D)==1)
+    case(4)
+       isLeafFaceNeigh = (surr(1,2,3,1+K3D)>0 .AND. surr(3,2,3,1+K3D)==1)
+#if NDIM == 3
+    case(5)
+       isLeafFaceNeigh = (surr(1,2,2,1)>0 .AND. surr(3,2,2,1)==1)
+    case(6)
+       isLeafFaceNeigh = (surr(1,2,2,3)>0 .AND. surr(3,2,2,3)==1)
+#endif
+#endif
+    end select
+  end function isLeafFaceNeigh
 
         Subroutine expand_fetch_list
 

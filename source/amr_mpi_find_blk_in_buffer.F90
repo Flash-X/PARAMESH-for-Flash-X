@@ -184,7 +184,8 @@
            ' remote_pe ',remote_pe,                                    & 
            ' rem_blk ',rem_blk,                                          & 
            ' rem_pe ',rem_pe,                                          & 
-           ' laddress ',laddress
+           ' pe_source ',pe_source,                                    &
+           ' laddress ',laddress(:,1:10),' ...'
           Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
         End If
         no_of_segments = size(p%to_be_received,2)
