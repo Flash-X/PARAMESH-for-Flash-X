@@ -146,6 +146,10 @@
 !!   Peter MacNeice (June 2000) with modifications by Kevin Olson for
 !!   directional guardcell filling and flux conservation.
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Use and pass local gr_pmCommPattern_t POINTER "pat"
+!!  2022-05-23 K. Weide  Additional optional args for selecting nodetypes&levels
+!!  2022-05-25 K. Weide  Use GRID_SUBPAT_RESTRICT_FOR_FCORR if appropriate
 !!***
 
 #include "paramesh_preprocessor.fh"

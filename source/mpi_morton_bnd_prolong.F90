@@ -1,13 +1,15 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/mpi_morton_bnd_prolong
+!!****if* source/mpi_morton_bnd_prolong
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_morton_bnd
@@ -61,6 +63,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
 !!***
 
 #include "paramesh_preprocessor.fh"

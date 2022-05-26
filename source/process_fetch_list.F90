@@ -16,7 +16,8 @@
 !!
 !! MODIFICATIONS
 !!
-!!  2022-05-20 K. Weide  Added pattern argument
+!!  2022-05-13 K. Weide  Added pattern arg, changed comm pattern references
+!!  2022-05-20 K. Weide  changed pattern dummy arg to POINTER_INTENT_IN; debug
 !!***
 
 #include "paramesh_preprocessor.fh"

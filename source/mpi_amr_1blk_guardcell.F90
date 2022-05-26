@@ -198,6 +198,13 @@
 !!   Michael Gehmeyr & Peter MacNeice (November 1999) with modifications by 
 !!   Kevin Olson for layered guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-05-23 K. Weide  Optional parentPresentRegions arg;
+!!                       changed code that determines "coarse" flag;
+!!                       create bit mask for GC regions than MUST be filled,
+!!                       and pass it to _srl, flash_convert_cc_hook when needed;
+!!                       cache effective gcregion flag mask;
+!!                       disabled some code for edge and node variables
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

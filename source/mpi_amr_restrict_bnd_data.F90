@@ -34,6 +34,11 @@ subroutine amr_restrict_bnd_data(mype,flux_dir)
 !
 !
 ! Written :     Peter MacNeice          February 1997
+!!
+!! MODIFICATIONS
+!!  2022-05-25 K. Weide  Allow mpi_pattern_id 42 as well as 40;
+!!                       skip restriction to parents without LEAF face-neighbors
+!!                       and from children without cached grid meta-information
 !------------------------------------------------------------------------
 
       use paramesh_dimensions

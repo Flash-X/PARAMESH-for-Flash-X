@@ -1,3 +1,40 @@
+!!****ih* headers/gr_pmCommPatternData
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   gr_pmCommPatternData
+!!
+!! SYNOPSIS
+!!
+!!   use gr_pmCommPatternData
+!!
+!! USES
+!!
+!!   gr_pmCommDataTypes ,ONLY: gr_pmCommPattern_t
+!!   tree
+!!
+!! DESCRIPTION
+!!
+!!   Fortran module which holds data structures for managing
+!!   Paramesh communication patterns.
+!!
+!! HISTORY
+!!
+!!  2022-05-13 K. Weide  created
+!!  2022-05-20 K. Weide  added space for alternative comm patterns
+!!  2022-05-25 K. Weide  added space for an additional restriction subpattern
+!!***
+
 module gr_pmCommPatternData
   use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
 

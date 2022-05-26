@@ -1,13 +1,15 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/mpi_morton_bnd_restrict
+!!****if* source/mpi_morton_bnd_restrict
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_morton_bnd_restrict
@@ -64,8 +66,11 @@
 !!
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson, August 2007.
-!!    Optional arg subPatNo                 Klaus Weide May 2022
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
+!!  2022-05-20 K. Weide  Variant pattern for subPatNo=GRID_SUBPAT_RESTRICT_ANC
+!!  2022-05-25 K. Weide  Variant pattern for GRID_SUBPAT_RESTRICT_FOR_FCORR
 !!***
 
 #include "paramesh_preprocessor.fh"

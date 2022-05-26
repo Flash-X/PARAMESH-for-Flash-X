@@ -25,6 +25,9 @@
 !
 !
 ! Written :     Peter MacNeice, Maharaj Bhat & Michael Gehmeyr   June 2000
+!!
+!! HISTORY
+!!  2022-05-13 K. Weide  This file and subroutine are now unused by Flash-X.
 !------------------------------------------------------------------------
 !
 ! Arguments:

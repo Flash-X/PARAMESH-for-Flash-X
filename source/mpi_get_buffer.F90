@@ -23,6 +23,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Changed include for MPI, removed "use mpi_morton"
 !------------------------------------------------------------------------
 !
 ! Arguments:

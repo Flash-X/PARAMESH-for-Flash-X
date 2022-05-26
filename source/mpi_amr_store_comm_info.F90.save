@@ -7,6 +7,10 @@
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
 
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Renamed "max_no_to_send_*" to "num_recipient_pes_*"
+!!  2022-05-13 K. Weide  This file version is now unused and not compiled.
+
 #include "paramesh_preprocessor.fh"
 
 !------------------

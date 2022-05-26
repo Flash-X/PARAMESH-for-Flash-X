@@ -1,17 +1,48 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
+!!****ih* headers/mpi_morton
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   mpi_morton
+!!
+!! SYNOPSIS
+!!
+!!   use mpi_morton
+!!
+!! INCLUDES
+!!
+!!   paramesh_preprocessor.fh
+!!
+!! USES
+!!
+!!   paramesh_dimensions
+!!
+!! DESCRIPTION
+!!
+!!   Fortran module which holds mostly data related to the organization of
+!!   Paramesh's domain data communications (guard cell exchange, prolongation,
+!!   flux communication, restriction).
+!!
+!! AUTHORS
+!!
+!!  PARAMESH4 authors
+!!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  removed many variables replaced by gr_pmCommPattern_t
+!!  2022-05-25 K. Weide  removed REORDER directives
+!!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+
 #include "paramesh_preprocessor.fh"
-!-----------------------------------------------------------------------
-! mpi_morton Module
 
 
 

@@ -79,6 +79,8 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-23 K. Weide  Pass ntypeMax to mpi_amr_comm_setup for LEAF-only fills
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

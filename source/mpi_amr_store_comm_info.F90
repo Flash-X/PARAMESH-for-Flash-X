@@ -1,11 +1,28 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
+!!****if* source/mpi_amr_store_comm_info
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   mpi_amr_store_comm_info
+!!
+!! MODIFICATIONS
+!!
+!!  2022-05-13 K. Weide  Shortened taking advantage of new gr_pmCommPatternData;
+!!                       turned "mpi_amr_write_*_comm" subroutines into no-ops;
+!!                       now "mpi_amr_read_*_comm" subroutines just activate
+!!                       proper patterns by calling gr_pmActivateCommPattern
+!!                       and doing final preparation for use such as setting
+!!                       "strt_buffer".
+!!***
 
 #include "paramesh_preprocessor.fh"
 

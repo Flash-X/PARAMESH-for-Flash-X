@@ -340,7 +340,7 @@
 
 	* source/mpi_amr_store_comm_info.F90: shortened a lot, taking
 	advantage of new functionality in gr_pmCommPatternData.
-	"mpi_amr_write_*_comm" sobroutines are now no-ops.
+	"mpi_amr_write_*_comm" subroutines are now no-ops.
 	(mpi_amr_read_guard_comm): essentially just activates the proper
 	comm pattern by calling the new "gr_pmActivateCommPattern", then
 	assigns the proper value to "strt_buffer" (still a global in

@@ -69,6 +69,8 @@
 !!
 !!   Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  changes for updated management of comm patterns
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

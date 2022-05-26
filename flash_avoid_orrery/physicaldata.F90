@@ -1,4 +1,4 @@
-!!****h* headers/physicaldata
+!!****ih* flash_avoid_orrery/physicaldata
 !! NOTICE
 !!  This file derived from PARAMESH - an adaptive mesh library.
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
@@ -16,7 +16,11 @@
 !! 
 !! SYNOPSIS
 !!
-!!   module physicaldata
+!!   use physicaldata
+!!
+!! INCLUDES
+!!
+!!   paramesh_preprocessor.fh
 !!  
 !! USES
 !!
@@ -39,6 +43,8 @@
 !!
 !!  Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-20 K. Weide  added "pcache_gcregions" variables
 !!***
 
 

@@ -1,22 +1,27 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****h* headers/physicaldata
+!!****ih* headers/physicaldata
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !!
 !! NAME
 !!
 !!   physicaldata
-!! 
+!!
 !! SYNOPSIS
 !!
-!!   module physicaldata
-!!  
+!!   use physicaldata
+!!
+!! INCLUDES
+!!
+!!   paramesh_preprocessor.fh
+!!
 !! USES
 !!
 !!   paramesh_dimensions
@@ -38,6 +43,8 @@
 !!
 !!  Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-20 K. Weide  added "pcache_gcregions" variables
 !!***
 
 
