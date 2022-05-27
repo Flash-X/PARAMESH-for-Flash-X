@@ -73,6 +73,7 @@
 !! MODIFICATIONS
 !!
 !!  2022-05-23 K. Weide  Pass lfulltree=TRUE unless filling guard cells
+!!  2022-05-27 K. Weide  Changes for pdg stuff, now loop over groups
 !!***
 
 #include "paramesh_preprocessor.fh"

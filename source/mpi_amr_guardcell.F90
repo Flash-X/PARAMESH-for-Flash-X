@@ -79,6 +79,8 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-27 K. Weide  Additions for pdg, call amr_guardcell_onePdg in loop
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

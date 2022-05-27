@@ -1,3 +1,117 @@
+2022-05-27  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/gr_pdgInit.F90: new file to support MultiPhysData code changes ("pdg stuff").
+
+	* source/gr_pdgDimenInitOne.F90: ditto.
+
+	* source/gr_pdgClose.F90: ditto.
+
+	* headers/paramesh_interfaces.F90: 
+	bringing in MultiPhysData code changes ("pdg stuff"): new
+	pdgNo,pdg, and/or ig args to many routines; some variant routines;
+	"use gr_pmPdgDecl" where needed; renamed some routines; introduced
+	looping over groups in some routines.
+
+	* headers/paramesh_mpi_interfaces.F90: ditto.
+
+	* headers/gr_pmPdgDecl.F90: ditto.
+
+	* headers/paramesh_dimensions.F90: ditto.
+
+	* headers/physicaldata.F90: ditto.
+
+	* headers/prolong_arrays.F90: ditto.
+
+	* headers/timings.F90: ditto.
+
+	* source/amr_1blk_cc_cp_remote.F90: ditto.
+
+	* source/amr_1blk_ec_cp_remote.F90: ditto.
+
+	* source/amr_1blk_fc_cp_remote.F90: ditto.
+
+	* source/amr_1blk_guardcell_srl.F90: ditto.
+
+	* source/amr_1blk_nc_cp_remote.F90: ditto.
+
+	* source/amr_close.F90: ditto.
+
+	* source/amr_initialize.F90: ditto.
+
+	* source/amr_mpi_find_blk_in_buffer.F90: ditto.
+
+	* source/amr_perm_to_1blk.F90: ditto.
+
+	* source/amr_set_runtime_parameters.F90: ditto.
+
+	* source/mpi_amr_1blk_guardcell.F90: ditto.
+
+	* source/mpi_amr_1blk_guardcell_c_to_f.F90: ditto.
+
+	* source/mpi_amr_1blk_restrict.F90: ditto.
+
+	* source/mpi_amr_comm_setup.F90: ditto.
+
+	* source/mpi_amr_edge_average_udt.F90: ditto.
+
+	* source/mpi_amr_edge_average_vdt.F90: ditto.
+
+	* source/mpi_amr_edge_diagonal_check.F90: ditto.
+
+	* source/mpi_amr_flux_conserve.F90: ditto.
+
+	* source/mpi_amr_flux_conserve_udt.F90: ditto.
+
+	* source/mpi_amr_flux_conserve_vdt.F90: ditto.
+
+	* source/mpi_amr_get_remote_block.F90: ditto.
+
+	* source/mpi_amr_get_remote_block_fvar.F90: ditto.
+
+	* source/mpi_amr_guardcell.F90: ditto.
+
+	* source/mpi_amr_prolong.F90: ditto.
+
+	* source/mpi_amr_prolong_fc_divbconsist.F90: ditto.
+
+	* source/mpi_amr_restrict.F90: ditto.
+
+	* source/mpi_amr_restrict_bnd_data.F90: ditto.
+
+	* source/mpi_amr_restrict_bnd_data_vdt.F90: ditto.
+
+	* source/mpi_amr_restrict_fulltree.F90: ditto.
+
+	* source/mpi_get_buffer.F90: ditto.
+
+	* source/mpi_get_edge_buffer.F90: ditto.
+
+	* source/mpi_get_flux_buffer.F90: ditto.
+
+	* source/mpi_pack_blocks.F90: ditto.
+
+	* source/mpi_pack_fluxes.F90: ditto.
+
+	* source/mpi_put_buffer.F90: ditto.
+
+	* source/mpi_put_edge_buffer.F90: ditto.
+
+	* source/mpi_put_edge_buffer_1blk.F90: ditto.
+
+	* source/mpi_put_flux_buffer.F90: ditto.
+
+	* source/mpi_set_message_limits.F90: ditto.
+
+	* source/mpi_unpack_blocks.F90: ditto.
+
+	* source/mpi_unpack_fluxes.F90: ditto.
+
+	* bittree/amr_initialize.F90: ditto.
+
+	* flash_avoid_orrery/amr_initialize.F90: ditto.
+
+	* flash_avoid_orrery/physicaldata.F90: ditto.
+
 2022-05-23  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_set_message_limits.F90 (mpi_set_message_limits):

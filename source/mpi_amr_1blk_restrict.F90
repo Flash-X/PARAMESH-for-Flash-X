@@ -112,6 +112,7 @@
 !! MODIFICATIONS
 !!
 !!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
+!!  2022-05-27 K. Weide  renamed, additions for pdg stuff, disabled ec,nc code
 !!***
 
 !!REORDER(5): unk, facevar[xyz]

@@ -11,6 +11,7 @@
 !!
 !!  2022-05-13 K. Weide  Added pattern args of type gr_pmCommPattern_t
 !!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces
+!!  2022-05-27 K. Weide  Added pdg,ig args; changed routine names; gr_pmPdgDecl
 
       module paramesh_mpi_interfaces
 

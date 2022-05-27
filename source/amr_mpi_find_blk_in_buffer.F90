@@ -84,8 +84,6 @@
       use Grid_data, ONLY: nprocs => gr_meshNumProcs
       use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
 #endif
-      Use paramesh_dimensions
-      Use physicaldata
       Use tree, only : lnblocks, strt_buffer, laddress
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm

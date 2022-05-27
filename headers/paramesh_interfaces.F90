@@ -15,6 +15,8 @@
 !     Michael L. Rilee, December 2002, *clean_divb*
 !        Support for projecting field onto divergenceless field
 !
+!!  2022-05-27 K. Weide  Added pdgNo,pdg,ig args; variant routines; gr_pmPdgDecl
+!
 !#ifdef HAVE_CONFIG_H
 !#include <config.h>
 !#endif
