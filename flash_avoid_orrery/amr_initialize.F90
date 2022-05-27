@@ -1,4 +1,4 @@
-!!****if* source/amr_initialize
+!!****if* flash_avoid_orrery/amr_initialize
 !! NOTICE
 !!  This file derived from PARAMESH - an adaptive mesh library.
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
@@ -39,6 +39,7 @@
 !!   timings
 !!   paramesh_comm_data
 !!   paramesh_interfaces
+!!   gr_pmCommPatternData
 !!
 !! CALLS
 !!
@@ -46,6 +47,7 @@
 !!   amr_prolong_fun_init
 !!   amr_abort
 !!   amr_set_runtime_parameters
+!!   gr_pmInitCommPatterns
 !!
 !! RETURNS
 !!
@@ -79,6 +81,9 @@
       Subroutine amr_initialize 
 
 !-----Use statements
+      use gr_pmCommPatternData, ONLY: gr_pmInitCommPatterns, &
+                                      gr_pmActivateCommPattern, &
+                                      gr_theActiveCommPattern
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -93,10 +98,8 @@
                                       amr_prolong_fun_init,            &
                                       gr_pdgDimenInitOne
 
-      Implicit None
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Integer variables
       Integer :: nfield, nprocs, mype, maxprocs
@@ -841,7 +844,7 @@
       Allocate(bsize(mdim,maxblocks_tr))
       Allocate(bnd_box(2,mdim,maxblocks_tr))
       Allocate(level_cell_sizes(mdim,maxlevels))
-      Allocate(laddress(1:2,1:maxblocks_alloc))
+
       Allocate(surr_blks(3,3,1+2*k2d,1+2*k3d,maxblocks_alloc))
 #ifdef SAVE_MORTS
       Allocate(surr_morts(6,3,1+2*k2d,1+2*k3d,maxblocks_alloc))
@@ -874,13 +877,6 @@
        Allocate(tempw1(ilw1:iuw1,jlw1:juw1,klw1:kuw1))
 
       End If  ! End If (nvar_work <= 0)
-
-!-----Allocate morton data
-
-      Allocate(laddress_guard(1:2,1:maxblocks_alloc))
-      Allocate(laddress_prol(1:2,1:maxblocks_alloc))
-      Allocate(laddress_flux(1:2,1:maxblocks_alloc))
-      Allocate(laddress_restrict(1:2,1:maxblocks_alloc))
 
 !-----Allocate prolong_arrays data
 
@@ -1134,8 +1130,10 @@
       bc_block_neighs_status = -1
 
 !-----Initialize some arrays used in controling mpi communications
-      commatrix_recv(:) = 0
-      commatrix_send(:) = 0
+      call gr_pmInitCommPatterns(nprocs,maxblocks_alloc)
+      call gr_pmActivateCommPattern(1)
+      gr_theActiveCommPattern % commatrix_recv(:) = 0
+      gr_theActiveCommPattern % commatrix_send(:) = 0
 
 !-----initialize the instance counter
       instance = 0

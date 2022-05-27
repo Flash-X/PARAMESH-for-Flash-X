@@ -19,7 +19,8 @@
 !!                               icoord,ldiag,nlayers0x, 
 !!                               nlayers0y,nlayers0z, 
 !!                               ipolar,
-!!                               curBlock)
+!!                               curBlock,
+!!                               presentRegions)
 !!   Call amr_1blk_guardcell_srl(integer,integer,integer,integer,
 !!                                integer,integer, 
 !!                               integer array,logical,logical,
@@ -27,7 +28,8 @@
 !!                               integer,logical,integer, 
 !!                               integer,integer, 
 !!                               integer array,
-!!                               OPTIONAL integer)
+!!                               OPTIONAL integer,
+!!                               OPTIONAL integer(kind=i27b))
 !!
 !! ARGUMENTS
 !!
@@ -49,9 +51,9 @@
 !!   Logical, Intent(in) :: lfc a logical switch controlling whether facevar data
 !!                              is filled
 !!   Logical, Intent(in) :: lec a logical switch controlling whether unk_e_x(y)(z) data
-!!                              is filled
+!!                              is filled     (FLASH: unused)
 !!   Logical, Intent(in) :: lnc a logical switch controlling whether unk_n data
-!!                              is filled
+!!                              is filled     (FLASH: unused)
 !!   Integer, Intent(in) :: icoord an integer switch used to select which faces of
 !!                                 the block are to be considered. If icoord=0 all
 !!                                 faces are considered. If icoord=1 only faces perp.
@@ -73,6 +75,17 @@
 !!                                       (assuming we are called from amr_1blk_guardcell,
 !!                                       which in turn is called iteratively on a list
 !!                                       of blocks that should be in local block order)
+!!  presentRegions - if present, an integer interpreted as a set of
+!!                   3**NDIM bit flags that indicate whether each of the
+!!                   guard cell regions actually needs to be filled.
+!!                   Any region for which the corresponding bit flag is not set
+!!                   can be ignored, as far as copying data from other blocks into
+!!                   it is concerned. (It is assumed that the data in such a region
+!!                   is not really needed, probably because we are caleld to fill the
+!!                   guard cells of a parent block to serve as source data for
+!!                   interpolation, but not all regions are actually contributing
+!!                   to the stencil for the child block(s) of interest.)
+!!
 !!
 !! INCLUDES
 !!
@@ -91,8 +104,8 @@
 !!
 !!   amr_1blk_cc_cp_remote
 !!   amr_1blk_fc_cp_remote
-!!   amr_1blk_ec_cp_remote
-!!   amr_1blk_nc_cp_remote
+!!   amr_1blk_ec_cp_remote     (FLASH: unused)
+!!   amr_1blk_nc_cp_remote     (FLASH: unused)
 !!   amr_1blk_bcset
 !!
 !! RETURNS
@@ -117,6 +130,7 @@
 !!   Modified:     Kevin Olson for directional guardcell filling.
 !!
 !!   Modified:     Klaus Weide added curBlock argument    July 2012
+!!   Modified:     Klaus Weide added presentRegions arg   Mar  2021
 !!   Modified:     Klaus Weide added pdg stuff            Dec  2021
 !!
 !!***
@@ -126,7 +140,8 @@
                                         lcc,lfc,lec,lnc,               & 
                                         icoord,ldiag,nlayers0x,        & 
                                         nlayers0y,nlayers0z,           & 
-                                        ipolar,pdg,ig,curBlock)
+                                        ipolar,pdg,ig,curBlock,        &
+                                        presentRegions)
 
 !-----Use Statements
       use gr_pmPdgDecl, ONLY : pdg_t
@@ -143,6 +158,7 @@
                                       amr_1blk_ec_cp_remote,           & 
                                       amr_1blk_nc_cp_remote,           & 
                                       amr_1blk_bcset
+      use gr_flashHook_interfaces, ONLY : i27b
 
       Implicit None
 
@@ -158,6 +174,7 @@
       type(pdg_t), intent(INOUT) :: pdg
       integer, intent(in) :: ig
       Integer,OPTIONAL, Intent(in) :: curBlock
+      integer(kind=i27b),OPTIONAL, intent(in) :: presentRegions
 
 !-----Local arrays and variables
 
@@ -168,7 +185,6 @@
       Integer :: local_blk_type
       Integer :: nblk_ind
       Integer :: ip3, jp3, kp3, ip4, jp4, kp4
-      Integer :: ip5, jp5, kp5, ip6, jp6, kp6
       Integer :: ibnd, jbnd, kbnd
       Integer :: jpolar(2)
       Double Precision :: time1
@@ -252,12 +268,6 @@
         ip4 = 0
         jp4 = 0
         kp4 = 0
-        ip5 = 0
-        jp5 = 0
-        kp5 = 0
-        ip6 = 0
-        jp6 = 0
-        kp6 = 0
 
         ibnd = 0
         jbnd = 0
@@ -281,7 +291,6 @@
           jp2 = 1
           kp2 = 1
           ilays = nlayers0x
-          If (lrestrict_in_progress) ip5 = 1
         ElseIf (jface == 2) Then
           remote_blk = surrblks(1,3,2,2)
           remote_pe  = surrblks(2,3,2,2)
@@ -296,8 +305,6 @@
           jp2 = 1
           kp2 = 1
           ilays = nlayers0x
-          If (lrestrict_in_progress) ip5 = 1
-          If (lrestrict_in_progress) ip6 = 1
         ElseIf (jface == 3) Then
           remote_blk = surrblks(1,2,1,2)
           remote_pe  = surrblks(2,2,1,2)
@@ -310,7 +317,6 @@
           ip2 = 1
           kp2 = 1
           jlays = nlayers0y
-          If (lrestrict_in_progress) jp5 = 1
         ElseIf (jface == 4) Then
           remote_blk = surrblks(1,2,3,2)
           remote_pe  = surrblks(2,2,3,2)
@@ -325,8 +331,6 @@
           ip2 = 1
           kp2 = 1
           jlays = nlayers0y
-          If (lrestrict_in_progress) jp5 = 1
-          If (lrestrict_in_progress) jp6 = 1
         ElseIf (jface == 5) Then
           remote_blk = surrblks(1,2,2,1)
           remote_pe  = surrblks(2,2,2,1)
@@ -339,7 +343,6 @@
           ip2 = 1
           jp2 = 1
           klays = nlayers0z
-          If (lrestrict_in_progress) kp5 = 1
         ElseIf (jface == 6) Then
           remote_blk = surrblks(1,2,2,3)
           remote_pe  = surrblks(2,2,2,3)
@@ -354,8 +357,6 @@
           ip2 = 1
           jp2 = 1
           klays = nlayers0z
-          If (lrestrict_in_progress) kp5 = 1
-          If (lrestrict_in_progress) kp6 = 1
 
         End If  ! End If (jface == 1)
 
@@ -368,6 +369,7 @@
 !-------from its data.
 
         If (remote_blk > 0) Then
+          if (doSkip(ibnd,jbnd,kbnd,presentRegions)) CYCLE
 
           If (timing_mpix) Then
              time2 = mpi_wtime()
@@ -395,6 +397,7 @@
                        nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
@@ -408,6 +411,7 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,ip3,jp3,kp3,                        & 
                        nblk_ind,ig)
+#endif
 
 
         ElseIf (remote_blk <= -20) Then
@@ -454,17 +458,6 @@
           kp3 = 0
           kp4 = 0
 
-          ip5 = 1
-          jp5 = 1
-          kp5 = 0
-          ip6 = 0
-          jp6 = 0
-          kp6 = 0
-          If (lrestrict_in_progress) Then
-            If (ii == 3 )ip6 = 1
-            If (jj == 3 )jp6 = 1
-          End If  ! End If (lrestrict_in_progress)
-    
           remote_blk = surrblks(1,ii,jj,2)
           remote_pe  = surrblks(2,ii,jj,2)
           remote_type  = surrblks(3,ii,jj,2)
@@ -507,6 +500,7 @@
 !-------from its data.
 
         If (remote_blk > 0) Then
+          if (doSkip(ibnd,jbnd,kbnd,presentRegions)) CYCLE
 
           if (timing_mpix) Then
              time2 = mpi_wtime()
@@ -535,6 +529,7 @@
                        nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
@@ -548,6 +543,7 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
                        nblk_ind,ig)
+#endif
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
@@ -632,6 +628,7 @@
 !-------from its data.
 
         If (remote_blk > 0) Then
+          if (doSkip(ibnd,jbnd,kbnd,presentRegions)) CYCLE
 
           If (timing_mpix) Then
              time2 = mpi_wtime()
@@ -657,6 +654,7 @@
                        nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
@@ -671,6 +669,7 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
                        nblk_ind,ig)
+#endif
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
@@ -751,6 +750,7 @@
 !-------from its data.
 
         If (remote_blk > 0) Then
+          if (doSkip(ibnd,jbnd,kbnd,presentRegions)) CYCLE
 
           If (timing_mpix) Then
              time2 = mpi_wtime()
@@ -778,6 +778,7 @@
                        nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
@@ -792,6 +793,7 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
                        nblk_ind,ig)
+#endif
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
@@ -885,6 +887,7 @@
 !-------from its data.
 
         If (remote_blk > 0) Then
+          if (doSkip(ibnd,jbnd,kbnd,presentRegions)) CYCLE
 
           If (timing_mpix) Then
              time2 = mpi_wtime()
@@ -911,6 +914,7 @@
                        nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
+#ifdef FLASH_PMFEATURE_UNUSED
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
@@ -924,6 +928,7 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
                        nblk_ind,ig)
+#endif
 
         ElseIf (remote_blk <= -20) Then
 
@@ -951,4 +956,25 @@
       end ASSOCIATE
 
       Return
+    contains
+      PURE logical function doSkip(ibnd,jbnd,kbnd,flags)
+        integer,intent(in) :: ibnd,jbnd,kbnd
+        integer(kind=i27b),intent(in),OPTIONAL :: flags
+
+        integer :: iD,jD,kD
+        intrinsic ibits
+
+        doSkip = .FALSE.
+        if (present(flags)) then
+           if (flags .NE. -1 .AND. iblock == 2) then
+              iD =  ibnd+1
+              jD = (jbnd+1) * K2D * 3
+              kD = (kbnd+1) * K3D * 9
+
+              doSkip = (ibits(flags,iD+jD+kD,1) == 0_i27b)
+
+           end if
+        end if
+      end function doSkip
+
       End Subroutine amr_1blk_guardcell_srl

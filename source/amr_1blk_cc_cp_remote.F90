@@ -65,7 +65,7 @@
 !! INCLUDES
 !! 
 !!  paramesh_preprocessor.fh
-!!  mpif.h
+!!  Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -99,6 +99,10 @@
 !!  Peter MacNeice, July 1998.
 !!  Klaus Weide (2021) additions for pdg stuff
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-20 K. Weide  Added DEBUG_LITE code
+!!  2022-05-23 K. Weide  Warnings, possible recovery for wrong dtype
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -122,15 +126,17 @@
       Use physicaldata, only : spherical_pm, lsingular_line, no_permanent_guardcells
       Use tree, only : lnblocks
       Use workspace, only : work1, work
-      Use mpi_morton
+      Use mpi_morton, ONLY: temprecv_buf
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
       Use paramesh_mpi_interfaces, only : mpiSet_message_limits
       Use timings, only : timing_mpix, timer_amr_1blk_cc_cp_remote
 
-      Implicit None
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
+
+#if defined(DEBUG) || defined(DEBUG_ALL)
+#define DEBUG_LITE
+#endif
 
 !-----Input/Output Arguments
       Integer, Intent(in) :: mype,remote_pe,remote_block
@@ -152,6 +158,7 @@
       Integer :: ierr,dtype
       Integer :: vtype
       Logical :: lfound
+      logical :: lessDataThanExpected
 
 !-----Begin Executable code.
 
@@ -320,9 +327,26 @@
           Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig,  & 
                        ill,jll,kll)
 
-          kk = kd
+          lessDataThanExpected = (ia>is .OR. ja>js .OR. ka>ks .OR. &
+               ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
+#ifdef DEBUG_LITE
+800       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
+               I5,' @',I5,' vtype',I3,' is,js,ks',3(1x,I5))
+9990      format(1x,'@',I5,' dtype=', I6, &
+                                 ', idest,iopt=',I1,',',I1,', id,jd,kd=',3(I2,','), &
+                                 ' ia,ja,ka,ib,jb,kb=',6(I2,','), &
+                                 ' ill ,jll ,kll =',3(I2,','))
+          if (lessDataThanExpected) then
+             print 800,mype,remote_block,remote_pe,vtype,is,js,ks
+             print 9990,mype,dtype, &
+                  idest,iopt, id,jd,kd, &
+                  ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+          end if
+#endif
+
+          kk = max(kd, kd + (ka-ks))
           Do k = ka,kb
-           jj = jd
+           jj = max(jd, jd + (ja-js))
            jstride = 1
            js2 = js
            js1 = js+jl
@@ -335,34 +359,62 @@
             If (no_permanent_guardcells) Then
               js2 = jd + jl + (nguard - 2*(jd+jl)) +1
               js1 = jd      + (nguard - 2* jd    ) +1
-              jj  = jd + jl
             Else
               js2 = jd + jl + 2*(nguard - (jd+jl)) +1
               js1 = jd      + 2*(nguard -  jd    ) +1
-              jj  = jd + jl
             End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
           ElseIf(ipolar(2).eq.+1.and.jd.gt.nyb+nguard) then
             jstride = -1
             If (no_permanent_guardcells) Then
               js1 = nyb - ( jd    -(nyb+nguard+1))
               js2 = nyb - ((jd+jl)-(nyb+nguard+1))
-              jj  = jd + jl
             Else
               js1 = (nyb+nguard)-( jd    -(nyb+nguard+1))
               js2 = (nyb+nguard)-((jd+jl)-(nyb+nguard+1))
-              jj  = jd + jl
             End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
           End If  ! End If (ipolar(1) == -1 .and. jd <= nguard)
           End If  ! End If (lsingular_line)
           End If  ! End If (spherical_pm)
 
           Do j = ja,jb
-          ii = id
+          ii = max(id, id + (ia-is))
           Do i = ia,ib
             If (k >= ks .and. k <= ks + kl) Then
             If (j >= js2.and. j <= js1)     Then
             If (i >= is .and. i <= is + il) Then
 
+#ifdef DEBUG_LITE
+            if (indx+ngcell_on_cc .GE. size(temprecv_buf,1)) then
+9980           format('*** WARNING *** on PE',I4,'  in amr_1blk_cc_cp_remote,', &
+                    ' copying to unk1 reaches or exceeds end of temprecv_buf!')
+               print 9980,mype
+9979           format(1x,'@',I12,'  remote_pe=',I4,', dtype=', I6, &
+                                 ', ia,ja,ka,ib,jb,kb=',6(I2,','), &
+                                 ' ill ,jll ,kll =',3(I2,','))
+               print 9979,mype,remote_pe,dtype, &
+                    ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+9981           format(1x,'@',I12,'  remote_pe=',I4,', remote_block=', I6, &
+                                 ', idest,iopt=',I1,',',I1,', id,jd,kd,is,js,ks=',6(I2,','), &
+                                 ' ilays,jlays,klays=',3(I2,','), &
+                                 ' nblk_ind,ipolar=',I2,',',2(I2:','))
+               print 9981,mype,remote_pe,remote_block, idest,iopt, &
+                    id,jd,kd,is,js,ks, ilays,jlays,klays, nblk_ind,ipolar
+9982           format(1x,'@',I12,1x, 12(1x,I3),' ngcell_on_cc=',I4)
+               print 9982,mype, kk, k,ka,kb, &
+                                jj, j,ja,jb, &
+                                ii, i,ia,ib, &
+                                ngcell_on_cc
+#define REAL_FORMAT ES20.13
+9983           format(1x,'@',I12,'  indx,ngcell_on_cc,indx+ngcell_on_cc,size(temprecv_buf,1)=', &
+                                    I6,1x,I3,1x,I6,1x,I7,'  dtype=',I3,', lfound=',L1, &
+                                    ', temprecv_buf(indx)=',REAL_FORMAT)
+               print 9983,mype,indx,ngcell_on_cc,indx+ngcell_on_cc,size(temprecv_buf,1),dtype,lfound,&
+                    temprecv_buf(indx)
+               !call Driver_abort("I have had enough!")
+            end if
+#endif
             Do ivar = 1, ngcell_on_cc
               ivar_next = gcell_on_cc_pointer(ivar)
               unk1(ivar_next,ii,jj,kk,idest) =                         & 
@@ -394,10 +446,21 @@
 
           Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig,  & 
                        ill,jll,kll)
-          kk = kd
+          lessDataThanExpected = (ia>is .OR. ja>js .OR. ka>ks .OR. &
+               ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
+#ifdef DEBUG_LITE
+          if (lessDataThanExpected) then
+             print 800,mype,remote_block,remote_pe,vtype,is,js,ks
+             print 9990,mype,dtype, &
+                  idest,iopt, id,jd,kd, &
+                  ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+          end if
+#endif
+
+          kk = max(kd, kd + (ka-ks))
           Do k = ka,kb
 
-          jj = jd
+          jj = max(jd, jd + (ja-js))
           jstride = 1
           js2 = js
           js1 = js+jl
@@ -409,29 +472,27 @@
             If (no_permanent_guardcells) Then
               js2 = jd + jl + (nguard_work - 2*(jd+jl)) +1
               js1 = jd      + (nguard_work - 2* jd    ) +1
-              jj  = jd + jl
             Else
               js2 = jd + jl + 2*(nguard_work - (jd+jl)) +1
               js1 = jd      + 2*(nguard_work -  jd    ) +1
-              jj  = jd + jl
             End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
           Elseif(ipolar(2) == +1 .and. jd > nyb+nguard_work) Then
             jstride = -1
             If (no_permanent_guardcells) Then
               js1 = nyb - ( jd    -(nyb+nguard_work+1))
               js2 = nyb - ((jd+jl)-(nyb+nguard_work+1))
-              jj  = jd + jl
             Else
               js1 = (nyb+nguard_work)-( jd    -(nyb+nguard_work+1))
               js2 = (nyb+nguard_work)-((jd+jl)-(nyb+nguard_work+1))
-              jj  = jd + jl
             End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
           End If  ! End If (ipolar(1).eq.-1.and.jd.le.nguard_work)
           End If  ! End If (lsingular_line)
           End If  ! End If (spherical_pm)
 
           Do j = ja,jb
-          ii = id
+          ii = max(id, id + (ia-is))
 
           Do i = ia,ib
             If (k >= ks .and. k <= ks + kl) Then
@@ -459,6 +520,15 @@
          timer_amr_1blk_cc_cp_remote(3) = -999.
         End If
 
+#ifdef DEBUG_LITE
+810       format(1x,'@',I5,' amr_1blk_cc_cp_remote: Less data than expected from',&
+               I5,' @',I5,' is,js,ks',3(1x,I5),', THIS SHOULD NOT HAPPEN!')
+        if (lessDataThanExpected) then
+           If (idest .NE. 2) Then
+              print 810,mype,remote_block,remote_pe,is,js,ks
+           end if
+        end if
+#endif
       End If  ! End If (remote_block <= lnblocks .and. remote_pe == mype)
       end ASSOCIATE
       Return

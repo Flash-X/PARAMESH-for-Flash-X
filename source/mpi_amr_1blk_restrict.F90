@@ -35,8 +35,8 @@
 !!        Logical switches which indicate which data is to be restricted.
 !!         lcc -> cell centered
 !!         lfc -> face centered
-!!         lec -> edge centered
-!!         lnc -> node centered
+!!         lec -> edge centered     (FLASH: unused)
+!!         lnc -> node centered     (FLASH: unused)
 !!
 !!   logical, intent(in) :: lfulltree
 !!        A switch to indicate if the entire tree is to be restricted.  If true the
@@ -49,7 +49,10 @@
 !!        the guardcell filling step so that only those blocks at jumps in refinement
 !!        need to restrict data to their parents.  This leads to a performance
 !!        savings.
-!!        
+!!        The greatest performance savings are enabled, and the restriction is
+!!        also handled as an ancillary operation as far as the communication pattern
+!!        is concerned, as long as the lfulltree flag is not TRUE.
+!!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
@@ -73,12 +76,12 @@
 !!   amr_perm_to_1blk,
 !!   amr_1blk_guardcell,
 !!   amr_restrict_unk_fun,
-!!   amr_restrict_nc_fun,
+!!   amr_restrict_nc_fun,     (FLASH: unused)
 !!   amr_restrict_fc_fun,
-!!   amr_restrict_ec_fun,
+!!   amr_restrict_ec_fun,     (FLASH: unused)
 !!   amr_restrict_work_fun,
 !!   amr_restrict_work_fun_recip,
-!!   amr_1blk_nc_cp_remote,
+!!   amr_1blk_nc_cp_remote,     (FLASH: unused)
 !!   comm_int_max_to_all,
 !!   comm_int_min_to_all
 !!   amr_block_geometry
@@ -106,6 +109,9 @@
 !!
 !!   Peter MacNeice (February 1999).
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -156,7 +162,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   use gr_flashHook_interfaces
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-  Implicit None
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
   Integer, Intent(in)  :: mype,iopt
@@ -189,7 +195,8 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: ip1, jp1, kp1, ip3, jp3, kp3
   Integer :: ng1, ndel
   Integer :: i1,i2,j1,j2,k1,k2
-  Integer,Save :: cnodetype,cempty
+  Integer :: cempty
+  Integer,Save :: cnodetype
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
@@ -197,8 +204,6 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
 
-!-----Include Statements
-  include 'mpif.h'
 
 !-----Begin Executable Code
   ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
@@ -306,11 +311,11 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
         ledge     = .False.
         lrestrict = .True.
         Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
-                              lflux,ledge,lrestrict,.False.,           & 
+                              lflux,ledge,lrestrict,lfulltree,         &
                               iopt,lcc,lfc,lec,lnc,                    & 
                               tag_offset,                              & 
                               pdg,ig,                                  &
-                              1,1,1)
+                              nlayersx=1,nlayersy=1,nlayersz=1)
 
         If (lnblocks > 0) Then
            Do lb = 1,lnblocks
@@ -318,7 +323,17 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 !-----Is this a parent block of at least one leaf node?
               If ((nodetype(lb) == 2 .and. lrefine(lb) == level) .or. &
                   (nodetype(lb) == 2 .and. filling_guardcells)) Then
-
+                 ! Skip this parent block if (1) we are here just in
+                 ! preparation for filling guard cells, AND (2) this
+                 ! parent block has no LEAF neighbors - i.e., this
+                 ! block is not at a fine-coarse boundary where its
+                 ! data may have to serve as a source for interpolation.
+                 if (lguard .AND. filling_guardcells .AND. .NOT.lfulltree &
+                      .AND. &
+                      .NOT.&
+                      any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.&
+                          surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) &
+                          CYCLE
 
 !-----If yes then cycle through its children.
                  Do ich=1,nchild

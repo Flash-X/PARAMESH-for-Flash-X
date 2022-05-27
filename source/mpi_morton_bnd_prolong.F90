@@ -26,7 +26,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -36,11 +36,14 @@
 !!   timings
 !!   mpi_morton
 !!   constants
+!!   gr_pmCommDataTypes
+!!   gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_guard_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -60,28 +63,26 @@
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpi_morton_bnd_prolong (mype,nprocs,tag_offset)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, GRID_PAT_PROLONG
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh
       Use constants
 
       Use paramesh_mpi_interfaces, only : mpi_amr_write_prol_comm,     & 
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
-!-----Include Statements
-      Include 'mpif.h'
+!-----Include Statements.
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Integer, Intent(in)    ::  mype,nprocs
@@ -105,6 +106,7 @@
       Integer, Dimension(:,:),       Allocatable :: recvstatus
       Integer, Dimension(:,:),       Allocatable :: fetch_list
       Integer, Dimension(:,:),       Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
 
 !-----Begin Executable Code
 
@@ -212,9 +214,11 @@
 
 !--------------------------------------------------
 
+      pattern => gr_pmCommPatternPtr(GRID_PAT_PROLONG)
+
 ! Initializations
-      commatrix_send = 0
-      commatrix_recv = 0
+      pattern % commatrix_send(:) = 0
+      pattern % commatrix_recv(:) = 0
 
 !-----Construct a list of potential neighbors of all blocks on this
 !-----processor, and potential neighbors of their parents.
@@ -371,7 +375,8 @@
 
       End Do  ! End Do lb = 1, lnblocks
 
-      Call process_fetch_list(fetch_list,                              &
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &

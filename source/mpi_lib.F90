@@ -577,6 +577,7 @@
 ! module mpi_morton, and the actual allocation is performed here.
 !
 ! Written :     Peter MacNeice          June 2000
+! Modified :    Klaus Weide              May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -594,9 +595,6 @@
 
 !------------------------------------------------------------------------
 
-      allocate( pe_source(1:nprocs)             )
-      allocate( commatrix_send(1:nprocs)        )
-      allocate( commatrix_recv(1:nprocs)        )
       allocate( ir_buf(2,1:nprocs)              )
       allocate( is_buf(2,1:nprocs)              )
 
@@ -618,11 +616,13 @@
 ! exit from the program.
 !
 ! Written :     Peter MacNeice          June 2000
+! Modified :    Klaus Weide              May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
 !
 !------------------------------------------------------------------------
+      use gr_pmCommPatternData, ONLY: gr_pmDeallocateCommPatterns
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -630,9 +630,7 @@
 
 !------------------------------------------------------------------------
 
-      if(allocated(pe_source)) deallocate( pe_source     )
-      if(allocated(commatrix_send)) deallocate( commatrix_send)
-      if(allocated(commatrix_recv)) deallocate( commatrix_recv)
+      call gr_pmDeallocateCommPatterns()
       if(allocated(ir_buf)) deallocate( ir_buf        )
       if(allocated(is_buf)) deallocate( is_buf        )
 
@@ -891,7 +889,7 @@
 
 
 
-      subroutine mpi_xchange_blocks(mype,nprocs, tag_offset, & 
+      subroutine mpi_xchange_blocks(pattern,mype,nprocs, tag_offset, &
      &                              buf_dim_send, S_buffer, &
      &                              buf_dim_recv, R_buffer)
 
@@ -904,6 +902,7 @@
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
 ! Modified to use MPI_Isend:   Klaus Weide              October 2021
+! Modified for pattern arg::   Klaus Weide              May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -917,17 +916,17 @@
 !
 !------------------------------------------------------------------------
 
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use workspace
-      use mpi_morton
+      use mpi_morton, ONLY: is_buf, ir_buf
       Use paramesh_comm_data
  
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
 
-      include 'mpif.h'
-
+      TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)    :: mype,nprocs,buf_dim_send,buf_dim_recv
       integer, intent(inout) :: tag_offset
       real,    intent(in)   ,ASYNCHRONOUS :: S_buffer(buf_dim_send)
@@ -952,13 +951,14 @@
       Call MPI_BARRIER(amr_mpi_meshComm, ierr)
 #endif
 
-      if (commatrix_send(mype+1) > 0  & 
+    ASSOCIATE(p => pattern)
+      if (p% commatrix_send(mype+1) > 0  &
      &    .or.  & 
-     &    commatrix_recv(mype+1) > 0) then
+     &    p% commatrix_recv(mype+1) > 0) then
         write(*,*) 'Paramesh error :  error in xchange : pe ',mype, & 
      &      ' diagonal element of commatrix is non-zero ', & 
-     &      commatrix_recv(mype+1), & 
-     &      commatrix_send(mype+1)
+     &      p% commatrix_recv(mype+1), &
+     &      p% commatrix_send(mype+1)
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
 
@@ -974,14 +974,14 @@
          itag = tag_offset !OK because 1 msg per process.
 #endif
                                  ! receive to pe=j
-         if(commatrix_recv(i).gt.0) then
+         if(p% commatrix_recv(i).gt.0) then
             ij = ij+1
             istrt = ir_buf(1,i)
             ilast = ir_buf(2,i)
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-            if(isize.gt.buf_dim_recv) then
+            if(isize > buf_dim_recv - istrt + 1) then
                write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 1:', & 
      &                    ' message is bigger than buffer space  ' & 
      &           ,' isrc ',isrc,' idest ',idest,' i ',i, & 
@@ -1006,14 +1006,14 @@
          itag = tag_offset !OK because 1 msg per process.
 #endif
          ! send from mype=i
-         if(commatrix_send(j).gt.0) then
+         if(p% commatrix_send(j).gt.0) then
             ji = ji+1
             istrt = is_buf(1,j)
             ilast = is_buf(2,j)
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-             if(isize.gt.buf_dim_send) then
+             if(isize > buf_dim_send - istrt + 1) then
                  write(*,*) 'PARAMESH ERROR : ', & 
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
@@ -1035,14 +1035,14 @@
          itag = tag_offset !OK because 1 msg per process.
 #endif
                                 ! send from mype=i
-         if(commatrix_send(j).gt.0) then
+         if(p% commatrix_send(j).gt.0) then
             ji = ji+1
             istrt = is_buf(1,j)
             ilast = is_buf(2,j)
             isize = ilast-istrt+1
 
             if (amr_error_checking) then
-             if(isize.gt.buf_dim_send) then
+             if(isize > buf_dim_send - istrt + 1) then
                write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 2:', & 
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
@@ -1054,6 +1054,7 @@
                             sendRequest(ji),ierr)
         endif
       enddo
+    end ASSOCIATE
 
       if(ji.gt.0) &
      &   call MPI_Waitall(ji,sendRequest,MPI_STATUSES_IGNORE, &
@@ -1071,7 +1072,7 @@
       end subroutine mpi_xchange_blocks
 
 
-
+#ifdef FLASH_PMFEATURE_UNUSED
       subroutine mpi_xchange_tree_info(mype,nprocs, tag_offset, & 
      &                              buf_dim, S_buffer, R_buffer)
 
@@ -1151,7 +1152,7 @@
 
             if (amr_error_checking) then
              if(isize.gt.buf_dim) then
-               write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 3:', & 
+               write(*,*) 'PARAMESH ERROR : mpi_xchange_tree_info 3:', &
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,errcode,ierr)
              endif
@@ -1179,7 +1180,7 @@
 
             if (amr_error_checking) then
              if(isize.gt.buf_dim) then
-               write(*,*) 'PARAMESH ERROR : mpi_xchange_blocks 4:', & 
+               write(*,*) 'PARAMESH ERROR : mpi_xchange_tree_info 4:', &
      &                   ' message is bigger than buffer space  '
                  call mpi_abort(amr_mpi_meshComm,errcode,ierr)
              endif
@@ -1203,7 +1204,7 @@
       deallocate( recvstatus )
 
       return
-      end subroutine mpi_xchange_tree_info
+    end subroutine mpi_xchange_tree_info
 
 !--------------------------------------------------------------------
-
+#endif

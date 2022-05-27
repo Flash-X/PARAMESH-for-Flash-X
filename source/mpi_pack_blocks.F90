@@ -10,7 +10,7 @@
 #include "paramesh_preprocessor.fh"
 
 !#define DEBUG
-      subroutine mpiPack_blocks(mype,nprocs,iopt, & 
+subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,S_buffer,offset, & 
                                  pdg,ig,                  &
@@ -22,9 +22,13 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!
+!! MODIFICATIONS
+!!  2022-05-27 K. Weide  Changed for pdg stuff, renamed subroutines
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      pattern        current communication pattern
 !      mype           current processor id
 !      nprocs         number of processors
 !      iopt           option setting for work array
@@ -41,19 +45,24 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use paramesh_comm_data
 
-      use mpi_morton
+      use mpi_morton, ONLY: is_buf, ir_buf, &
+                            l_datapacked,   &
+                            message_size_cc, &
+                            message_size_fcx,message_size_fcy,message_size_fcz,&
+                            message_size_ec,message_size_nc, message_size_wk,&
+                            mess_segment_loc
 
       use paramesh_mpi_interfaces, only : mpiGet_buffer
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
 
-      include 'mpif.h'
-
+      TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(in)  ::  buf_dim,offset
@@ -150,13 +159,14 @@
 
       index = 0
       jrpe = 0
+    ASSOCIATE(p => pattern)
       do irpe = 1,nprocs      ! define send buffer indices
-        if (commatrix_send(irpe).gt.0) then
+        if (p% commatrix_send(irpe).gt.0) then
 
            jrpe = jrpe + 1
            isize = 0
-           do iblk = 1,commatrix_send(irpe)
-            itype = to_be_sent(3,iblk,jrpe)
+           do iblk = 1,p% commatrix_send(irpe)
+            itype = p% to_be_sent(3,iblk,jrpe)
             isize = isize + loc_message_size(itype)
 #ifdef DEBUG
             write(*,*) 'pe ',mype,' sizing send buf to pe ',irpe, & 
@@ -183,7 +193,7 @@
 ! block of information in the received messages
 
       index = 0
-      tot_no_blocks_to_be_received = sum(commatrix_recv(:))
+      tot_no_blocks_to_be_received = sum(p% commatrix_recv(:))
 
       if(allocated(mess_segment_loc)) deallocate(mess_segment_loc)
       allocate(mess_segment_loc(tot_no_blocks_to_be_received))
@@ -198,13 +208,13 @@
 #endif /* DEBUG */
       do irpe = 1,nprocs      ! define recv buffer indices
 
-        if (commatrix_recv(irpe).gt.0) then
+        if (p% commatrix_recv(irpe).gt.0) then
 
            jrpe = jrpe + 1
            isize = 0
-           do iblk = 1,commatrix_recv(irpe)
+           do iblk = 1,p% commatrix_recv(irpe)
 
-             itype = to_be_received(3,iblk,jrpe)
+             itype = p% to_be_received(3,iblk,jrpe)
              isize = isize + loc_message_size(itype)
              iseg = iseg+1
              mess_segment_loc(iseg) = lindex+1
@@ -240,16 +250,16 @@
       do irpe = 1,nprocs      ! define recv buffer indices
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' irpe ',irpe,' commatrix_send ', & 
-     &        commatrix_send(irpe)
+     &        p% commatrix_send(irpe)
 #endif /* DEBUG */
-        if (commatrix_send(irpe).gt.0) then
+        if (p% commatrix_send(irpe).gt.0) then
           next_pe = next_pe+1
-          do iblk = 1,commatrix_send(irpe)
-            if(to_be_sent(1,iblk,next_pe).gt.0) then
+          do iblk = 1,p% commatrix_send(irpe)
+            if(p% to_be_sent(1,iblk,next_pe).gt.0) then
 
 
-              lb = to_be_sent(1,iblk,next_pe)
-              dtype = to_be_sent(3,iblk,next_pe)
+              lb = p% to_be_sent(1,iblk,next_pe)
+              dtype = p% to_be_sent(3,iblk,next_pe)
 
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' :pack for rempe ',irpe, & 
@@ -267,7 +277,8 @@
             endif
           enddo
         endif
-      enddo
+     enddo
+   end ASSOCIATE
 
 #ifdef DEBUG
       if (index .ne. buf_dim) then
@@ -285,7 +296,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      subroutine mpi_Sbuffer_size(mype,nprocs,iopt, & 
+subroutine mpi_Sbuffer_size(pattern,mype,nprocs,iopt, &
      &                            lcc,lfc,lec,lnc, & 
      &                            buf_dim,offset, & 
      &                            block_sections, fluxes, edges, &
@@ -299,9 +310,11 @@
 !
 !
 ! Written :     Kevin Olson          January 2007
+! Modified :    Klaus Weide          May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      pattern        current communication pattern
 !      mype           current processor id
 !      nprocs         number of processors
 !      iopt           option setting for work array
@@ -317,21 +330,19 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
       use paramesh_dimensions
       use physicaldata
       use tree
       use paramesh_comm_data
 
-      use mpi_morton
-
       use paramesh_mpi_interfaces, only : mpiGet_Sbuffer_size, &
      &                                    mpiGet_Sbuffer_size_fluxes, &
      &                                    mpi_get_Sbuffer_size_edges
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
 
-      include 'mpif.h'
-
+      TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(out) ::  buf_dim
@@ -353,71 +364,72 @@
       integer :: iblk, next_pe
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      if(iopt.gt.1.and.(lfc.or.lec.or.lnc)) then
+  if(iopt.gt.1.and.(lfc.or.lec.or.lnc)) then
          write(*,*) 'Paramesh error : calling mpi_Sbuffer_size with ', & 
      &              'inconsistent argument list - iopt is > 1 while ', & 
      &              'one or more of lfc, lec and lnc are set to true.'
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
-      endif
+  endif
 
 ! count up the number of entries needed in S_buffer
 
-      index = 1 
+  index = 1
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' nprocs ',nprocs,' start packing'
 #endif /* DEBUG */
 
-      next_pe = 0
-      do irpe = 1,nprocs      ! define recv buffer indices
+  next_pe = 0
+  do irpe = 1,nprocs      ! define recv buffer indices
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' irpe ',irpe,' commatrix_send ', & 
-     &        commatrix_send(irpe)
+     &        pattern%commatrix_send(irpe)
 #endif /* DEBUG */
-        if (commatrix_send(irpe).gt.0) then
-          next_pe = next_pe+1
-          do iblk = 1,commatrix_send(irpe)
-            if(to_be_sent(1,iblk,next_pe).gt.0) then
+     if (pattern%commatrix_send(irpe).gt.0) then
+        next_pe = next_pe+1
+        do iblk = 1,pattern%commatrix_send(irpe)
+           if(pattern%to_be_sent(1,iblk,next_pe).gt.0) then
 
-              lb = to_be_sent(1,iblk,next_pe)
-              dtype = to_be_sent(3,iblk,next_pe)
+              lb = pattern%to_be_sent(1,iblk,next_pe)
+              dtype = pattern%to_be_sent(3,iblk,next_pe)
 
 #ifdef DEBUG
-        write(*,*) 'pe ',mype,' :pack for rempe ',irpe, & 
-     &     ' in buffer layer ', next_pe,' blk ', iblk, & 
-     &     ' from local lb ',lb,' dtype ',dtype,' index ',index & 
-     &     ,' buf_dim ',buf_dim
+              write(*,*) 'pe ',mype,' :pack for rempe ',irpe, &
+     &         ' in buffer layer ', next_pe,' blk ', iblk, &
+     &         ' from local lb ',lb,' dtype ',dtype,' index ',index &
+     &        ,' buf_dim ',buf_dim
 #endif /* DEBUG */
 
-	      if (block_sections) then
+              if (block_sections) then
 
-              call mpiGet_Sbuffer_size( mype,lb,dtype,iopt,index, & 
+                 call mpiGet_Sbuffer_size( mype,lb,dtype,iopt,index, & 
      &                                   lcc,lfc,lec,lnc,ig, &
      &                                   nlayersx,nlayersy,nlayersz)
 
               elseif (fluxes) then
 
-              call mpiGet_Sbuffer_size_fluxes( mype,lb,dtype,index, &
+
+                 call mpiGet_Sbuffer_size_fluxes( mype,lb,dtype,index, &
      &                                          ig,flux_dir)
 
               elseif (edges) then
 
-              call mpi_get_Sbuffer_size_edges( mype,lb,dtype,index)
+                 call mpi_get_Sbuffer_size_edges( mype,lb,dtype,index)
 
               end if
 
-            endif
-          enddo
-        endif
-      enddo
+           endif
+        enddo
+     endif
+  enddo
 
-      if (index > 0) then
+  if (index > 0) then
          buf_dim = index 
-      else
+  else
          buf_dim = 1
-      end if
+  end if
 
-      return
-      end subroutine mpi_Sbuffer_size
+  return
+end subroutine mpi_Sbuffer_size
 
 
 

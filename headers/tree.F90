@@ -170,7 +170,7 @@
       Integer, Save :: strt_buffer,last_buffer
       Integer, Allocatable, Save :: surr_blks(:,:,:,:,:)
       Integer, Allocatable, Save :: surr_morts(:,:,:,:,:)
-      Integer, Allocatable, Save :: laddress(:,:)
+      Integer, pointer, Save :: laddress(:,:) => null()
 
 ! arrays to store info about block neighbors which are boundaries
       Public :: bc_block_neighs,bc_block_neighs_send

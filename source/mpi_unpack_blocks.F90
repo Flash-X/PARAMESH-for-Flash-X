@@ -10,7 +10,7 @@
 
 #include "paramesh_preprocessor.fh"
 !#define DEBUG
-      subroutine mpi_unpack_blocks(mype,iopt, & 
+      subroutine mpi_unpack_blocks(commatrixRecv,mype,iopt, & 
      &                             lcc,lfc,lec,lnc, & 
      &                             buf_dim,R_buffer,ig, &
      &                             nlayersx,nlayersy,nlayersz)
@@ -24,9 +24,11 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+! Modified for commatrixRecv arg : Klaus Weide          May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      commatrixRecv  a component from the current communication pattern
 !      mype           current processor id
 !      iopt           option setting for work array
 !      lcc            if true include unk data in buffer
@@ -40,15 +42,14 @@
       use paramesh_dimensions
       use physicaldata
       use tree
-      use mpi_morton
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpi_put_buffer
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
-      include 'mpif.h'
-
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in) :: mype,buf_dim,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
       real,    intent(IN) ::  R_buffer(buf_dim)
@@ -65,7 +66,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      lnumb = sum(commatrix_recv(:))
+      lnumb = sum(commatrixRecv(:))
       if(lnumb.gt.maxblocks_alloc) then
             call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
@@ -105,7 +106,7 @@
 
 !------------------------------------------------------------------------
 
-      subroutine mpi_Rbuffer_size(mype,nprocs,iopt, & 
+      subroutine mpi_Rbuffer_size(pattern,mype,nprocs,iopt, & 
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim, & 
      &                           block_sections, fluxes, edges, pdg,ig, flux_dir, &
@@ -117,9 +118,11 @@
 !
 !
 ! Written :     Kevin Olson January 2007
+! Modified :    Klaus Weide          May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      pattern        current communication pattern
 !      mype           current processor id
 !      nprocs         No. of processors
 !      iopt           option setting for work array
@@ -131,10 +134,10 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
       use paramesh_dimensions
       use physicaldata
       use tree
-      use mpi_morton
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpi_get_Rbuffer_size, &
@@ -143,8 +146,7 @@
 
       implicit none
 
-      include 'mpif.h'
-
+      TYPE(gr_pmCommPattern_t),intent(in) :: pattern
       integer, intent(in)  :: mype, nprocs, iopt
       integer, intent(out) :: buf_dim
       logical, intent(in)  :: lcc,lfc,lec,lnc
@@ -169,12 +171,12 @@
 
       next_pe = 0
       do irpe = 1, nprocs
-         if (commatrix_recv(irpe) > 0) then
+         if (pattern%commatrix_recv(irpe) > 0) then
             next_pe = next_pe + 1
-            do iblk = 1, commatrix_recv(irpe)
-               if (to_be_received(1,iblk,next_pe) > 0) then
-                  lb = to_be_received(1,iblk,next_pe)
-                  dtype = to_be_received(3,iblk,next_pe)
+            do iblk = 1, pattern%commatrix_recv(irpe)
+               if (pattern%to_be_received(1,iblk,next_pe) > 0) then
+                  lb = pattern%to_be_received(1,iblk,next_pe)
+                  dtype = pattern%to_be_received(3,iblk,next_pe)
 
                                    ! unpack all arrays from buffer into lb
 #ifdef DEBUG

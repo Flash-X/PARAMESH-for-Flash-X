@@ -24,6 +24,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!
+!! MODIFICATIONS
+!!  2022-05-27 K. Weide  Changed for pdg stuff, renamed subroutines
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -52,13 +55,9 @@
       use workspace
       use paramesh_comm_data
 
-      use mpi_morton
-
       use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 
@@ -536,13 +535,10 @@
       use tree
       use workspace
       use paramesh_comm_data
-      use mpi_morton
 
       use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 

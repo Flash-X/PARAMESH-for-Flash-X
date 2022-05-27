@@ -70,6 +70,9 @@
 !!
 !!   Peter MacNeice (July 1997)
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-23 K. Weide  Pass lfulltree=TRUE unless filling guard cells
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -116,6 +119,7 @@ subroutine amr_restrict_pdgNo(mype,iopt,iempty,filling_guardcells,pdgNo)
 
 !
 ! Perform restriction
+      lfulltree = .NOT. fillingt
 
   do ig = sg,eg
      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
@@ -135,7 +139,7 @@ subroutine amr_restrict_pdgNo(mype,iopt,iempty,filling_guardcells,pdgNo)
        if(nvarcorn.gt.0.and.iopt.eq.1.and.ig.eq.1) lnc = .true.
 
        call mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc, &
-       &                         lfulltree=.FALSE.,filling_guardcells=fillingt,&
+       &                         lfulltree,filling_guardcells=fillingt,&
                                  pdg=gr_thePdgs(ig),ig=ig)
 
      end ASSOCIATE

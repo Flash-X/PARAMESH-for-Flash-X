@@ -254,7 +254,7 @@
       Deallocate(bsize)
       Deallocate(bnd_box)
       Deallocate(level_cell_sizes)
-      Deallocate(laddress)
+      nullify(laddress)
       Deallocate(surr_blks)
 #ifdef SAVE_MORTS
       Deallocate(surr_morts)
@@ -277,13 +277,6 @@
       If (curvilinear) Then
          Deallocate(cell_vol_w)
       End If  ! End of If (curvilinear)
-
-! morton data
-
-      Deallocate(laddress_guard)
-      Deallocate(laddress_prol)
-      Deallocate(laddress_flux)
-      Deallocate(laddress_restrict)
 
 ! prolong_arrays data
 

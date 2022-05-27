@@ -168,6 +168,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       Integer :: ilp,iup,jlp,jup,klp,kup
       Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
       Integer :: maxNodetype_gcWanted_loc
+      integer :: ntypeMaxLoc
 
 !------------------------------------
 !-----Begin Executable code section
@@ -177,8 +178,10 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
          Write(*,*) 'amr_guardcell:  diagonals off'
       End if
 
+      ntypeMaxLoc = 2
       If (present(maxNodetype_gcWanted)) Then
          maxNodetype_gcWanted_loc = maxNodetype_gcWanted
+         if (maxNodetype_gcWanted > 0) ntypeMaxLoc = maxNodetype_gcWanted
       Else
          maxNodetype_gcWanted_loc = -1
       End If
@@ -330,9 +333,10 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       Call mpi_amr_comm_setup(mype,nprocs,                             & 
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset,         & 
+                              iopt,lcc,lfc,lec,lnc,tag_offset,         &
                               pdg,ig,                                  &
-                              nlayersx,nlayersy,nlayersz)
+                              ntypeMax=ntypeMaxLoc,                    &
+                              nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
 
 
       If (lnblocks > 0) Then

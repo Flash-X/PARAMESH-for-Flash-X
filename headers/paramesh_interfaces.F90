@@ -364,7 +364,8 @@
      &                              lcc,lfc,lec,lnc,                     & 
      &                              l_srl_only,icoord,ldiag,             & 
                                     pdg,ig,                              &
-     &                              nlayersx, nlayersy, nlayersz)
+     &                              nlayersx, nlayersy, nlayersz,        &
+     &                              parentPresentRegions)
       use gr_pmPdgDecl, ONLY : pdg_t
       implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,icoord
@@ -372,6 +373,7 @@
       type(pdg_t), intent(INOUT) :: pdg
       integer, intent(in) :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      integer(kind=selected_int_kind(9)), intent(in), optional :: parentPresentRegions
       end subroutine amr_1blk_guardcell
       end interface
 
@@ -398,8 +400,9 @@
       subroutine amr_1blk_guardcell_srl(mype,pe,lb,iblock,iopt,nlayers,  & 
      &                         surrblks,lcc,lfc,lec,lnc,icoord,ldiag,    & 
      &                         nlayers0x,nlayers0y,nlayers0z, & 
-     &                         ipolar,pdg,ig,curBlock)
+     &                         ipolar,pdg,ig,curBlock,presentRegions)
       use gr_pmPdgDecl, ONLY : pdg_t
+      use gr_flashHook_interfaces, ONLY : i27b
       implicit none
       integer, intent(in) :: mype,iopt,nlayers,lb,pe,iblock,icoord
       integer, intent(in) :: surrblks(:,:,:,:)
@@ -409,6 +412,7 @@
       type(pdg_t), intent(INOUT) :: pdg
       integer, intent(in) :: ig
       integer,OPTIONAL, intent(in) :: curBlock
+      integer(kind=i27b),OPTIONAL, intent(in) :: presentRegions
       end subroutine amr_1blk_guardcell_srl
       end interface
 

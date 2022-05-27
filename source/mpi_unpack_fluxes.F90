@@ -9,7 +9,7 @@
 
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpiUnpack_fluxes(mype, & 
+      subroutine mpiUnpack_fluxes(commatrixRecv,mype, & 
      &                             buf_dim,R_buffer,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
@@ -21,29 +21,29 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+! Modified for commatrixRecv arg : Klaus Weide          May 2022
+!  2022-05-27 K. Weide  renamed, additions for pdg stuff
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      commatrixRecv  a component from the current communication pattern
 !      mype           current processor id
-!      nprocs         number of processors
 !      buf_dim        dimension of buffer
 !      R_buffer       receive buffer 
-!      ir_buf         starting & ending indices of buffer
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
-      use mpi_morton
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpiPut_flux_buffer
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
-      include 'mpif.h'
-
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in) :: mype,buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
       type(pdg_t), intent(IN) :: pdg
@@ -60,7 +60,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !#define DEBUG
 
-      lnumb = sum(commatrix_recv(:))
+      lnumb = sum(commatrixRecv(:))
       if(lnumb.gt.maxblocks_alloc) then
             call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif

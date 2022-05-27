@@ -14,33 +14,40 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call mpi_morton_bnd_restrict(mype, nprocs, tag_offset)
-!!   Call mpi_morton_bnd_restrict(integer, integer, integer)
+!!   Call mpi_morton_bnd_restrict(mype, nprocs, tag_offset, subPatNo)
+!!   Call mpi_morton_bnd_restrict(integer, integer, integer, integer)
 !!
 !! ARGUMENTS
 !!
 !!   Integer, Intent(in)    :: mype       Local processor id.
 !!   Integer, Intent(in)    :: nprocs     Number of processors.
 !!   Integer, Intent(inout) :: tag_offset A unique id used in marking messages.
+!!   subPatNo - Integer(in), OPTIONAL ::  request computation of non-default
+!!                                        variant of the communication pattern
 !!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
+!!   gr_pmCommDataTypes
+!!   gr_pmCommPatternData
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
 !!   timings
 !!   mpi_morton
 !!   constants
+!!   gr_pmCommDataTypes
+!!   gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_restrict_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -57,37 +64,41 @@
 !!
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson, August 2007.
+!!    Optional arg subPatNo                 Klaus Weide May 2022
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpi_morton_bnd_restrict (mype,                        &
                                           nprocs,                      &
-                                          tag_offset)
+                                          tag_offset,                  &
+                                          subPatNo)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, &
+           GRID_PAT_RESTRICT, &
+           GRID_SUBPAT_RESTRICT_DEFAULT, GRID_SUBPAT_RESTRICT_ANC
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr, &
+           gr_pmPrintCommPattern
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh
       Use constants
 
       Use paramesh_mpi_interfaces, only : mpi_amr_write_restrict_comm, & 
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Variables
       Integer, Intent(in)    ::  mype,nprocs
       Integer, Intent(inout) ::  tag_offset
+      Integer,OPTIONAL, intent(in) ::  subPatNo
 
 !-----Local variables
       Integer :: lb,i,j,k,j00
@@ -98,6 +109,8 @@
       Integer,Dimension (:),  Allocatable :: n_to_left
       Integer,Dimension (:,:),Allocatable :: fetch_list
       Integer,Dimension (:,:),Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
+      integer :: subPatLoc
 
 !-----Begin executable code.
       npts_neigh1 = npts_neigh
@@ -124,9 +137,13 @@
          n_to_left(iproc) = n_to_left(iproc) + n_to_left(iproc-1)
       End Do
 
+      subPatLoc = GRID_SUBPAT_RESTRICT_DEFAULT
+      if(present(subPatNo)) subPatLoc = subPatNo
+      pattern => gr_pmCommPatternPtr(GRID_PAT_RESTRICT,subPatNo)
+
 !-----Initializations
-      commatrix_send = 0
-      commatrix_recv = 0
+      pattern % commatrix_send(:) = 0
+      pattern % commatrix_recv(:) = 0
 
 !-----Construct a list of potential neighbors of all blocks on this
 !-----processor, and potential neighbors of their parents.
@@ -137,6 +154,10 @@
 
       If (nodetype(lb) == 2 .or.                                       &
           (advance_all_levels .and. nodetype(lb) == 3)) Then
+        if (advance_all_levels .OR. &
+            (subPatLoc.NE.GRID_SUBPAT_RESTRICT_ANC) .OR.        &
+            any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
+                surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1) ) then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
         Do i = 1,nchild
@@ -153,11 +174,13 @@
          End If  ! End If child
          End Do  ! End Do i = 1,nchild
 
-      End If  ! End If (nodetype(lb) <= 2 .or. advance_all_levels)
+      end if  ! End if (advance_all_levels .OR. ...
+      End If  ! End If (nodetype(lb) <= 2 .or. (advance_all_levels ...))
 
       End Do  ! End Do lb = 1, lnblocks
 
-      Call process_fetch_list(fetch_list,                              &
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &
@@ -165,13 +188,15 @@
                               tag_offset)
 
 !------Store communication info for future use
-       Call mpi_amr_write_restrict_comm(nprocs)
+!!$       Call mpi_amr_write_restrict_comm(nprocs) !This is a no-op now.
 
 !------Deallocate any memory which was dynamically allocated for local 
 !------use in this routine.
        If (Allocated(fetch_list)) deallocate(fetch_list)
        If (Allocated(n_to_left)) deallocate(n_to_left)
-
+#ifdef DEBUG
+       call gr_pmPrintCommPattern(pattern,'mmbr:pattern',mype)
+#endif
       Return
 
       Contains
