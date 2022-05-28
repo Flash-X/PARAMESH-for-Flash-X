@@ -141,6 +141,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Use physicaldata, only: diagonals,lrestrict_in_progress
   Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
   Use tree, only: lnblocks, nchild, lrefine, nodetype, child, laddress, empty
+  Use tree, ONLY: surr_blks
   Use workspace
   use mpi_morton
   Use timings

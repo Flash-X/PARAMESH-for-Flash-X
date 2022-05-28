@@ -92,7 +92,7 @@ subroutine amr_restrict_pdgNo(mype,iopt,iempty,filling_guardcells,pdgNo)
   integer, intent(in), optional :: pdgNo
 
   double precision :: time1
-  logical :: lcc,lfc,lec,lnc,fillingt
+  logical :: lcc,lfc,lec,lnc,lfulltree,fillingt
   integer :: npdg, ig,sg,eg
   npdg = 1
   if (present(pdgNo)) npdg = pdgNo

@@ -83,6 +83,7 @@
 #ifdef DEBUG_LITE
       use Grid_data, ONLY: nprocs => gr_meshNumProcs
       use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
+      Use physicaldata, ONLY: mpi_pattern_id
 #endif
       Use tree, only : lnblocks, strt_buffer, laddress
       Use mpi_morton

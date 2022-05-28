@@ -225,7 +225,8 @@
       Use physicaldata, only: amr_error_checking, lnew_parent
       Use physicaldata, only: lprolong_in_progress, lrestrict_in_progress
       Use physicaldata, only: lsingular_line, spherical_pm, mpi_pattern_id
-      Use physicaldata, only: pcache_blk_u,pcache_pe_u, pcache_blk_w,pcache_pe_w
+      Use physicaldata, only: pcache_blk_u,pcache_pe_u, pcache_blk_w,pcache_pe_w,&
+                              pcache_gcregions_u,pcache_gcregions_w
       Use tree
       Use timings
       Use workspace
