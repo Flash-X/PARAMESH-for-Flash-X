@@ -156,7 +156,8 @@
       Use constants, Only : pi
       Use paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
+!-----Include Statements
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Type(node), Pointer :: t, tpar
@@ -179,8 +180,6 @@
       Integer :: child_no, ierr, curr_level, parent_level, ichild
       Logical :: is_close
 
-!-----Include Statements
-      Include 'mpif.h'
 
 !-----Begin Executable code.
 !-----If the parent exists then store its size and location
@@ -452,7 +451,7 @@
 !!
 !! INCLUDES
 !!
-!!   mpif.h
+!!   none
 !!
 !! USES
 !!
@@ -499,8 +498,6 @@
       Integer :: i
       Real    :: dx, dy, dz
 
-!-----Include Statements
-      Include 'mpif.h'
 
 !-----Begin executable code.
 
@@ -587,7 +584,7 @@
 !!
 !! INCLUDES
 !!
-!!   mpif.h
+!!   none
 !!
 !! USES
 !!
@@ -622,9 +619,6 @@
       Use paramesh_dimensions, Only : ndim
 
       Implicit None
-
-!-----Include Statements.
-      Include 'mpif.h'
 
 !-----Input/Output Arguments
       Type(node), Pointer :: loc_t

@@ -1,46 +1,55 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/mpi_morton_bnd
+!!****if* source/mpi_morton_bnd
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_morton_bnd
 !!
 !! SYNOPSIS
 !!
-!!   Call mpi_morton_bnd(mype, nprocs, tag_offset)
-!!   Call mpi_morton_bnd(integer, integer, integer)
+!!   Call mpi_morton_bnd(mype, nprocs, tag_offset, subPatNo)
+!!   Call mpi_morton_bnd(integer, integer, integer, integer)
 !!
 !! ARGUMENTS
 !!
 !!   Integer, Intent(in)    :: mype       Local processor id.
 !!   Integer, Intent(in)    :: nprocs     Number of processors.
 !!   Integer, Intent(inout) :: tag_offset A unique id used in marking messages.
+!!   subPatNo - Integer(in), OPTIONAL ::  request computation of non-default
+!!                                        variant of the communication pattern
 !!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
+!!    gr_pmCommDataTypes
+!!    gr_pmCommPatternData
 !!    paramesh_dimensions
 !!    physicaldata
 !!    tree
 !!    timings
 !!    mpi_morton
 !!    constants
+!!    gr_pmCommDataTypes
+!!    gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_guard_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -58,32 +67,39 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! HISTORY
+!!    PM_OPTIMIZE_MORTONBND_FETCHLIST mods  Klaus Weide November 2018
+!!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
+!!  2022-05-20 K. Weide  Compute variant pattern for subPatNo=GRID_SUBPAT_GC_OPT
 !!***
 
 #include "paramesh_preprocessor.fh"
 
-      Subroutine mpi_morton_bnd(mype,nprocs,tag_offset)
+      Subroutine mpi_morton_bnd(mype,nprocs,tag_offset,subPatNo)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, &
+           GRID_PAT_GC, GRID_SUBPAT_GC_OPT
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh
       Use constants
 
       Use paramesh_mpi_interfaces, only : mpi_amr_write_guard_comm,    & 
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
+#include "constants.h"
 
 !-----Input/Output Arguments
       Integer, intent(in)    ::  mype,nprocs
       Integer, intent(inout) ::  tag_offset
+      Integer,OPTIONAL, intent(in) ::  subPatNo
 
 !-----Local variables and arrays.
       Real    :: eps,accuracy
@@ -92,7 +108,9 @@
       Integer :: lb,i,j,k,j00
       integer :: ia,ib,ja,jb,ka,kb
       Integer :: ierror
+#ifdef PM_UNIQUE_MPI_TAGS
       Integer :: max_no_of_blocks
+#endif
       Integer :: istack, ioff, joff, koff, itemp
       Integer :: isize, isrc, idest, itag, kk
       Integer :: nguarda, iproc
@@ -103,6 +121,10 @@
       Integer,Dimension (:,:),     Allocatable :: recvstatus
       Integer,Dimension (:,:),     Allocatable :: fetch_list
       Integer,Dimension (:,:),     Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
+      integer :: ntMin,ntMax
+      logical :: doOpt1Pattern
+      logical :: doAllNodeTypes
 
 !-----Begin Executable Code
 
@@ -110,11 +132,33 @@
       eps = accuracy                                                                                                     
       nguarda = max(nguard,nguard_work)
 
+      doAllNodeTypes = .FALSE.
+      if (advance_all_levels) doAllNodeTypes = .TRUE.
+
+      doOpt1Pattern = .FALSE.
+      if (.NOT. doAllNodeTypes .AND. present(subPatNo)) then
+         if (subPatNo == GRID_SUBPAT_GC_OPT) then
+            doOpt1Pattern = .TRUE.
+         end if
+      end if
+
+      if (doAllNodeTypes) then
+         ntMin = LEAF
+         ntMax = ANCESTOR
+      else if (doOpt1Pattern) then
+         ntMin = LEAF
+         ntMax = LEAF
+      else
+         ntMin = LEAF
+         ntMax = PARENT_BLK
+      end if
+
       npts_neigh1 = npts_neigh
       npts_neigh2 = npts_neigh+100
       allocate(fetch_list(3,npts_neigh2))
       allocate(n_to_left(0:nprocs-1))
 
+#ifdef PM_UNIQUE_MPI_TAGS
 !-----store the max no of blocks on any one processor
       Call MPI_ALLREDUCE(lnblocks,                                     & 
                          max_no_of_blocks,                             & 
@@ -123,6 +167,7 @@
                          MPI_MAX,                                      & 
                          amr_mpi_meshComm,                               & 
                          ierror)
+#endif
 
 !-----COMPUTE the number of blocks to the 'left' (ie. stored on processors with
 !-----smaller process ids) of every other processor
@@ -179,9 +224,8 @@
                          amr_mpi_meshComm,                               & 
                          recvrequest(kk),                              &
                          ierror)
-          ! Commented out next two lines (Else ...), not needed - KW 2018-11-05
-!!$         Else
-!!$            psurr_blks(:,:,:,:,lb) = surr_blks(:,:,:,:,parent(1,lb))
+         Else
+            psurr_blks(:,:,:,:,lb) = surr_blks(:,:,:,:,parent(1,lb))
          End If  ! End If (parent(2,lb) .ne. mype) 
          End If  ! End If (parent(1,lb) > 0)
       End Do  ! End Do lb = 1, lnblocks
@@ -221,7 +265,7 @@
 
       Do lb = 1, lnblocks
 
-      If (nodetype(lb) <= 2 .or. advance_all_levels) Then
+      If (nodetype(lb) >= ntMin .AND. nodetype(lb) <= ntMax) Then
 
 !-------Compute geometry information for parent if spherical_pm is defined
        If (parent(1,lb) > 0 .and. spherical_pm) Then
@@ -310,6 +354,7 @@
          End Do  ! End Do j = 1,1+2*k2d
         End Do  ! End Do k = 1,1+2*k3d
 
+        if (.NOT. present(subPatNo) .OR. ntMax == PARENT_BLK) then
 !-------ADD PARENT TO FETCH LIST (if off processor)
         If (parent(1,lb) > 0 .and. parent(2,lb) .ne. mype) Then
             istack = istack + 1
@@ -318,11 +363,13 @@
             fetch_list(2,istack) = parent(2,lb)
             fetch_list(3,istack) = 14
         End If
+        end if
 
 !-------ADD PARENT'S surrounding blocks to fetch list if the 
 !-------block 'lb' is a leaf and it is at a refinement jump.
         If (parent(1,lb) > 0 .and. nodetype(lb) == 1 .and. & 
-            parent(2,lb) .ne. mype                   .and. &
+            (parent(2,lb) .ne. mype .OR. ntMax == 1 &
+             .OR. .NOT.diagonals)                    .and. &
             any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > -20 .and.    & 
                 surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) < 0)) Then
 
@@ -389,28 +436,26 @@
 
          End If  ! End If (nodetype(lb) == 1 ...
 
-      End If  ! End If (nodetype(lb) <= 2 .or. advance_all_levels)
+      End If  ! End If (nodetype(lb) >= ntMin .AND. ...)
 
       End Do  ! End Do lb = 1, lnblocks
 
-#ifdef DEBUG
-99    format('@',I12,'  mpi_morton_bnd has fetchlist',/,('@',I12,20x,I3,': (',3I7,')'))
-      print 99,mype,(mype,i,fetch_list(:,i),i=1,istack)
-#endif
+      pattern => gr_pmCommPatternPtr(GRID_PAT_GC,subPatNo)
 
 !-----Compress 'fetch_list' and eliminate any redundances
 !-----Also, if a block appears in the list more than once this routine
 !-----will adjust which section of the block is requested (i.e. corner, 
 !-----face, or entire block)
-      Call process_fetch_list(fetch_list,                              &
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &
                               n_to_left,                               &
                               tag_offset)
 
-!------Store communication info for future Use
-       Call mpi_amr_write_guard_comm(nprocs)
+!------Store communication info for future use
+!!$       Call mpi_amr_write_guard_comm(nprocs) !This is a no-op now.
 
 !-----Deallocate any memory which was dynamically allocated for local 
 !-----Use in this routine.

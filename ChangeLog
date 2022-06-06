@@ -1,0 +1,478 @@
+2022-05-25  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_morton_bnd_restrict.F90: added internal function
+	hasLeafFaceNeighs and isLeafFaceNeigh.
+	(mpi_morton_bnd_restrict): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(mpi_morton_bnd_restrict): If GRID_SUBPAT_RESTRICT_FOR_FCORR is
+	passed, only request a child block if the parent has a LEAF
+	face-neighbor at a face direction and side for which flux
+	restriction from the child would be needed. If in such a situation
+	only one face of the child needs to contribute fine flux data for
+	flux correction, dtype may be set to 13,15,11,17,5, or 23 instead
+	of 14 so that only data from the appropriate child face will be communicated.
+
+	* source/mpi_amr_restrict_bnd_data.F90: added internal function hasLeafFaceNeigh.
+	(amr_restrict_bnd_data): skip bnd-restriction to parent blocks
+	that have no LEAF face-neighbors.
+	(amr_restrict_bnd_data): skip bnd-restriction from child blocks
+	for which no cached grid meta-information is availabe.
+
+	* source/mpi_amr_comm_setup.F90 (mpi_amr_comm_setup): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(mpi_amr_comm_setup): use GRID_SUBPAT_RESTRICT_FOR_FCORR in
+	appropriate circumstances. Set mpi_pattern_id = 42 in that case.
+
+	* source/amr_mpi_find_blk_in_buffer.F90
+	(amr_mpi_find_blk_in_buffer): tweaked debug output.
+
+	* source/amr_morton_process.F90 (amr_morton_process): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process): added "call mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+
+	* headers/gr_pmCommPatternData.F90 (gr_pmCommPatternData):
+	increased room for restriction comm subpatterns to 3.
+
+	* headers/gr_pmCommDataTypes.F90 (gr_pmCommDataTypes): added
+	constant GRID_SUBPAT_RESTRICT_FOR_FCORR=3.
+
+	* flash_avoid_orrery/amr_morton_process.F90 (amr_morton_process):
+	reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process): added "call mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process_flash): reference GRID_SUBPAT_RESTRICT_FOR_FCORR.
+	(amr_morton_process_flash): added "call	mpi_morton_bnd_restrict" with GRID_SUBPAT_RESTRICT_FOR_FCORR.
+
+2022-05-23  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_set_message_limits.F90 (mpi_set_message_limits):
+	added (1) warnings (ifdef DEBUG_LITE) and (2) attempted sane
+	fallback if a call is detected where the requested extent of the
+	data buffer in a dimension is larger than what the message segment
+	contains according to its "dtype".
+
+	* source/mpi_amr_restrict.F90 (amr_restrict): set lfulltree True
+	for "call mpi_amr_1blk_restrict" UNLESS filling guardcells.
+
+	* source/mpi_amr_guardcell.F90 (amr_guardcell): pass proper
+	"ntypeMax" argument in "mpi_amr_comm_setup" call, so the callee
+	can activate a LEAF(-and-neccessary-parents)-only comm pattern if,
+	for example, Grid_fillGuardCells was called with selectBlockType=.TRUE.
+
+	* source/mpi_amr_comm_setup.F90 (mpi_amr_comm_setup): additional
+	optional arguments for selecting (ranges of) node types and/or
+	refinement levels; only partially implemented.
+	(mpi_amr_comm_setup): activate the proper comm pattern in the new
+	way, i.e., by calling gr_pmActivateCommPattern (directly or via
+	the old-style calls like "mpi_amr_read_guard_comm" than now
+	basically do the same thing.
+	(mpi_amr_comm_setup): set the current "strt_buffer", still a
+	global variable, from the active comm pattern.
+
+	* source/mpi_amr_1blk_restrict.F90: minor cleanups througout.
+	(mpi_amr_1blk_restrict): updated the "call mpi_amr_comm_setup"
+	statement. Now pass the value of received "lfulltree" flag on to
+	"mpi_amr_comm_setup", so the latter can use it for determining
+	whether full or ancillary restriction is called for.
+	(mpi_amr_1blk_restrict): skip unneeded blocks in the post-comm
+	processing loop if we are dealing with ancillary restriction.
+
+	* source/mpi_amr_1blk_guardcell.F90: 
+	(amr_1blk_guardcell): added optional "parentPresentRegions" argument.
+	(amr_1blk_guardcell): added code to create a set of bit flags that
+	mark guard cell regions than MUST be filled (in additions to ones
+	that CAN be locally filled), if "parentPresentRegions" is not present.
+	(amr_1blk_guardcell): modified the code that checks for the need to
+	fill guard cells of the parent block.
+	(amr_1blk_guardcell): added debugging statements, mostly commented out.
+	(amr_1blk_guardcell): the effective gcregion flag mask gets cached.
+	(amr_1blk_guardcell): disabled some code for edge and node
+	variables using FLASH_PMFEATURE_UNUSED.
+	(amr_1blk_guardcell): pass effective gcregion flag mask to
+	subroutines "amr_1blk_guardcell_srl", "flash_convert_cc_hook"
+	called for the parent block where necessary to allow callees to
+	skip acting on some gc regions.
+
+	* source/amr_mpi_find_blk_in_buffer.F90: 
+	(amr_mpi_find_blk_in_buffer): updated error and corner case handling.
+
+	* source/amr_1blk_fc_cp_remote.F90: 
+	(amr_1blk_fc_cp_remote): added warnings and possible recovery in
+	case the data segment found in temprecv_buf holds less data than
+	expected.
+
+	* source/amr_1blk_cc_cp_remote.F90: 
+	(amr_1blk_cc_cp_remote): added warnings and possible recovery in
+	case the data segment found in temprecv_buf holds less data than
+	expected.
+
+	* headers/paramesh_mpi_interfaces.F90 (mpi_amr_comm_setup):
+	updated explicit interface for subroutine.
+
+	* headers/paramesh_interfaces.F90 (amr_1blk_guardcell): 
+	updated explicit interface for subroutine.
+
+	* flash_avoid_orrery/amr_morton_process.F90 (amr_morton_process):
+	added one variant pattern each for gc and restrict comms.
+	(amr_morton_process_flash): ditto.
+
+2022-05-20  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_morton_process.F90: 
+	(amr_morton_process): added one variant pattern each for gc and restrict comms.
+
+	* source/mpi_morton_bnd_restrict.F90: 
+	(mpi_morton_bnd_restrict): compute a variant pattern if subPatNo
+	is given with value GRID_SUBPAT_RESTRICT_ANC. Use
+	gr_pmCommPatternPtr to get a pointer to the proper pattern slot.
+
+	* source/mpi_morton_bnd.F90: 
+	(mpi_morton_bnd): compute a variant pattern if subPatNo
+	is given with value GRID_SUBPAT_GC_OPT. Use
+	gr_pmCommPatternPtr to get a pointer to the proper pattern slot.
+
+	* headers/paramesh_mpi_interfaces.F90: 
+	(process_fetch_list): changed "pattern" argument to POINTER_INTENT_IN.
+	(mpi_morton_bnd): added optional arg subPatNo to interface.
+	(mpi_morton_bnd_restrict): added optional arg subPatNo to
+	interface.
+
+	* source/process_fetch_list.F90: edited Robodoc header.
+	(process_fetch_list): changed "pattern" argument to POINTER_INTENT_IN.
+	(process_fetch_list): added some debug output of questionable use,
+	#ifdef DEBUG_XTRA.
+	(process_fetch_list): added "call gr_pmPrintCommPattern" at the
+	end, #ifdef DEBUG.
+
+	* source/mpi_lib.F90 (mpi_xchange_blocks): tighten buffer overrun
+	tests in three places (if (amr_error_checking)).
+
+	* source/mpi_amr_local_surr_blks_lkup.F90: minor comment edits.
+
+	* source/amr_initialize.F90: removed trailing spaces.
+
+	* source/amr_1blk_guardcell_srl.F90: added
+	"presentRegions" optional argument to "amr_1blk_guardcell_srl" interface.
+	(amr_1blk_guardcell_srl): added loghic for skipping some guard
+	cell regions if they are not included in "presentRegions" flags.
+	(amr_1blk_guardcell_srl): some other minor additions borrowed from
+	"PmAsyncExp" code variant.
+
+	* source/amr_1blk_guardcell_reset.F90 (amr_1blk_guardcell_reset):
+	added "pcache_gcregions" variables.
+
+	* source/amr_1blk_cc_cp_remote.F90: 
+	(amr_1blk_cc_cp_remote): added DEBUG_LITE code; it should only
+	print if something goes wrong.
+
+	* headers/physicaldata.F90 (physicaldata): added
+	"pcache_gcregions" variables.
+
+	* headers/paramesh_interfaces.F90 (amr_1blk_guardcell_srl): added
+	"presentRegions" optional argument to "amr_1blk_guardcell_srl" interface.
+
+	* headers/gr_pmCommPatternData.F90 (gr_pmCommPatternData): added
+	space for alternative comm patterns for GC filling and restriction.
+	(gr_pmDeallocateCommPatterns): removed unused local variable;
+	initialize "id" component.
+	(gr_pmInitCommPatterns): added for debugging. Note that the
+	pattern has to be provided as a POINTER argument. Note hardwired MAXPRINT.
+
+	* headers/gr_pmCommDataTypes.F90 (gr_pmCommDataTypes): added "id"
+	component to gr_pmCommPattern_t.
+	(gr_pmCommDataTypes): added constants GRID_SUBPAT_GC_DEFAULT=1,
+	GRID_SUBPAT_GC_OPT=2, etc.
+
+	* flash_avoid_orrery/physicaldata.F90 (physicaldata): added
+	"pcache_gcregions" variables.
+
+2022-05-13  Klaus Weide  <kweide@uchicago.edu>
+
+	* utilities/multigrid/mpi_amr_store_comm_info_mg.F90: kept
+	around, but not compiled or used by any Flash-X code.
+	(mpi_amr_write_guard_comm_mg): obsolete version, could be updated
+	to use gr_pmCommPatternData, kept for reference.
+	(mpi_amr_read_guard_comm_mg): ditto.
+	(mpi_amr_write_prol_comm_mg): ditto.
+	(mpi_amr_read_prol_comm_mg): ditto.
+	(mpi_amr_write_flux_comm_mg): ditto.
+	(mpi_amr_read_flux_comm_mg): ditto.
+	(mpi_amr_write_restrict_comm_mg): ditto.
+	(mpi_amr_read_restrict_comm_mg): ditto.
+
+	* utilities/multigrid/amr_mg_common.F90 (amr_mg_common): kept
+	around, but not compiled or used by any Flash-X code.
+	(amr_mg_common):  renamed "max_no_to_send_*" to "num_recipient_pes_*"
+	because	this better expresses the meaning.
+
+	* source/process_fetch_list.F90: added ONLY to many
+	USE statements. included "Flashx_mpi_implicitNone.fh".
+	added "pattern" first dummy argument with intent(inout).
+	(process_fetch_list): renamed "max_no_to_be_received" to
+	"num_sending_pes", "max_no_to_send" to "num_recipient_pes" because
+	it better expresses the meaning.
+	(process_fetch_list): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv",
+	"to_be_received", "num_recipient_pes", "strt_buffer".
+	(process_fetch_list): use local strtBuffer, with copy of the value
+	in the pattern.
+
+	* source/mpi_unpack_fluxes.F90: 
+	(mpi_unpack_fluxes): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_fluxes): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_fluxes): use "commatrixRecv" instead of global array.
+
+	* source/mpi_unpack_edges.F90: 
+	(mpi_unpack_edges): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_edges): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_edges): use "commatrixRecv" instead of global array.
+
+	* source/mpi_unpack_blocks.F90: 
+	(mpi_unpack_blocks): new "commatrixRecv" first dummy argument.
+	(mpi_unpack_blocks): included "Flashx_mpi_implicitNone.fh" and
+	"FortranLangFeatures.fh". removed now unnecessary "use mpi_morton".
+	(mpi_unpack_blocks): use "commatrixRecv" instead of global array.
+	(mpi_Rbuffer_size): new "pattern" first dummy argument.
+	(mpi_Rbuffer_size): added "use gr_pmCommDataTypes", removed unnecessary "use mpi_morton".
+	Removed "Include 'mpif.h'". sanitized some indentation.
+	(mpi_Rbuffer_size): use "pattern" for references to
+	"commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_fluxes.F90: 
+	(mpi_pack_fluxes): new "pattern" first dummy argument.
+	(mpi_pack_fluxes): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_fluxes): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_edges.F90: 
+	(mpi_pack_edges): new "pattern" first dummy argument.
+	(mpi_pack_edges): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_edges): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_blocks.F90: 
+	(mpi_pack_blocks): new "pattern" first dummy argument.
+	(mpi_pack_blocks): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_blocks): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+	(mpi_Sbuffer_size): new "pattern" first dummy argument.
+	(mpi_Sbuffer_size): removed unnecessary "use mpi_morton". included
+	"Flashx_mpi_implicitNone.fh". sanitized some indentation.
+	(mpi_Sbuffer_size): use "pattern" for references to
+	"commatrix_send", "to_be_sent".
+
+	* source/mpi_pack_fluxes.F90: 
+	(mpi_pack_fluxes): new "pattern" first dummy argument.
+	(mpi_pack_fluxes): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_fluxes): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_edges.F90: 
+	(mpi_pack_edges): new "pattern" first dummy argument.
+	(mpi_pack_edges): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_edges): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+
+	* source/mpi_pack_blocks.F90: 
+	(mpi_pack_blocks): new "pattern" first dummy argument.
+	(mpi_pack_blocks): added "use gr_pmCommDataTypes", added ONLY to
+	"use mpi_morton".
+	(mpi_pack_blocks): use "pattern" for references to
+	"commatrix_send", "to_be_sent", "commatrix_recv", "to_be_received".
+	(mpi_Sbuffer_size): new "pattern" first dummy argument.
+	(mpi_Sbuffer_size): removed unnecessary "use mpi_morton". included
+	"Flashx_mpi_implicitNone.fh". sanitized some indentation.
+	(mpi_Sbuffer_size): use "pattern" for references to
+	"commatrix_send", "to_be_sent".
+
+	* source/mpi_morton_bnd_restrict.F90: updated RoboDocs text.
+	removed unnecessary REORDER directives.
+	(mpi_morton_bnd_restrict): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd_prolong.F90: updated RoboDocs text.
+	removed unnecessary REORDER directives.
+	(mpi_morton_bnd_prolong): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd_fluxcon.F90: updated RoboDocs text.
+	(mpi_morton_bnd_fluxcon): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+
+	* source/mpi_morton_bnd.F90: updated RoboDocs text.
+	(mpi_morton_bnd): included "Flashx_mpi_implicitNone.fh".
+	added ONLY to "use mpi_morton". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	introduced local "pattern" pointer. have it
+	point to the proper pattern, then pass it to "process_fetch_list".
+
+	* source/mpi_lib.F90 (mpi_array_allocate): removed "pe_source" allocation.
+	(mpi_array_allocate): removed global allocations now handled by "gr_pmCommPatternData".
+	(mpi_array_deallocate): removed some allocations.
+	(mpi_array_deallocate): instead, call gr_pmDeallocateCommPatterns.
+	(mpi_xchange_blocks): new "pattern" dummy argument.
+	(mpi_xchange_blocks): added ONLY to "use mpi_morton".
+	(mpi_xchange_blocks): use "pattern" for references to
+	"commatrix_send" and "commatrix_recv".
+	(mpi_xchange_tree_info): disabled.
+
+	* source/mpi_get_buffer.F90 (mpi_get_buffer): include
+	"Flashx_mpi_implicitNone.fh". removed unnecessary "use mpi_morton".
+	(mpi_get_Sbuffer_size): ditto.
+
+	* source/mpi_amr_store_comm_info.F90.save: saved a copy of
+	(partially modfied) original "mpi_amr_store_comm_info.F90" here.
+
+	* source/mpi_amr_store_comm_info.F90: shortened a lot, taking
+	advantage of new functionality in gr_pmCommPatternData.
+	"mpi_amr_write_*_comm" subroutines are now no-ops.
+	(mpi_amr_read_guard_comm): essentially just activates the proper
+	comm pattern by calling the new "gr_pmActivateCommPattern", then
+	assigns the proper value to "strt_buffer" (still a global in
+	"tree" module).
+	(mpi_amr_read_prol_comm): ditto.
+	(mpi_amr_read_flux_comm): ditto.
+	(mpi_amr_read_restrict_comm): ditto.
+
+	* source/mpi_amr_comm_setup.F90: include
+	"Flashx_mpi_implicitNone.fh". added ONLY to "use tree". added USE
+	for "gr_pmCommDataTypes", "gr_pmCommPatternData".
+	(mpi_amr_comm_setup): moved and updated  some code producing DEBUG output.
+	(mpi_amr_comm_setup): introduced local pointer "pat". activate the
+	appropriate comm pattern, and have "pat" point to it. pass "pat" to
+	various called subroutines.
+
+	* source/amr_mpi_find_blk_in_buffer.F90
+	(amr_mpi_find_blk_in_buffer): adjusted DEBUG code, since global
+	"pe_source" is now gone.
+
+	* source/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+	* source/amr_close.F90 (amr_close): nullify instead of deallocate "laddress".
+	(amr_close): removed some more deallocations.
+
+	* source/amr_1blk_guardcell_reset.F90 (amr_1blk_guardcell_reset):
+	removed unused USE.
+
+	* source/amr_1blk_cc_cp_remote.F90: tweaked RoboDoc info.
+	(amr_1blk_cc_cp_remote): include "Flashx_mpi_implicitNone.fh".
+	added ONLY for "use mpi_morton".
+
+	* source/UNUSED/mpi_unpack_tree_info.F90: moved to UNUSED.
+
+	* source/UNUSED/mpi_pack_tree_info.F90: moved to UNUSED.
+
+	* headers/tree.F90 (tree): laddress is now a POINTER instead of an
+	ALLOCATABLE array.
+
+	* headers/paramesh_mpi_interfaces.F90: include "FortranLangFeatures.fh".
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_pack_blocks", "mpi_Sbuffer_size", "mpi_pack_edges",
+	"mpi_pack_fluxes", "mpi_Rbuffer_size", "mpi_xchange_blocks",
+	"process_fetch_list" now have "pattern" first arguments".
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_unpack_blocks", "mpi_unpack_edges", "mpi_unpack_fluxes" now
+	have "commatrixRecv" first arguments.
+	(paramesh_mpi_interfaces): subroutine interfaces
+	"mpi_pack_tree_info", "mpi_unpack_tree_info"  disabled by default.
+	(paramesh_mpi_interfaces): subroutine interface
+	"process_fetch_list" removed.
+
+	* headers/mpi_morton.F90 (mpi_morton): removed lots of (mostly)
+	array variables, most now unused because replaced by
+	gr_pmCommPattern_t structures, some unused even before.
+	including arrays named "commatrix_*", "to_be_*", etc.
+
+	* headers/gr_pmCommPatternData.F90: created.
+
+	* headers/gr_pmCommDataTypes.F90: added.
+	(gr_pmCommDataTypes): changed order of some elements in gr_pmCommPattern_t.
+	renamed "max_no_to_send" to "num_recipient_pes". added "valid" flag.
+	(gr_pmCommDataTypes): changed comment on unused "pe_source".
+
+	* headers/Makefile (Grid): created.
+
+	* flash_avoid_orrery/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+	* bittree/amr_initialize.F90: updated RoboDocs.
+	(amr_initialize): add "use gr_pmCommPatternData".
+	(amr_initialize): include "Flashx_mpi_implicitNone.fh".
+	(amr_initialize): do not allocate "laddress" arrays.
+	initialize "gr_theActiveCommPattern" instead of global "commatrix_recv", "commatrix_send".
+
+2022-02-21  Klaus Weide  <kweide>
+
+	* Reorganize source under Paramesh4 so that PARAMESH and derived
+	software that should be subject to the PARAMESH_USERS_AGREEMENT is
+	located in and under the PM4_package subdirectory.
+
+2022-02-16  Klaus Weide  <kweide>
+
+	* updated copyright and license notices in some source files
+
+2004 - 2020-06-30  University of Chicago
+
+	* Customizations of PARAMESH code for FLASH versions 2, 3, and 4
+
+2016-09     Marcos Vanella
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Adapted for INS
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/amr_restrict_fc_ins.F90:
+	Named _ins
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: 
+	Named _ins
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90:
+	handle interp=30..32
+
+2010        Chris Daley
+
+	* Paramesh4/flash_avoid_orrery/mpi_amr_exchange_nodetype.F90: created
+
+3/27/07 K. Olson removed ALL reference to 'LIBRARY'.
+
+
+2/1/07  K. Olson removed ALL references to 'shmem'.
+
+
+1/24/07 K. Olson removed all references to MPI_USED in the PARAMESH source tree
+
+
+2006-09     Klaus Weide  <kweide>
+
+	* Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90: Modified
+
+2004-02     Kevin Olson
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Written
+

@@ -79,6 +79,11 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2021       K. Weide  Tweaked to prepare for asynchronous domain data comms
+!!  2022-05-23 K. Weide  Pass ntypeMax to mpi_amr_comm_setup for LEAF-only fills
+!!  2022-06-06 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
+!!  2022-06-06 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -131,6 +136,7 @@
       Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
       Integer :: maxNodetype_gcWanted_loc
       integer :: ntype,lev
+      integer :: ntypeMaxLoc    !!DEV: consolidate - KW
 
 !------------------------------------
 !-----Begin Executable code section
@@ -140,8 +146,10 @@
          Write(*,*) 'amr_guardcell:  diagonals off'
       End if
 
+      ntypeMaxLoc = 2
       If (present(maxNodetype_gcWanted)) Then
          maxNodetype_gcWanted_loc = maxNodetype_gcWanted
+         if (maxNodetype_gcWanted > 0) ntypeMaxLoc = maxNodetype_gcWanted
       Else
          maxNodetype_gcWanted_loc = -1
       End If
@@ -303,6 +311,8 @@
                               ntype=ntype, level=lev,                  &
                               nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
       call Timers_stop("gr_mpiAmrComm s")
+!!=======
+!!DEV:                              ntypeMax=ntypeMaxLoc,                    &-KW
 
       If (lnblocks > 0) Then
       Do lb = 1,lnblocks

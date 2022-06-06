@@ -6,6 +6,8 @@
 ! usage agreement which can be found in the file
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  renamed max_no_to_send_* to num_recipient_pes_*
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -31,9 +33,6 @@
       integer :: iTmp, jTmp, kTmp
 
       istat = 0
-
-      if(.not.allocated(pe_source_guard_mg))  & 
-     &   allocate(pe_source_guard_mg(1:nprocs,1:lrefine_max))
 
 
 !!!
@@ -119,7 +118,6 @@
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
        endif
 
-      pe_source_guard_mg(:,level) = pe_source(:)
       commatrix_guard_mg(:,:,level) = 0
 
       do i = 1,nprocs
@@ -129,10 +127,10 @@
 
       if (.not.allocated(strt_guard_mg)) then
          allocate(strt_guard_mg(1:lrefine_max))
-         allocate(max_no_to_send_guard_mg(1:lrefine_max))
+         allocate(num_recipient_pes_guard_mg(1:lrefine_max))
       end if
       strt_guard_mg(level) = strt_buffer
-      max_no_to_send_guard_mg(level) = max_no_to_send
+      num_recipient_pes_guard_mg(level) = num_recipient_pes
 
       if (.not.allocated(laddress_guard_mg)) then
         allocate(laddress_guard_mg(1:2,1:maxblocks_alloc,1:lrefine_max))
@@ -163,7 +161,6 @@
 
       istat = 0
 
-      pe_source_guard(:) = pe_source_guard_mg(:,level)
       commatrix_guard(:,:) = 0
 
       do i = 1,nprocs
@@ -172,12 +169,12 @@
       enddo
 
       strt_guard = strt_guard_mg(level)
-      max_no_to_send_guard = max_no_to_send_guard_mg(level)
+      num_recipient_pes_guard = num_recipient_pes_guard_mg(level)
 
       laddress_guard(:,:) = laddress_guard_mg(:,:,level)
 
 
-      if(max_no_to_send_guard.gt.0) then
+      if(num_recipient_pes_guard.gt.0) then
 
       if(allocated(to_be_received_guard))  & 
      &                 deallocate(to_be_received_guard)
@@ -236,9 +233,6 @@
       integer :: iTmp, jTmp, kTmp
 
       istat = 0
-
-      if(.not.allocated(pe_source_prol_mg))  & 
-     &   allocate(pe_source_prol_mg(1:nprocs,1:lrefine_max))
 
 
 !!!
@@ -327,7 +321,6 @@
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
        endif
 
-      pe_source_prol_mg(:,level) = pe_source(:)
       commatrix_prol_mg(:,:,level) = 0
 
       do i = 1,nprocs
@@ -337,10 +330,10 @@
 
       if (.not.allocated(strt_prol_mg)) then
          allocate(strt_prol_mg(1:lrefine_max))
-         allocate(max_no_to_send_prol_mg(1:lrefine_max))
+         allocate(num_recipient_pes_prol_mg(1:lrefine_max))
       end if
       strt_prol_mg(level) = strt_buffer
-      max_no_to_send_prol_mg(level) = max_no_to_send
+      num_recipient_pes_prol_mg(level) = num_recipient_pes
 
       if (.not.allocated(laddress_prol_mg)) then
         allocate(laddress_prol_mg(1:2,1:maxblocks_alloc,1:lrefine_max))
@@ -371,7 +364,6 @@
 
       istat = 0
 
-      pe_source_prol(:) = pe_source_prol_mg(:,level)
       commatrix_prol(:,:) = 0
 
       do i = 1,nprocs
@@ -380,12 +372,12 @@
       enddo
 
       strt_prol = strt_prol_mg(level)
-      max_no_to_send_prol = max_no_to_send_prol_mg(level)
+      num_recipient_pes_prol = num_recipient_pes_prol_mg(level)
 
       laddress_prol(:,:) = laddress_prol_mg(:,:,level)
 
 
-      if(max_no_to_send_prol.gt.0) then
+      if(num_recipient_pes_prol.gt.0) then
 
       if(allocated(to_be_received_prol))  & 
      &                 deallocate(to_be_received_prol)
@@ -445,9 +437,6 @@
       integer :: iTmp, jTmp, kTmp
 
       istat = 0
-
-      if(.not.allocated(pe_source_flux_mg))  & 
-     &   allocate(pe_source_flux_mg(1:nprocs,1:lrefine_max))
 
 
 !!!
@@ -533,7 +522,6 @@
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
        endif
 
-      pe_source_flux_mg(:,level) = pe_source(:)
       commatrix_flux_mg(:,:,level) = 0
 
       do i = 1,nprocs
@@ -543,10 +531,10 @@
 
       if (.not.allocated(strt_flux_mg)) then
          allocate(strt_flux_mg(1:lrefine_max))
-         allocate(max_no_to_send_flux_mg(1:lrefine_max))
+         allocate(num_recipient_pes_flux_mg(1:lrefine_max))
       end if
       strt_flux_mg(level) = strt_buffer
-      max_no_to_send_flux_mg(level) = max_no_to_send
+      num_recipient_pes_flux_mg(level) = num_recipient_pes
 
       if (.not.allocated(laddress_flux_mg)) then
         allocate(laddress_flux_mg(1:2,1:maxblocks_alloc,1:lrefine_max))
@@ -577,7 +565,6 @@
 
       istat = 0
 
-      pe_source_flux(:) = pe_source_flux_mg(:,level)
       commatrix_flux(:,:) = 0
 
       do i = 1,nprocs
@@ -586,12 +573,12 @@
       enddo
 
       strt_flux = strt_flux_mg(level)
-      max_no_to_send_flux = max_no_to_send_flux_mg(level)
+      num_recipient_pes_flux = num_recipient_pes_flux_mg(level)
 
       laddress_flux(:,:) = laddress_flux_mg(:,:,level)
 
 
-      if(max_no_to_send_flux.gt.0) then
+      if(num_recipient_pes_flux.gt.0) then
 
       if(allocated(to_be_received_flux))  & 
      &                 deallocate(to_be_received_flux)
@@ -650,9 +637,6 @@
       integer :: iTmp, jTmp, kTmp
 
       istat = 0
-
-      if(.not.allocated(pe_source_restrict_mg))  & 
-     &   allocate(pe_source_restrict_mg(1:nprocs,1:lrefine_max))
 
 
 !!!
@@ -737,7 +721,6 @@
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
        endif
 
-      pe_source_restrict_mg(:,level) = pe_source(:)
       commatrix_restrict_mg(:,:,level) = 0
 
       do i = 1,nprocs
@@ -747,10 +730,10 @@
 
       if (.not.allocated(strt_restrict_mg)) then
          allocate(strt_restrict_mg(1:lrefine_max))
-         allocate(max_no_to_send_restrict_mg(1:lrefine_max))
+         allocate(num_recipient_pes_restrict_mg(1:lrefine_max))
       end if
       strt_restrict_mg(level) = strt_buffer
-      max_no_to_send_restrict_mg(level) = max_no_to_send
+      num_recipient_pes_restrict_mg(level) = num_recipient_pes
 
       if (.not.allocated(laddress_restrict_mg)) then
        allocate & 
@@ -782,7 +765,6 @@
 
       istat = 0
 
-      pe_source_restrict(:) = pe_source_restrict_mg(:,level)
       commatrix_restrict(:,:) = 0
 
       do i = 1,nprocs
@@ -791,12 +773,12 @@
       enddo
 
       strt_restrict = strt_restrict_mg(level)
-      max_no_to_send_restrict = max_no_to_send_restrict_mg(level)
+      num_recipient_pes_restrict = num_recipient_pes_restrict_mg(level)
 
       laddress_restrict(:,:) = laddress_restrict_mg(:,:,level)
 
 
-      if(max_no_to_send_restrict.gt.0) then
+      if(num_recipient_pes_restrict.gt.0) then
 
       if(allocated(to_be_received_restrict))  & 
      &                 deallocate(to_be_received_restrict)

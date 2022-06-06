@@ -1,13 +1,14 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/amr_1blk_guardcell_reset
+!!****if* source/amr_1blk_guardcell_reset
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !!
 !! NAME
 !!
@@ -46,11 +47,13 @@
 !!
 !!   Peter MacNeice, February 1999.
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Small cleanup
+!!  2022-05-20 K. Weide  Added "pcache_gcregions" variables
 !!***
 
       Subroutine amr_1blk_guardcell_reset
 
-      Use paramesh_dimensions
       Use physicaldata
 
       Implicit None

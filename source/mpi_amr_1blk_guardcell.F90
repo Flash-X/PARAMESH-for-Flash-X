@@ -198,6 +198,13 @@
 !!   Michael Gehmeyr & Peter MacNeice (November 1999) with modifications by 
 !!   Kevin Olson for layered guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-05-23 K. Weide  Optional parentPresentRegions arg;
+!!                       changed code that determines "coarse" flag;
+!!                       create bit mask for GC regions than MUST be filled,
+!!                       and pass it to _srl, flash_convert_cc_hook when needed;
+!!                       cache effective gcregion flag mask;
+!!                       disabled some code for edge and node variables
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -228,10 +235,8 @@
       use gr_flashHook_interfaces
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguements.
       Logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
@@ -243,11 +248,14 @@
       Integer :: nprocs
       Integer :: parent_lb,parent_pe
       Integer :: i,j,k, ll, idest, iblock
+      integer :: ia,ib,ja,jb,ka,kb
+      integer :: ioff,joff,koff
       Integer :: ij,ijk
       Integer :: surrblks(3,3,3,3), tsurrblks(3,3,3,3)
       Integer :: psurrblks(3,3,3,3)
       Integer :: pcache_pe,pcache_blk,pcache_gcregions
       integer(kind=i27b) :: p_gcregions_eff
+      integer(kind=i27b) :: ibcount
       Integer :: ierrorcode,ierr
       Integer :: ipolar(2)
       Integer :: ippolar(2)
@@ -258,7 +266,7 @@
       Double Precision :: time1
       Double Precision :: time2
 
-      Logical :: lcoarse,l_parent
+      Logical :: lcoarse
       Logical :: loc_lcc,loc_lfc,loc_lec,loc_lnc
       Logical :: lfound
       Logical :: ldiag_loc
@@ -270,7 +278,6 @@
 !------Begin Executable code.
 
       pbnd_box(:,:) = 0.
-      lcoarse = .FALSE.
       accuracy = 10./10.**precision(accuracy)
       eps = accuracy
 
@@ -474,12 +481,6 @@
          End If
       End If  ! End If (iopt == 1 .And. ...)
 
-      if (present(parentPresentRegions)) then
-         p_gcregions_eff = parentPresentRegions
-      else
-         p_gcregions_eff = -1
-      end if
-
       If (pe.Ne.mype) Then
           Write(*,*) 'Error : trying to fill guardcells for a ',       & 
                      'remote block - not supported with the mpi ',     & 
@@ -547,14 +548,29 @@
       End If  ! End If (amr_error_checking)
 
 !-----Intialization
-      surrblks  = -1         
       tsurrblks = -1  
 
 !-----construct a list of blocks surrounding local block lb
-      l_parent = .True.
-     If (l_srl_only) l_parent = .False.
       Call mpi_amr_local_surr_blks_lkup(mype,lb,                       & 
-                                surrblks,l_parent,psurrblks)
+                                surrblks,.FALSE.,psurrblks)
+      lcoarse = .False.
+
+!-------Are there any coarse neighbors to consider?
+      If (.Not.l_srl_only) Then
+         If (parent(1,lb) > 0) Then
+            Do k = 2-k3d,2+k3d
+               Do j = 2-k2d,2+k2d
+                  Do i = 1,3
+                     If (surrblks(1,i,j,k) > -20.And.surrblks(1,i,j,k) < 0) &
+                         lcoarse = .True.
+                  End Do
+               End Do
+            End Do
+         End If
+         if (lcoarse) &
+              Call mpi_amr_local_surr_blks_lkup(mype,lb,                   &
+                                surrblks,lcoarse,psurrblks)
+      End If  ! End If (.Not.l_srl_only)
 
 !-----relate surrblks with the guard block indices stored implicitly 
 !-----in laddress and update tsurrblks
@@ -595,12 +611,13 @@
               (tsurrblks(1,i,j,k) > -20)   .AND.                       &
               (ldiag .OR. (abs(i-2)+abs(j-2)+abs(k-2)==1) ) ) Then
              Write(*,*) 'ERROR in mpi_amr_1blk_guardcell : pe ',mype,  & 
-               ' working on lb ',lb,' neigh ',i,j,k,                   & 
+               ' working on lb ',lb,' type',nodetype(lb),              &
+               ' neigh ',i,j,k,                                        &
                ' cannot find surrblk ',                                & 
                surrblks(:,i,j,k),' on this proc ',                     & 
                ' laddress ',laddress(:,strt_buffer:last_buffer),       & 
                ' strt_buffer,last_buffer ',strt_buffer,last_buffer,    & 
-               ' tsurrblks ',tsurrblks(1:2,i,j,k)                      & 
+               ' tsurrblks ',tsurrblks(:,i,j,k)                        &
              ,' ladd_strt ',ladd_strt,' ladd_end ',ladd_end            & 
              ,' comm pattern id ',mpi_pattern_id
              Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
@@ -612,6 +629,112 @@
 
 !-----update surrblks with the local guard block info
       surrblks = tsurrblks
+#define DEBUG_STATEMACHINE
+#ifdef DEBUG_STATEMACHINE
+40       format(1x,A1,I12,'  Block',I12,' ',A,':',&
+              ' p_gcregions_eff = o',o11.9)
+41       format(1x,A1,I12,'  Block',I12,' ',A,':',&
+              ' parentPresentRegions = o',o11.9)
+#endif
+      if(lcoarse .AND. .NOT.present(parentPresentRegions)) then
+         p_gcregions_eff = 0_i27b
+         tsurrblks = psurrblks
+         ibcount = 0_i27b
+!!$#ifdef DEBUG_STATEMACHINE
+!!$         if(mype==0) then! .AND. lb==95) then
+!!$            print 40,'@',mype,lb,'loc00',p_gcregions_eff
+!!$         end if
+!!$#endif
+         parentK:Do k = 2-k3d,2+k3d     ! loop over all its surrounding blocks
+            Do j = 2-k2d,2+k2d
+               Do i = 1,3
+                  If ( (psurrblks(2,i,j,k).EQ.mype) .OR.              &
+                       (psurrblks(1,i,j,k)<=-20) ) Then
+                     p_gcregions_eff = &
+                          ibset(p_gcregions_eff,ibcount)
+                  end if
+                  ibcount = ibcount + 1_i27b
+               End Do  ! End Do i = 1, 3
+            End Do  ! End Do j = 2-k2d,2+k2d
+         End Do parentK ! End Do k = 2-k3d,2+k3d
+!!$#ifdef DEBUG_STATEMACHINE
+!!$         if(mype==0) then! .AND. lb==95) then
+!!$            print 40,'@',mype,lb,'loc01',p_gcregions_eff
+!!$         end if
+!!$#endif
+         coarseK:Do k = 2-k3d,2+k3d     ! loop over all its surrounding blocks
+            Do j = 2-k2d,2+k2d
+               Do i = 1,3
+                  If ( (surrblks(1,i,j,k).EQ.-1)   .And.              &
+                       (surrblks(2,i,j,k).EQ.-1)   .And.              &
+                       (ldiag .OR. (abs(i-2)+abs(j-2)+abs(k-2)==1) ) ) Then
+                     if(ANY(psurrblks(1,1:3,2-k2d:2+k2d,2-k3d:2+k3d)<=-20)) then
+                        p_gcregions_eff = -1
+                        EXIT coarseK
+                     end if
+                     ka = 2-k3d; kb = 2+k3d
+                     ja = 2-k2d; jb = 2+k2d
+                     ia = 1; ib = 3
+#if NDIM >= 3
+                     if (max(nguard,nguard_work) .LE. 3NZB/2) then
+                        koff = mod((which_child(lb)-1)/4,2)
+                        ka = 1+koff; kb = 1+K3D+koff
+                     end if
+#endif
+#if NDIM >= 2
+                     if (max(nguard,nguard_work) .LE. NYB/2) then
+                        joff = mod((which_child(lb)-1)/2,2)
+                        ja = 1+joff; jb = 1+K2D+joff
+                     end if
+#endif
+                     if (max(nguard,nguard_work) .LE. NXB/2) then
+                        ioff = mod(which_child(lb)-1,2)
+                        ia = 1+ioff; ib = 2+ioff
+                     end if
+
+                     tsurrblks(2,ia:ib,ja:jb,ka:kb) = mype
+                  End If
+
+               End Do  ! End Do i = 1, 3
+            End Do  ! End Do j = 2-k2d,2+k2d
+         End Do coarseK ! End Do k = 2-k3d,2+k3d
+         if (p_gcregions_eff .NE. -1) then
+            ibcount = 0_i27b
+            parentK2:Do k = 2-k3d,2+k3d     ! loop over all its surrounding blocks
+               Do j = 2-k2d,2+k2d
+                  Do i = 1,3
+                     If ( (tsurrblks(2,i,j,k).EQ.mype) ) Then
+                        p_gcregions_eff = &
+                          ibset(p_gcregions_eff,ibcount)
+                     end if
+                     ibcount = ibcount + 1_i27b
+                  End Do  ! End Do i = 1, 3
+               End Do  ! End Do j = 2-k2d,2+k2d
+            End Do parentK2 ! End Do k = 2-k3d,2+k3d
+!!$#ifdef DEBUG_STATEMACHINE
+!!$            if(mype==0) then! .AND. lb==95) then
+!!$               print 40,'@',mype,lb,'loc02',p_gcregions_eff
+!!$            end if
+!!$#endif
+         end if
+      else if (lcoarse .AND. present(parentPresentRegions)) then
+         p_gcregions_eff = parentPresentRegions
+!!$#ifdef DEBUG_STATEMACHINE
+!!$         if(mype==0) then! .AND. lb==95) then
+!!$            print 41,'@',mype,lb,'loc04',parentPresentRegions
+!!$            print 40,'@',mype,lb,'loc04',p_gcregions_eff
+!!$         end if
+!!$#endif
+      else      ! lcoarse is false
+         p_gcregions_eff = -1
+#ifdef DEBUG_STATEMACHINE
+         if(mype==0) then! .AND. lb==95) then
+            if (present(parentPresentRegions)) &
+                 print 41,'@',mype,lb,'loc05',parentPresentRegions
+         end if
+#endif
+      end if    ! if(lcoarse .AND. .NOT.present(parentPresentRegions))
+
 
       ipolar = 0
       If (spherical_pm) Then
@@ -629,23 +752,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      lcoarse = .False.
-
-!-------Are there any coarse neighbors to consider?
-      If (.Not.l_srl_only) Then
-
-        If (parent(1,lb) > 0) Then
-        Do k = 2-k3d,2+k3d
-        Do j = 2-k2d,2+k2d
-        Do i = 1,3
-          If (surrblks(1,i,j,k) > -20.And.surrblks(1,i,j,k) < 0)       & 
-                         lcoarse = .True.
-        End Do
-        End Do
-        End Do
-        End If 
-
-      End If  ! End If (.Not.l_srl_only)
 
 !-----Put leaf block lb's data into the '1blk' datastructures, 
 !-----with the appropriate guardcell padding.
@@ -763,7 +869,7 @@
 99         format(A8,4(I6),A3,3(9(2x,I3,':',I3,':',I3),:,' |'))
            print 99,'mype...',mype,lb,parent_pe,parent_lb,' ::',(psurrblks(:,1:3,2-k2d:2+k2d,2-k3d:2+k3d))
 #endif
-           if (.NOT. present(parentPresentRegions)) then
+           if (p_gcregions_eff == -1) then
               call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
      &         why=gr_callReason_PROLONG)
@@ -773,9 +879,9 @@
      &         why=gr_callReason_PROLONG)
            else
               call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
-     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
+     &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
      &         why=gr_callReason_PROLONG, &
-               presentRegions=parentPresentRegions)
+               presentRegions=p_gcregions_eff)
            end if
         end if                  ! if (lcc
 

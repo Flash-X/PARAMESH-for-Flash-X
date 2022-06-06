@@ -1,13 +1,15 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003, 2007
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/mpi_morton_bnd_fluxcon
+!!****if* source/mpi_morton_bnd_fluxcon
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_morton_bnd_fluxcon
@@ -26,7 +28,7 @@
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -36,11 +38,14 @@
 !!   timings
 !!   mpi_morton
 !!   constants
+!!   gr_pmCommDataTypes
+!!   gr_pmCommPatternData
 !!
 !! CALLS
 !!
 !!    mpi_amr_write_guard_comm
 !!    process_fetch_list
+!!    gr_pmCommPatternPtr
 !!
 !! RETURNS
 !!
@@ -58,6 +63,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -65,11 +72,13 @@
       Subroutine mpi_morton_bnd_fluxcon(mype,nprocs,tag_offset)
 
 !-----Use Statements
+      use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, GRID_PAT_FCORR
+      use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
       Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
-      Use mpi_morton
+      Use mpi_morton, ONLY: npts_neigh, no_of_diagonal_edges, edge_mark
       Use constants
 
       Use paramesh_interfaces, only : amr_abort
@@ -78,10 +87,8 @@
       use Driver_interface, ONLY : Driver_abort
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       integer, intent(in)    ::  mype,nprocs
@@ -107,6 +114,7 @@
       Integer,Dimension(:,:),Allocatable :: recvstatus
       Integer,Dimension(:,:),Allocatable :: fetch_list
       Integer,Dimension(:,:),Allocatable :: tfetch_list
+      TYPE(gr_pmCommPattern_t),pointer :: pattern
 
 !-----Begin executable code.
 
@@ -341,7 +349,10 @@
       End Do  ! End Do lb = 1, lnblocks
       End If  ! End If (nedgevar1 > 0)
 
-      Call process_fetch_list(fetch_list,                              &
+      pattern => gr_pmCommPatternPtr(GRID_PAT_FCORR)
+
+      Call process_fetch_list(pattern,                                 &
+                              fetch_list,                              &
                               istack,                                  &
                               mype,                                    &
                               nprocs,                                  &

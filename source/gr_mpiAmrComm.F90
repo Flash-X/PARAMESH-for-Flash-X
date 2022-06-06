@@ -152,6 +152,8 @@
 !!   Peter MacNeice (June 2000) with modifications by Kevin Olson for
 !!   directional guardcell filling and flux conservation.
 !!
+!! MODIFICATIONS
+!!  2020-12-11 K. Weide  Created from mpi_amr_comm_setup for async dd comms
 !!***
 
 #include "paramesh_preprocessor.fh"

@@ -1,21 +1,22 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-!
-!!****h* headers/tree
+!!****ih* headers/tree
+!! NOTICE
+!!  This file is from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !!
 !! NAME
 !!
-!!   physicaldata
+!!   tree
 !!
 !! SYNOPSIS
 !!
-!!   Module tree
+!!   use tree
 !!
 !! INCLUDES
 !!
@@ -68,6 +69,8 @@
 !!
 !!  Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  declare laddress POINTER instead of ALLOCATABLE
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -170,7 +173,7 @@
       Integer, Save :: strt_buffer,last_buffer
       Integer, Allocatable, Save :: surr_blks(:,:,:,:,:)
       Integer, Allocatable, Save :: surr_morts(:,:,:,:,:)
-      Integer, Allocatable, Save :: laddress(:,:)
+      Integer, pointer, Save :: laddress(:,:) => null()
 
 ! arrays to store info about block neighbors which are boundaries
       Public :: bc_block_neighs,bc_block_neighs_send

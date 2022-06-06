@@ -19,6 +19,8 @@
 !!  get() method on the same getter object in the same cycle will not
 !!  need to use data that are in danger of being overwritten).
 
+!!  2021-01-09 K. Weide  Created for asynchronous domain data communications
+
 #include "constants.h"
 #include "Simulation.h"
 

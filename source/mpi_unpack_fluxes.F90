@@ -9,7 +9,7 @@
 
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_unpack_fluxes(mype, & 
+      subroutine mpi_unpack_fluxes(commatrixRecv,mype, & 
      &                             buf_dim,R_buffer,flux_dir)
 
 !------------------------------------------------------------------------
@@ -21,28 +21,27 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+! Modified for commatrixRecv arg : Klaus Weide          May 2022
 !------------------------------------------------------------------------
 !
 ! Arguments:
+!      commatrixRecv  a component from the current communication pattern
 !      mype           current processor id
-!      nprocs         number of processors
 !      buf_dim        dimension of buffer
 !      R_buffer       receive buffer 
-!      ir_buf         starting & ending indices of buffer
 !
 !------------------------------------------------------------------------
       use paramesh_dimensions
       use physicaldata
       use tree
-      use mpi_morton
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpi_put_flux_buffer
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
-      include 'mpif.h'
-
+      integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
       integer, intent(in) :: mype,buf_dim
       real,    intent(inout) ::  R_buffer(buf_dim)
       integer, optional, intent(in) :: flux_dir
@@ -57,7 +56,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !#define DEBUG
 
-      lnumb = sum(commatrix_recv(:))
+      lnumb = sum(commatrixRecv(:))
       if(lnumb.gt.maxblocks_alloc) then
             call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif

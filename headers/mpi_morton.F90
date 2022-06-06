@@ -1,17 +1,48 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
+!!****ih* headers/mpi_morton
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   mpi_morton
+!!
+!! SYNOPSIS
+!!
+!!   use mpi_morton
+!!
+!! INCLUDES
+!!
+!!   paramesh_preprocessor.fh
+!!
+!! USES
+!!
+!!   paramesh_dimensions
+!!
+!! DESCRIPTION
+!!
+!!   Fortran module which holds mostly data related to the organization of
+!!   Paramesh's domain data communications (guard cell exchange, prolongation,
+!!   flux communication, restriction).
+!!
+!! AUTHORS
+!!
+!!  PARAMESH4 authors
+!!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  removed many variables replaced by gr_pmCommPattern_t
+!!  2022-05-25 K. Weide  removed REORDER directives
+!!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+
 #include "paramesh_preprocessor.fh"
-!-----------------------------------------------------------------------
-! mpi_morton Module
 
 
 
@@ -26,90 +57,23 @@
 
 ! 
 ! variables for storing the morton environment
-      Public :: pe_source
       Public :: ir_buf,is_buf
 
 
-      Integer, Save,dimension(:),allocatable :: pe_remote
-      Integer, Save,dimension(:),allocatable :: pe_source
-      Integer, Save,dimension(:),allocatable :: pe_destination
       Integer, Save,dimension(:,:),allocatable :: ir_buf
       Integer, Save,dimension(:,:),allocatable :: is_buf
 
-      Public :: commatrix_send, commatrix_recv
-      Public :: commatrix_guard,commatrix_prol
-      Public :: commatrix_flux
-      Public :: commatrix_restrict
-      Public :: laddress_guard,laddress_prol,laddress_flux
-      Public :: laddress_restrict
-      Integer, Save,dimension(:),allocatable :: commatrix_send
-      Integer, Save,dimension(:),allocatable :: commatrix_recv
-      Integer, Save,dimension(:,:),allocatable :: commatrix_guard
-      Integer, Save,dimension(:,:),allocatable :: commatrix_prol
-      Integer, Save,dimension(:,:),allocatable :: commatrix_flux
-      Integer, Save,dimension(:,:),allocatable ::  & 
-     &                                         commatrix_restrict
-      Integer, allocatable, Save,dimension(:,:)  & 
-     &                                          :: laddress_guard
-      Integer, allocatable, Save,dimension(:,:)  & 
-     &                                          :: laddress_prol
-      Integer, allocatable, Save,dimension(:,:)  & 
-     &                                          :: laddress_flux
-      Integer, allocatable, Save,dimension(:,:)  & 
-     &                                          :: laddress_restrict
 
 ! list of block edges which need diagonal info during edge averaging
       Public :: edge_mark,no_of_diagonal_edges
       Integer, Save :: edge_mark(6:6,4,npts_neigh)
       Integer, Save :: no_of_diagonal_edges
 
-! a list of blocks to be sent from the local processor
-      Public :: to_be_sent,to_be_sent_guard,to_be_sent_prol
-      Public :: to_be_sent_flux
-      Integer,Save,dimension(:,:,:),allocatable :: to_be_sent
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_sent_guard
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_sent_prol
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_sent_flux
-
-      Public :: to_be_sent_restrict
-      Integer,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_sent_restrict
-
-! a list of blocks to be received by the local processor
-      Public :: to_be_received
-      Integer,Save,dimension(:,:,:),allocatable :: to_be_received
-
 ! Used to make searching of laddress more efficient
       Public :: ladd_strt,ladd_end
       Integer,Save,dimension(:),allocatable :: ladd_strt,ladd_end
 
 !new code
-      Public :: to_be_received_guard
-      Public :: to_be_received_prol
-      Public :: to_be_received_flux
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_received_guard
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_received_prol
-      Integer,Save,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_received_flux
-
-      Public :: to_be_received_restrict
-      Integer,dimension(:,:,:),allocatable  & 
-     &                                   :: to_be_received_restrict
-
-      Public :: pe_source_guard
-      Public :: pe_source_prol
-      Public :: pe_source_flux
-      Public :: pe_source_restrict
-      Integer, Save,dimension(:),allocatable :: pe_source_guard
-      Integer, Save,dimension(:),allocatable :: pe_source_prol
-      Integer, Save,dimension(:),allocatable :: pe_source_flux
-      Integer, Save,dimension(:),allocatable  & 
-     &                                   :: pe_source_restrict
 
       Public :: message_size_cc
       Public :: message_size_fcx, message_size_fcy, message_size_fcz
@@ -133,35 +97,6 @@
       Logical,Save,dimension(5) :: l_datapacked
 
 !new code end
-
-      Public :: largest_no_of_blocks,largest_no_of_blocks_guard
-      Public :: largest_no_of_blocks_prol,largest_no_of_blocks_flux
-      Public :: largest_no_of_blocks_restrict
-      Public :: max_no_to_send,max_no_to_send_guard
-      Public :: max_no_to_send_prol,max_no_to_send_flux
-      Public :: max_no_to_send_restrict
-      Public :: strt_guard,strt_prol,strt_flux
-      Public :: strt_restrict,no_commatrix_guard
-      Public :: no_commatrix_prol,no_commatrix_flux
-      Public :: no_commatrix_restrict
-      Integer,Save  :: largest_no_of_blocks
-      Integer,Save  :: largest_no_of_blocks_guard
-      Integer,Save  :: largest_no_of_blocks_prol
-      Integer,Save  :: largest_no_of_blocks_flux
-      Integer,Save  :: largest_no_of_blocks_restrict
-      Integer,Save  :: max_no_to_send
-      Integer,Save  :: max_no_to_send_guard
-      Integer,Save  :: max_no_to_send_prol
-      Integer,Save  :: max_no_to_send_flux
-      Integer,Save  :: max_no_to_send_restrict
-      Integer,Save  :: strt_guard
-      Integer,Save  :: strt_prol
-      Integer,Save  :: strt_flux
-      Integer,Save  :: strt_restrict
-      Integer,Save  :: no_commatrix_guard
-      Integer,Save  :: no_commatrix_prol
-      Integer,Save  :: no_commatrix_flux
-      Integer,Save  :: no_commatrix_restrict
 
       Public :: lperiodicx,lperiodicy,lperiodicz
       Logical, Save :: lperiodicx

@@ -112,6 +112,7 @@
 !!
 !!  Klaus Weide, July - September 2012 - modified for more consistent force_consistency,
 !!                                       added optional arguments
+!!  2022-05-23 K. Weide  Warnings, possible recovery for wrong dtype
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -165,6 +166,7 @@
       logical, parameter :: forceConsistFineToCoarse = .TRUE.
 
       Logical :: lfound
+      logical :: lessDataThanExpected,ldte
       logical :: doForceConsIlo, doForceConsIhi
       logical :: doForceConsJlo, doForceConsJhi
       logical :: doForceConsKlo, doForceConsKhi
@@ -411,16 +413,33 @@
                      dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
                      ill,jll,kll)
 
+          lessDataThanExpected = (ia>is .OR. ja>js .OR. ka>ks .OR. &
+               ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
+#ifdef DEBUG_LITE
+800       format(1x,'@',I5,' amr_1blk_fc_cp_remote: Less data than expected from',&
+               I5,' @',I5,' vtype',I3,' is,js,ks',3(1x,I5))
+9990      format(1x,'@',I5,' dtype=', I6, &
+                                 ', idest=',I1,',',I1,', id,jd,kd=',3(I2,','), &
+                                 ' ia,ja,ka,ib,jb,kb=',6(I2,','), &
+                                 ' ill ,jll ,kll =',3(I2,','))
+          if (lessDataThanExpected) then
+             print 800,mype,remote_block,remote_pe,vtype,is,js,ks
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
+                  ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+          end if
+#endif
+
         ilo = is1
         ihi = is1+il+ip2
         If (doForceConsIlo) ihi = nxb+1+nguard0
         If (doForceConsIhi) ilo = 1+nguard0
 
 
-        kk = kd
+        kk = max(kd, kd + (ka-ks))
         Do k = ka,kb
 
-        jj = jd
+           jj = max(jd, jd + (ja-js))
         jstride = 1
         js2 = js
         js1 = js+jl
@@ -432,23 +451,21 @@
         If (no_permanent_guardcells) Then
           js2 = jd + jl + (nguard - 2*(jd+jl)) +1
           js1 = jd      + (nguard - 2* jd    ) +1
-          jj  = jd + jl
         Else
           js2 = jd + jl + 2*(nguard - (jd+jl)) +1
           js1 = jd      + 2*(nguard -  jd    ) +1
-          jj  = jd + jl
         End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
         Elseif (ipolar(2) == +1.and.jd > nyb+nguard) Then
         jstride = -1
         If (no_permanent_guardcells) Then
           js1 = nyb - ( jd    -(nyb+nguard+1))
           js2 = nyb - ((jd+jl)-(nyb+nguard+1))
-          jj  = jd + jl
         Else
           js1 = (nyb+nguard)-( jd    -(nyb+nguard+1))
           js2 = (nyb+nguard)-((jd+jl)-(nyb+nguard+1))
-          jj  = jd + jl
         End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
         End If  ! End If (ipolar(1) == -1 .and. jd <= nguard)
         End If  ! End If (lsingular_line)
         End If  ! End If (spherical_pm)
@@ -500,6 +517,18 @@
                      dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
                      ill,jll,kll)
 
+        ldte =(ia>is .OR. ja>js .OR. ka>ks .OR. &
+                ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
+#ifdef DEBUG_LITE
+          if (ldte) then
+             print 800,mype,remote_block,remote_pe,vtype,is,js,ks
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
+                  ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+          end if
+#endif
+          lessDataThanExpected = lessDataThanExpected .OR. ldte
+
 
 ! reset js1, js2 to values set on entry
         js1 = js + jp1*k2d
@@ -510,7 +539,7 @@
         If (doForceConsJlo) jhi = nyb+1+nguard0*k2d
         If (doForceConsJhi) jlo = 1 + nguard0*k2d
 
-        kk = kd
+        kk = max(kd, kd + (ka-ks))
         Do k = ka,kb
 
         jj = jd1
@@ -546,7 +575,7 @@
         End If  ! End If (spherical_pm)
 
         Do j = ja,jb
-        ii = id
+          ii = max(id, id + (ia-is))
         Do i = ia,ib
           If (k >= ks .and. k <= ks + kl) Then
           If (j >= jlo .and. j <= jhi) Then
@@ -591,6 +620,18 @@
                      dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
                      ill,jll,kll)
 
+        ldte =(ia>is .OR. ja>js .OR. ka>ks .OR. &
+                ib<is+il .OR. jb<js+jl .OR. kb<ks+kl)
+#ifdef DEBUG_LITE
+          if (ldte) then
+             print 800,mype,remote_block,remote_pe,vtype,is,js,ks
+             print 9990,mype,dtype, &
+                  idest, id,jd,kd, &
+                  ia,ja,ka,ib,jb,kb, ill ,jll ,kll
+          end if
+#endif
+        lessDataThanExpected = lessDataThanExpected .OR. ldte
+
         klo = ks1
         khi = ks1+kl+kp2
         If (doForceConsKlo) khi = nzb+1+nguard0*k3d
@@ -600,7 +641,7 @@
         If(doForceConsKhi) kk = kd1-1
         Do k = ka,kb
 
-        jj = jd
+           jj = max(jd, jd + (ja-js))
         jstride = 1
 
         js2 = js
@@ -613,29 +654,27 @@
         If (no_permanent_guardcells) Then
           js2 = jd + jl + (nguard - 2*(jd+jl)) +1
           js1 = jd      + (nguard - 2* jd    ) +1
-          jj  = jd + jl
         Else
           js2 = jd + jl + 2*(nguard - (jd+jl)) +1
           js1 = jd      + 2*(nguard -  jd    ) +1
-          jj  = jd + jl
         End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
         Elseif(ipolar(2) == +1 .and. jd > nyb+nguard) Then
         jstride = -1
         If (no_permanent_guardcells) Then
           js1 = nyb - ( jd    -(nyb+nguard+1))
           js2 = nyb - ((jd+jl)-(nyb+nguard+1))
-          jj  = jd + jl
         Else
           js1 = (nyb+nguard)-( jd    -(nyb+nguard+1))
           js2 = (nyb+nguard)-((jd+jl)-(nyb+nguard+1))
-          jj  = jd + jl
         End If  ! End If (no_permanent_guardcells)
+            jj  = min(jd + jl, jd + jl - (ja-js))
         End If  ! End If (ipolar(1) == -1 .and. jd <= nguard)
         End If  ! End If (lsingular_line)
         End If  ! End If (spherical_pm)
 
         Do j = ja,jb
-        ii = id
+          ii = max(id, id + (ia-is))
         Do i = ia,ib
           If (k >= klo .and. k <= khi) Then
           If (j >= js2 .and. j <= js1) Then
@@ -674,6 +713,15 @@
 
         End If  ! End If (ndim == 3)
 
+#ifdef DEBUG_LITE
+810       format(1x,'@',I5,' amr_1blk_fc_cp_remote: Less data than expected from',&
+               I5,' @',I5,' is,js,ks',3(1x,I5),', THIS SHOULD NOT HAPPEN!')
+        if (lessDataThanExpected) then
+           If (idest .NE. 2) Then
+              print 810,mype,remote_block,remote_pe,is,js,ks
+           end if
+        end if
+#endif
 
       End If  ! End If (remote_block <= lnblocks .and. remote_pe == mype)
 

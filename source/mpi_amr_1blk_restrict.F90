@@ -49,7 +49,10 @@
 !!        the guardcell filling step so that only those blocks at jumps in refinement
 !!        need to restrict data to their parents.  This leads to a performance
 !!        savings.
-!!        
+!!        The greatest performance savings are enabled, and the restriction is
+!!        also handled as an ancillary operation as far as the communication pattern
+!!        is concerned, as long as the lfulltree flag is not TRUE.
+!!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
@@ -106,6 +109,11 @@
 !!
 !!   Peter MacNeice (February 1999).
 !!
+!! MODIFICATIONS
+!!
+!!  2020-12-16 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
+!!  2021-01-23 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
+!!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -144,7 +152,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   use gr_flashHook_interfaces
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-  Implicit None
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
   Integer, Intent(in)  :: mype,iopt
@@ -187,8 +195,6 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
 
-!-----Include Statements
-  include 'mpif.h'
 
   !-----Begin Executable Code
   nguard0 = nguard*npgs
@@ -276,6 +282,12 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                             ntype=ntype, level=lev,                  &
                             nlayersx=1,nlayersy=1,nlayersz=1)
         call Timers_stop("gr_mpiAmrComm s")
+!!=======!DEV: consolidate args, esp. lfulltree handling! -KW
+!!        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
+!!                              lflux,ledge,lrestrict,lfulltree,         &
+!!                              iopt,lcc,lfc,lec,lnc,                    &
+!!                              tag_offset,                              &
+!!                              nlayersx=1,nlayersy=1,nlayersz=1)
 
         If (lnblocks > 0) Then
            Do lb = 1,lnblocks
@@ -283,7 +295,17 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 !-----Is this a parent block of at least one leaf node?
               If ((nodetype(lb) == 2 .and. lrefine(lb) == level) .or. &
                   (nodetype(lb) == 2 .and. filling_guardcells)) Then
-
+                 ! Skip this parent block if (1) we are here just in
+                 ! preparation for filling guard cells, AND (2) this
+                 ! parent block has no LEAF neighbors - i.e., this
+                 ! block is not at a fine-coarse boundary where its
+                 ! data may have to serve as a source for interpolation.
+                 if (lguard .AND. filling_guardcells .AND. .NOT.lfulltree &
+                      .AND. &
+                      .NOT.&
+                      any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.&
+                          surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) &
+                          CYCLE
 
 !-----If yes then cycle through its children.
                  Do ich=1,nchild

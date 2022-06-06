@@ -63,6 +63,8 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2021       K. Weide  Created out of amr_guardcell for async domain data comm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

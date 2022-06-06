@@ -83,6 +83,7 @@
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
 !! MODIFICATIONS
+!!  2021       K. Weide  Created out of amr_guardcell for async domain data comm
 !!  2022-06-06 K. Weide  Call MPI_BARRIER only when USEBARS is defined
 !!***
 

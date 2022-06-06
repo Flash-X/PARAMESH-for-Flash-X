@@ -70,6 +70,9 @@
 !!
 !!   Peter MacNeice (July 1997)
 !!
+!! MODIFICATIONS
+!!
+!!  2022-05-23 K. Weide  Pass lfulltree=TRUE unless filling guard cells
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -130,7 +133,7 @@
 
 !
 ! Perform restriction
-      lfulltree = .false.
+      lfulltree = .NOT. fillingt
       call mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc, & 
      &                           lfulltree,fillingt)
 
