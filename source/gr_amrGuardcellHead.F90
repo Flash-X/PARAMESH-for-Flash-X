@@ -82,6 +82,8 @@
 !!
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-06-06 K. Weide  Call MPI_BARRIER only when USEBARS is defined
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -257,7 +259,9 @@ contains
          iempty = 0
          call amr_restrict(mype,iopt,iempty,.True.)
          call amr_1blk_guardcell_reset
+#ifdef USEBARS
          Call MPI_BARRIER(amr_mpi_meshComm, ierr)
+#endif
       End if
 
 
