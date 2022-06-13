@@ -85,6 +85,7 @@
 !! MODIFICATIONS
 !!  2021       K. Weide  Created out of amr_guardcell for async domain data comm
 !!  2022-06-06 K. Weide  Call MPI_BARRIER only when USEBARS is defined
+!!  2022-06-13 K. Weide  Pass ntypeMin,ntypeMax,levelMin/Max to gr_mpiAmrComm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -118,10 +119,8 @@ contains
 
       use gr_pmFlashHookData, ONLY : alwaysFcAtBC => gr_pmAlwaysFillFcGcAtDomainBC
 
-      Implicit none
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       type(gr_itParam_t), intent(INOUT) :: itContext
@@ -143,7 +142,7 @@ contains
       Integer :: ilp,iup,jlp,jup,klp,kup
       Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
       Integer :: maxNodetype_gcWanted_loc
-      integer :: ntype,lev
+      integer :: ntypeMin,ntypeMax,lev
 
 !------------------------------------
 !-----Begin Executable code section
@@ -298,18 +297,19 @@ contains
       lrestrict = .False.
       lfulltree = .False.
       lev = UNSPEC_LEVEL        ! or as requested??
+      ntypeMin = LEAF
       if (maxNodetype_gcWanted_loc < 0) then
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       else if (maxNodetype_gcWanted_loc == 1) then
-         ntype = LEAF
+         ntypeMax = LEAF
       else if (maxNodetype_gcWanted_loc == 2) then
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       else if (maxNodetype_gcWanted_loc .GE. 3) then
-         ntype = ALL_BLKS
+         ntypeMax = ANCESTOR
       else if (advance_all_levels) then
-         ntype = ALL_BLKS
+         ntypeMax = ANCESTOR
       else
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       end if
       call Timers_start("gr_mpiAmrComm")
       Call gr_mpiAmrComm(mype,nprocs,                             &
@@ -317,7 +317,8 @@ contains
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         &
                               getter,                                  &
-                              ntype, level=lev,                        &
+                              ntypeMin, ntypeMax,                      &
+                              levelMin=lev, levelMax=lev,              &
                               nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
       call Timers_stop("gr_mpiAmrComm")
 

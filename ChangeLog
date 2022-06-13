@@ -1,3 +1,33 @@
+2022-06-13  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
+
+	* source/gr_mpiXchangeBlocks.F90 (gr_mpiXchangeBlocks): source
+	file from PmAsyncDev code development, originally created out of
+	mpi_lib.F90. use pattern dummy arg to access the active comm pattern.
+
+	* source/gr_pmBlockGetter.F90: source file from PmAsyncDev code
+	development. store pointer to gr_theActiveCommPattern and use it.
+
+	* source/gr_amr1blkRestrict.F90: In ancillary restrict, skip parent blocks w/o leaf neighs.
+
+	* source/gr_amrGuardcellHead.F90: pass
+	ntypeMin,ntypeMax,levelMin,levelMax to gr_mpiAmrComm.
+
+	* source/mpi_amr_1blk_guardcell.F90: turn of DEBUG_STATEMACHINE by default.
+
+	* source/mpi_amr_guardcell.F90: pass ntypeMin,ntypeMax,levelMin,levelMax args to gr_mpiAmrComm.
+
+	* source/process_fetch_list.F90 (process_fetch_list): removed some unncessary code that was for debugging.
+
+	* source/gr_mpiAmrComm.F90 (gr_mpiAmrComm): now has
+	ntypeMin,ntypeMax,levelMin,levelMax dummy args. special case logic
+	for more pattern variants. for now, avoid GRID_SUBPAT_RESTRICT_ANC
+	with getter.
+
+	* source/mpi_amr_1blk_restrict.F90 (mpi_amr_1blk_restrict): pass
+	ntypeMin,ntypeMax,levelMin,levelMax args to gr_mpiAmrComm.
+	Now pass the value of received "lfulltree" flag on to
+	gr_mpiAmrComm. In ancillary restrict, skip parent blocks w/o leaf neighs.
+
 2022-05-25  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_morton_bnd_restrict.F90: added internal function

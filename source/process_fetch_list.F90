@@ -18,6 +18,7 @@
 !!
 !!  2022-05-13 K. Weide  Added pattern arg, changed comm pattern references
 !!  2022-05-20 K. Weide  changed pattern dummy arg to POINTER_INTENT_IN; debug
+!!  2022-06-21 K. Weide  removed some unncessary code that was for debugging
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -167,10 +168,6 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
            ,'p%laddres BEFORE:',p%laddress(:,max(1,size(p%laddress,2)-9):)
 #endif
       p % laddress(:,:) = 0
-      DO CONCURRENT (ii = 1:lnblocks) !!DEV: this and next 3 lines to be removed
-         p % laddress(1,ii) = ii
-         p % laddress(2,ii) = mype
-      END DO
 
 !-----Set up the array to_be_received on each processor
       If (no_of_remote_neighs > 0) Then

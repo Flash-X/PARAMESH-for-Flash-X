@@ -20,6 +20,7 @@
 !!  need to use data that are in danger of being overwritten).
 
 !!  2021-01-09 K. Weide  Created for asynchronous domain data communications
+!!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
 
 #include "constants.h"
 #include "Simulation.h"
@@ -33,7 +34,7 @@ module gr_pmBlockGetter
     use tree, ONLY : lnblocks, surr_blks, laddress, strt_buffer
     use tree, ONLY : nodetype, child, parent, which_child, newchild, lrefine
     use physicaldata,        ONLY: advance_all_levels
-    use mpi_morton,          ONLY: commatrix_recv, ladd_strt, ladd_end
+    use mpi_morton,          ONLY: ladd_strt, ladd_end
     use paramesh_dimensions, ONLY : ndim, nguard,nguard_work
 
   implicit none
@@ -92,6 +93,7 @@ module gr_pmBlockGetter
      logical,ALLOCATABLE :: psections_processed(:)
 !!$     logical :: section_processed(tot_no_blocks_to_be_received)
 !!$     logical :: psections_processed(nprocs)
+     integer,pointer :: commatrix_recv(:)
 
    contains
      procedure :: get     => pmBlockGet
@@ -105,6 +107,7 @@ contains
                                    lcc,lfc,lec,lnc, & 
                                    buf_dim,         &
                                    nlayersx,nlayersy,nlayersz)
+    use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
 #include "Flashx_mpi_implicitNone.fh"
 
         type(gr_pmBlockGetter_t), intent(OUT) :: getter
@@ -147,7 +150,8 @@ contains
           allocate(commCtl % sendStatus (MPI_STATUS_SIZE,nprocs)) ! We could use MPI_STATUSES_IGNORE instead.
         end associate
 
-        getter % tot_no_blocks_to_be_received = sum(commatrix_recv(:))
+        getter % commatrix_recv => gr_theActiveCommPattern % commatrix_recv
+        getter % tot_no_blocks_to_be_received = sum(getter % commatrix_recv(:))
         allocate(getter % section_processed(getter % tot_no_blocks_to_be_received))
         allocate(getter % psections_processed(0:nprocs-1))
 #ifdef DEBUG_STATEMACHINE
@@ -366,6 +370,7 @@ contains
               remoteNeedFlagMaskGc  => this % remoteNeedFlagMaskGc,  & ! maybe UNNEEDED, use needFlagMaskGc?
               section_processed     => this % section_processed,     &
               psections_processed   => this % psections_processed,   &
+              commatrix_recv        => this % commatrix_recv,        &
               receivedCount         => this % receivedCount          &
               )
 
@@ -798,7 +803,7 @@ contains
 #endif
                do i=1,receivedCount
                   isrc = recvstatus(MPI_SOURCE,i)
-                  call pmMpiUnpackBlksFromProc(isrc, iopt, &
+                  call pmMpiUnpackBlksFromProc(commatrix_recv, isrc, iopt, &
                           lcc,lfc,lec,lnc, & 
                           buf_dim,temprecv_buf, & 
                           nlayersx,nlayersy,nlayersz)
@@ -829,7 +834,7 @@ contains
                   allReceivedCount = allReceivedCount + receivedCount
                   do i=1,receivedCount
                      isrc = recvstatus(MPI_SOURCE,i)
-                     call pmMpiUnpackBlksFromProc(isrc, iopt, &
+                     call pmMpiUnpackBlksFromProc(commatrix_recv, isrc, iopt, &
                           lcc,lfc,lec,lnc, & 
                           buf_dim,temprecv_buf, & 
                           nlayersx,nlayersy,nlayersz)
@@ -1855,7 +1860,7 @@ contains
   ! An auxiliary routine that updates metainformation for
   ! pp blocks that have just been received.
   ! Variant of, and derived from, mpi_unpack_blocks.
-  subroutine pmMpiUnpackBlksFromProc(sproc,iopt, & 
+  subroutine pmMpiUnpackBlksFromProc(commatrixRecv,sproc,iopt, & 
      &                             lcc,lfc,lec,lnc, & 
      &                             buf_dim,R_buffer, & 
      &                             nlayersx,nlayersy,nlayersz)
@@ -1876,9 +1881,11 @@ contains
     !
     ! Written: mpi_unpack_blocks   Maharaj Bhat & Michael Gehmeyr  March 2000
     ! Adapted: pmMpiUnpackBlksFromProc  Klaus Weide                  Jan 2021
+    ! Modified for commatrixRecv arg : Klaus Weide                  June 2022
     !------------------------------------------------------------------------
     !
     ! Arguments:
+    !      commatrixRecv  a component from the current communication pattern
     !      sproc          sending processor id
     !      iopt           option setting for work array
     !      lcc            if true include unk data in buffer
@@ -1896,7 +1903,9 @@ contains
     use paramesh_mpi_interfaces, only : mpi_put_buffer
 
 #include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
+    integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
     integer, intent(in) :: sproc,buf_dim,iopt
     logical, intent(in) :: lcc,lfc,lec,lnc
     real,    intent(IN),ASYNCHRONOUS ::  R_buffer(buf_dim)
@@ -1912,7 +1921,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    lnumb = commatrix_recv(sproc+1)
+    lnumb = commatrixRecv(sproc+1)
     if(lnumb.gt.maxblocks) then
        call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
     endif

@@ -93,6 +93,9 @@
 !!
 !!   Written: mpi_amr_1blk_restrict   Peter MacNeice      (February 1999).
 !!   Adapted: gr_amr1blkRestrict      Klaus Weide                Jan 2021
+!!
+!! MODIFICATIONS
+!!  2021-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -107,6 +110,7 @@
 #define FLASH_PMFEATURE_UNUSED
 
 !-----Use Statements
+      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -174,16 +178,6 @@
       nguard_work0 = nguard_work*npgs
       nguard_work1 = nguard_work - nguard_work0
 
-      if (iopt == 1 .AND. (lfc .OR. lec)) then
-         maxbnd = max(1,nbndvare,nbndvar)
-         Allocate(                                                     &
-          tempf(maxbnd,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,          &
-                kl_bnd1:ku_bnd1+k3d))
-         Allocate(                                                     &
-          sendf(maxbnd,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,          &
-                kl_bnd1:ku_bnd1+k3d))
-      end if
-
       If ((.Not.diagonals) .and. (iopt .ne. 2)) Then
          Write(*,*) 'amr_1blk_restrict:  diagonals off'
       End If
@@ -216,6 +210,28 @@
 !-----Is this a parent block of at least one leaf node?
       If (nodetype(lb) == 2) Then
 
+                 ! Skip this parent block if (1) we are here just in
+                 ! preparation for filling guard cells, AND (2) this
+                 ! parent block has no LEAF neighbors - i.e., this
+                 ! block is not at a fine-coarse boundary where its
+                 ! data may have to serve as a source for interpolation.
+                 if (gr_theActiveCommPattern % id .NE. 40 .OR. &
+                     mpi_pattern_id .NE. 40) then
+                    if (.NOT.&
+                      any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.&
+                          surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) &
+                          RETURN
+                 end if
+
+      if (iopt == 1 .AND. (lfc .OR. lec)) then
+         maxbnd = max(1,nbndvare,nbndvar)
+         Allocate(                                                     &
+          tempf(maxbnd,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,          &
+                kl_bnd1:ku_bnd1+k3d))
+         Allocate(                                                     &
+          sendf(maxbnd,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,          &
+                kl_bnd1:ku_bnd1+k3d))
+      end if
 
 !-----If yes then cycle through its children.
       Do ich=1,nchild
@@ -756,7 +772,7 @@
 
       if (iopt.eq.1) call flash_unconvert_cc_hook(unk(:,:,:,:,lb), nvar, &
                 il_bnd,iu_bnd, jl_bnd,ju_bnd, kl_bnd,ku_bnd, &
-                where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
+     &          where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
                 nlayers_in_data=nguard0)
 
 #ifdef FLASH_PMFEATURE_UNUSED

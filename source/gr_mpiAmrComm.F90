@@ -3,7 +3,10 @@
 #endif
 !----------------------------------------------------------------------
 ! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
+! Copyright (C) 2003, 2004 United States Government as represented by the
+! National Aeronautics and Space Administration, Goddard Space Flight
+! Center.  All Rights Reserved.
+! Copyright (C) 2022 The University of Chicago
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -21,6 +24,7 @@
 !!                           lguard,lprolong,
 !!                           lflux,ledge,lrestrict,lfulltree,
 !!                           iopt,lcc,lfc,lec,lnc,tag_offset,
+!!                           getter,
 !!                           stages,
 !!                           nlayersx,nlayersy,nlayersz,
 !!                           flux_dir)
@@ -110,6 +114,8 @@
 !!   workspace
 !!   tree
 !!   mpi_morton
+!!   gr_parameshInterface
+!!   paramesh_interfaces
 !!   paramesh_mpi_interfaces
 !!
 !! CALLS
@@ -127,7 +133,7 @@
 !!   mpi_amr_read_flux_comm
 !!   mpi_amr_read_restrict_comm
 !!   mpi_set_message_sizes
-!!   mpi_xchange_blocks
+!!   gr_mpiXchangeBlocks
 !!
 !! RETURNS
 !!
@@ -154,6 +160,10 @@
 !!
 !! MODIFICATIONS
 !!  2020-12-11 K. Weide  Created from mpi_amr_comm_setup for async dd comms
+!!  2021-06-13 K. Weide  Now has ntypeMin,ntypeMax,levelMin,levelMax dummy args
+!!  2021-06-13 K. Weide  Use pat => gr_theActiveCommPattern
+!!  2021-06-13 K. Weide  Special case logic for GC-fill and restrict variants
+!!  2021-06-13 K. Weide  For now, avoid GRID_SUBPAT_RESTRICT_ANC with getter
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -167,7 +177,7 @@ contains
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   &
                                     getter,                            &
 !!$                                    stages,                            &
-                                    ntype,level,                       &
+                                    ntypeMin,ntypeMax,levelMin,levelMax,&
                                     nlayersx,nlayersy,nlayersz,        & 
                                     flux_dir)
 !#define DEBUG
@@ -179,8 +189,9 @@ contains
       Use mpi_morton, ONLY: temprecv_buf,                              &
                             ladd_strt, ladd_end
 #ifdef DEBUG
-      Use mpi_morton, ONLY: commatrix_send, commatrix_recv, max_no_to_send
+      Use mpi_morton, ONLY: max_no_to_send
 #endif
+      Use paramesh_interfaces, ONLY: amr_1blk_guardcell_reset
       Use paramesh_mpi_interfaces, Only :                              & 
                                       mpi_pack_blocks,                 & 
                                       mpi_Sbuffer_size,                & 
@@ -194,14 +205,21 @@ contains
                                       mpi_amr_read_prol_comm,          & 
                                       mpi_amr_read_flux_comm,          & 
                                       mpi_amr_read_restrict_comm,      & 
-                                      mpi_set_message_sizes,           & 
-                                      mpi_xchange_blocks
+                                      mpi_set_message_sizes
       use gr_parameshInterface, ONLY : gr_mpiXchangeBlocks
 #ifdef DEBUG
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 #endif
-      use gr_pmCommDataTypes, ONLY: GRID_PAT_GC,GRID_PAT_PROLONG,GRID_PAT_FCORR,GRID_PAT_RESTRICT
+      use gr_pmCommDataTypes, ONLY: GRID_PAT_GC, GRID_PAT_FCORR, &
+                                    GRID_PAT_PROLONG, GRID_PAT_RESTRICT,&
+                                    GRID_SUBPAT_GC_OPT,                 &
+                                    GRID_SUBPAT_RESTRICT_DEFAULT,       &
+                                    GRID_SUBPAT_RESTRICT_ANC,           &
+                                    GRID_SUBPAT_RESTRICT_FOR_FCORR
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, gr_pmCommCtl_t
+      use gr_pmCommPatternData, ONLY: gr_pmActivateCommPattern, &
+                                      gr_theActiveCommPattern,  &
+                                      gr_pmPrintCommPattern
       use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterBuild
 
 #ifdef DEBUG_DAT
@@ -222,12 +240,10 @@ contains
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
       type(gr_pmBlockGetter_t), intent(OUT), OPTIONAL, TARGET :: getter
 !!$      integer, intent(in), optional :: stages
-      integer, intent(IN), optional :: ntype
-      integer, intent(IN), optional :: level
+      integer, intent(IN), optional :: ntypeMin, ntypeMax
+      integer, intent(IN), optional :: levelMin, levelMax
       Integer, Intent(in), Optional :: nlayersx,nlayersy,nlayersz
       Integer, Intent(in), Optional :: flux_dir
-
-      integer,parameter :: sendBit=1, postRecvBit=2, waitBit=4
 
 !-----Local variables and arrays.
       Integer :: buffer_dim_send, buffer_dim_recv
@@ -238,16 +254,13 @@ contains
       Integer :: itemp
       Integer :: ierror
 #endif
-!!$      integer :: myStages
       Integer :: nlayerstx, nlayersty, nlayerstz
+      integer :: ntypeMinLoc, ntypeMaxLoc, levMin, levMax
       integer :: ntypeLoc, lev, patFam
       Integer :: flux_dirt
       Integer :: ii,jj
-      integer :: lb
 
-      logical :: doSend, doPostRecv, doWait
-
-      type(gr_pmCommPattern_t),SAVE :: commPat !NOT YET USED
+      TYPE(gr_pmCommPattern_t),pointer :: pat
       type(gr_pmCommCtl_t),SAVE,TARGET :: commCtl     ! This one is used.
       type(gr_pmCommCtl_t),POINTER :: pCommCtl
 !!$      type(gr_pmBlockGetter_t) :: myGetter
@@ -292,14 +305,6 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!!$      if (present(stages)) then
-!!$         myStages = stages
-!!$      else
-!!$         myStages = 7           !all in
-!!$      end if
-!!$      doSend     = IAND(myStages, sendBit    ) /= 0
-!!$      doPostRecv = IAND(myStages, postRecvBit) /= 0
-!!$      doWait     = IAND(myStages, waitBit    ) /= 0
 
 
 #ifdef DEBUG
@@ -448,39 +453,117 @@ contains
 
       Call mpi_set_message_sizes(iopt,nlayerstx,nlayersty,nlayerstz)
 
+      ! Much of the following is for future use - we later may want to have
+      ! comm patterns for specific ranges of node types (or even of levels).
+      ntypeMinLoc = 1; ntypeMaxLoc = ANCESTOR
+      if (present(ntypeMin)) then
+         ntypeMinLoc = ntypeMin
+      else if (lguard.and.(.not.lrestrict) ) Then
+         ntypeMinLoc = 1
+      ElseIf (lprolong) Then
+         ntypeMinLoc = 1
+      ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
+         ntypeMinLoc = 1
+      ElseIf (lrestrict) Then
+         ntypeMinLoc = PARENT_BLK
+      else
+         ntypeMinLoc = 1
+      end if
+      if (present(ntypeMax)) then
+         ntypeMaxLoc = ntypeMax
+      else if (lguard.and.(.not.lrestrict) ) Then
+         ntypeMaxLoc = PARENT_BLK
+      ElseIf (lprolong) Then
+         ntypeMaxLoc = PARENT_BLK !DEV: or maybe LEAF (sometimes)?
+      ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
+         ntypeMaxLoc = LEAF
+      ElseIf (lrestrict) Then
+         ntypeMaxLoc = PARENT_BLK
+      else
+         ntypeMaxLoc = PARENT_BLK
+      end if
 
-      If (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
+      levMin = 1; levMax = 1000
+      if (present(levelMin)) then
+         if (levelMin .NE. UNSPEC_LEVEL) levMin = levelMin
+      ElseIf (lprolong) Then
+         levMin = 2             !DEV: correct?
+      end if
+      if (present(levelMax)) then
+         if (levelMax .NE. UNSPEC_LEVEL) levMax = levelMax
+      end if
+
+      If (lguard.and.(.not.lrestrict)) Then
+         ! This is the case for communicating guard cell data proper.
 
 #ifdef DEBUG
          print*,'@',mype,' will now Call mpi_amr_read_guard_comm(nprocs) from gr_mpiAmrComm.'
 #endif
          patFam = GRID_PAT_GC
-         Call mpi_amr_read_guard_comm(nprocs)
+         if (ntypeMaxLoc > 1) then
+            ! The following calls gr_pmActivateCommPattern(GRID_PAT_GC)
+            Call mpi_amr_read_guard_comm(nprocs)
+         else
+            call gr_pmActivateCommPattern(patFam,GRID_SUBPAT_GC_OPT)
+            mpi_pattern_id = 10
+            Call amr_1blk_guardcell_reset
+         end if
 
       ElseIf (lprolong) Then
 
          patFam = GRID_PAT_PROLONG
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_PROLONG)
          Call mpi_amr_read_prol_comm(nprocs)
 
       ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
 
          patFam = GRID_PAT_FCORR
-        Call mpi_amr_read_flux_comm(nprocs)
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_FCORR)
+         Call mpi_amr_read_flux_comm(nprocs)
+
+      ElseIf (lrestrict .AND. lflux) Then
+         ! We get here if we are dealing with an ancillary restriction operation
+         ! for flux correction (but not for edge averaging!).
+
+         patFam = GRID_PAT_RESTRICT
+         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_FOR_FCORR)
+         mpi_pattern_id = 42
+
+      ElseIf (lrestrict .AND. (.NOT.lguard .OR. lfulltree)) Then
+
+         patFam = GRID_PAT_RESTRICT
+         ! The following calls gr_pmActivateCommPattern(GRID_PAT_RESTRICT)
+         Call mpi_amr_read_restrict_comm(nprocs)
 
       ElseIf (lrestrict) Then
+         ! We get here if we are dealing with an ancillary restriction operation
+         ! for guard cell filling.
 
 #ifdef DEBUG
          print*,'@',mype,' will now Call mpi_amr_read_restrict_comm(nprocs) from gr_mpiAmrComm.'
 #endif
          patFam = GRID_PAT_RESTRICT
-        Call mpi_amr_read_restrict_comm(nprocs)
+         if (present(getter)) then
+            !! DEV: Want to use GRID_SUBPAT_RESTRICT_ANC here, but need to adapt block getter code first - KW
+            call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_DEFAULT)
+         else
+            call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_ANC)
+         end if
+         mpi_pattern_id = 41
+         Call amr_1blk_guardcell_reset
 
       End If
 
+      pat => gr_theActiveCommPattern
 #ifdef DEBUG
-      print*,'@',mype,' has commatrix_send=',commatrix_send
-      print*,'@',mype,' has commatrix_recv=',commatrix_recv
-      itemp = max(sum(commatrix_send), sum(commatrix_recv))
+      call gr_pmPrintCommPattern(pat,'pat',mype)
+#endif
+      strt_buffer = pat % strt_buffer
+
+#ifdef DEBUG
+      print*,'@',mype,' has commatrix_send=',pat % commatrix_send
+      print*,'@',mype,' has commatrix_recv=',pat % commatrix_recv
+      itemp = max(sum(pat % commatrix_send), sum(pat % commatrix_recv))
       Call MPI_ALLREDUCE (itemp,                                       & 
                           max_blks_sent,                               & 
                           1,                                           & 
@@ -498,36 +581,36 @@ contains
       offset_tree = -1          ! will not be used in following calls
       If (lguard.or.lprolong) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .True., .False., .False., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .True.,.False., .False., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .False., .True., .False., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .False.,.True., .False., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (ledge) Then
 
-        Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
                               .False., .False., .True., flux_dir,      &
                               nlayerstx,nlayersty,nlayerstz)
 
-        Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
+        Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
                               .False.,.False., .True., flux_dir,       &
                               nlayerstx,nlayersty,nlayerstz)
@@ -568,33 +651,22 @@ contains
 !!$                              buffer_dim_recv,temprecv_buf)
       !! DEMOSTRATION how completion of communication can be deferred:
       IF(PRESENT(getter)) THEN
-         if (present(ntype)) then
-            ntypeLoc = ntype
-         else if (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
-            ntypeLoc = ACTIVE_BLKS
-         ElseIf (lprolong) Then
-            ntypeLoc = ACTIVE_BLKS
-         ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
-            ntypeLoc = LEAF
-         ElseIf (lrestrict) Then
-            ntypeLoc = PARENT_BLK
+         if (ntypeMinLoc == LEAF) then
+            ntypeLoc = ALL_BLKS
+            if (ntypeMaxLoc == LEAF)       ntypeLoc = LEAF
+            if (ntypeMaxLoc == PARENT_BLK) ntypeLoc = ACTIVE_BLKS
+         else if (ntypeMinLoc == ntypeMaxLoc) then
+            ntypeLoc = ntypeMinLoc
          else
             ntypeLoc = ACTIVE_BLKS
          end if
-         if (present(level)) then
-            lev = level
-         else if (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
-            lev = UNSPEC_LEVEL
-         ElseIf (lprolong) Then
-            lev = UNSPEC_LEVEL
-         ElseIf ((lflux.or.ledge).and.(.not.lrestrict)) Then
-            lev = UNSPEC_LEVEL
-         ElseIf (lrestrict) Then
-            lev = UNSPEC_LEVEL
+         if (levMin == levMax) then
+            lev = levMin
          else
             lev = UNSPEC_LEVEL
          end if
-         ! Build a getter and leave completion of communications to it
+
+         ! Build a getter. Below we will leave completion of communications to it.
          call gr_pmBlockGetterBuild(getter,ntypeLoc,lev,&
                                     patFam,          &
                                     iopt,            &
@@ -622,24 +694,24 @@ contains
 
       If (lguard.or.lprolong) Then
 
-        Call mpi_pack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         &
+        Call mpi_pack_blocks(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,         &
                              buffer_dim_send,pCommCtl % sendBuf,offset_tree,     &
                              nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_pack_fluxes(mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,     &
+        Call mpi_pack_fluxes(pat,mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,     &
                              offset_tree,flux_dir)
 
       ElseIf (ledge) Then
 
-        Call mpi_pack_edges(mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,      &
+        Call mpi_pack_edges(pat,mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,      &
                             offset_tree)
 
       End If  ! End If (lguard.or.lprolong)
 
       ! Post receives and sends:
-      Call gr_mpiXchangeBlocks(mype,nprocs,tag_offset,                 &
+      Call gr_mpiXchangeBlocks(pat,mype,nprocs,tag_offset,                 &
                               buffer_dim_send,pCommCtl % sendBuf,                &
                               buffer_dim_recv,temprecv_buf,            &
                               3,                                       &
@@ -688,7 +760,7 @@ contains
       END IF
          
       ! Wait for completions:
-      Call gr_mpiXchangeBlocks(mype,nprocs,tag_offset,                 &
+      Call gr_mpiXchangeBlocks(pat,mype,nprocs,tag_offset,                 &
                                   buffer_dim_send,commCtl % sendBuf,       &
                                   buffer_dim_recv,temprecv_buf,            &
                                   4,                                       &
@@ -697,18 +769,21 @@ contains
 
       If (lguard.or.lprolong) Then
 
-         Call mpi_unpack_blocks(mype,iopt,lcc,lfc,lec,lnc,             &
+         Call mpi_unpack_blocks(pat % commatrix_recv,                  &
+                                mype,iopt,lcc,lfc,lec,lnc,             &
                                 buffer_dim_recv,temprecv_buf,          &
                                 nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
          
-         Call mpi_unpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     & 
+         Call mpi_unpack_fluxes(pat % commatrix_recv,                  &
+                                mype,buffer_dim_recv,temprecv_buf,     &
                                 flux_dir)
 
       ElseIf (ledge) Then
 
-         Call mpi_unpack_edges(mype,buffer_dim_recv,temprecv_buf)
+         Call mpi_unpack_edges(pat % commatrix_recv,                  &
+                               mype,buffer_dim_recv,temprecv_buf)
 
       End If  ! End If (lguard.or.lprolong)
 

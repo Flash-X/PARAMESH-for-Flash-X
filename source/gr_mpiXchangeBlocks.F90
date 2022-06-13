@@ -1,9 +1,8 @@
-subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
+subroutine gr_mpiXchangeBlocks(pattern,mype,nprocs, tag_offset, &
                               buf_dim_send, S_buffer, &
                               buf_dim_recv, R_buffer, &
                               stages,                 &
                               commCtl,                &
-                              commPat,                &
                               commShaped)
 
 !------------------------------------------------------------------------
@@ -16,6 +15,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
 ! Written: (mpi_xchange_blocks) Maharaj Bhat & Michael Gehmeyr   March 2000
 ! Modified:  Klaus Weide                                         December 2020
 !!  2021       K. Weide  Created out of mpi_lib.F90 for async domain data comms
+!!  2021-06-13 K. Weide  Use pattern dummy arg to access the active comm pattern
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -34,20 +34,19 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
   use physicaldata
   use tree
   use workspace
-  use mpi_morton, ONLY: commatrix_send, commatrix_recv, &
-                        is_buf,         ir_buf
+  use mpi_morton, ONLY: is_buf,         ir_buf
   Use paramesh_comm_data, ONLY: amr_mpi_real, amr_mpi_meshComm
   use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, gr_pmCommCtl_t, &
                                 gr_pmCommShaped_t
 
 #include "Flashx_mpi_implicitNone.fh"
 
+  TYPE(gr_pmCommPattern_t),intent(in) :: pattern
   integer, intent(in)    :: mype,nprocs,buf_dim_send,buf_dim_recv
   integer, intent(inout) :: tag_offset
   real,    intent(in)    :: S_buffer(buf_dim_send)
   real,    intent(inout),ASYNCHRONOUS :: R_buffer(buf_dim_recv)
   integer, intent(in)    :: stages
-  type(gr_pmCommPattern_t), intent(in),OPTIONAL :: commPat
   type(gr_pmCommShaped_t),  intent(in),OPTIONAL :: commShaped
   type(gr_pmCommCtl_t), intent(INOUT)     :: commCtl
 
@@ -83,9 +82,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
   ij = commCtl % numReq
   ji = commCtl % numSReq
 
-!!$  associate(commatrix_send => commPat % commatrix_send, &
-!!$            commatrix_recv => commPat % commatrix_recv, &
-!!$            is_buf         => commShaped % is_buf,         &
+!!$  associate(is_buf         => commShaped % is_buf,         &
 !!$            ir_buf         => commShaped % ir_buf          )
   associate(recvrequest => commCtl % recvrequest, &
             recvstatus  => commCtl % recvstatus,  &
@@ -93,16 +90,17 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
             allReceivedCount => commCtl % allReceivedCount, &
             sendRequest => commCtl % sendRequest, &
             sendStatus  => commCtl % sendStatus,  &
-            allSentCount => commCtl % allSentCount &
+            allSentCount => commCtl % allSentCount, &
+            p => pattern &
             )
 
-    if (commatrix_send(mype+1) > 0  &
+    if (p% commatrix_send(mype+1) > 0  &
          &    .or.  &
-         &    commatrix_recv(mype+1) > 0) then
+         &    p% commatrix_recv(mype+1) > 0) then
        write(*,*) 'Paramesh error :  error in xchange : pe ',mype, &
             &      ' diagonal element of commatrix is non-zero ', &
-            &      commatrix_recv(mype+1), &
-            &      commatrix_send(mype+1)
+            &      p% commatrix_recv(mype+1), &
+            &      p% commatrix_send(mype+1)
        call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
     endif
 
@@ -118,7 +116,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
           itag = tag_offset !OK because 1 msg per process.
 #endif
           ! receive to pe=j
-          if(commatrix_recv(i).gt.0) then
+          if(p% commatrix_recv(i).gt.0) then
              ij = ij+1
              istrt = ir_buf(1,i)
              ilast = ir_buf(2,i)
@@ -155,7 +153,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
           itag = tag_offset !OK because 1 msg per process.
 #endif
           ! send from mype=i
-          if(commatrix_send(j).gt.0) then
+          if(p% commatrix_send(j).gt.0) then
             ji = ji+1
              istrt = is_buf(1,j)
              ilast = is_buf(2,j)
@@ -184,7 +182,7 @@ subroutine gr_mpiXchangeBlocks(mype,nprocs, tag_offset, &
           itag = tag_offset !OK because 1 msg per process.
 #endif
           ! send from mype=i
-          if(commatrix_send(j).gt.0) then
+          if(p% commatrix_send(j).gt.0) then
             ji = ji+1
              istrt = is_buf(1,j)
              ilast = is_buf(2,j)

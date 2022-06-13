@@ -84,6 +84,7 @@
 !!  2022-05-23 K. Weide  Pass ntypeMax to mpi_amr_comm_setup for LEAF-only fills
 !!  2022-06-06 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
 !!  2022-06-06 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
+!!  2022-06-13 K. Weide  Pass ntypeMin,ntypeMax,levelMin/Max to gr_mpiAmrComm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -135,8 +136,7 @@
       Integer :: ilp,iup,jlp,jup,klp,kup
       Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
       Integer :: maxNodetype_gcWanted_loc
-      integer :: ntype,lev
-      integer :: ntypeMaxLoc    !!DEV: consolidate - KW
+      integer :: ntypeMin,ntypeMax,lev
 
 !------------------------------------
 !-----Begin Executable code section
@@ -146,10 +146,8 @@
          Write(*,*) 'amr_guardcell:  diagonals off'
       End if
 
-      ntypeMaxLoc = 2
       If (present(maxNodetype_gcWanted)) Then
          maxNodetype_gcWanted_loc = maxNodetype_gcWanted
-         if (maxNodetype_gcWanted > 0) ntypeMaxLoc = maxNodetype_gcWanted
       Else
          maxNodetype_gcWanted_loc = -1
       End If
@@ -290,29 +288,29 @@
       lrestrict = .False.
       lfulltree = .False.
       lev = UNSPEC_LEVEL        ! or as requested??
+      ntypeMin = LEAF
       if (maxNodetype_gcWanted_loc < 0) then
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       else if (maxNodetype_gcWanted_loc == 1) then
-         ntype = LEAF
+         ntypeMax = LEAF
       else if (maxNodetype_gcWanted_loc == 2) then
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       else if (maxNodetype_gcWanted_loc .GE. 3) then
-         ntype = ALL_BLKS
+         ntypeMax = ANCESTOR
       else if (advance_all_levels) then
-         ntype = ALL_BLKS
+         ntypeMax = ANCESTOR
       else
-         ntype = ACTIVE_BLKS
+         ntypeMax = PARENT_BLK
       end if
       call Timers_start("gr_mpiAmrComm s")
       Call gr_mpiAmrComm(mype,nprocs,                             &
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         &
-                              ntype=ntype, level=lev,                  &
+                              ntypeMin=ntypeMin, ntypeMax=ntypeMax,    &
+                              levelMin=lev, levelMax=lev,              &
                               nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
       call Timers_stop("gr_mpiAmrComm s")
-!!=======
-!!DEV:                              ntypeMax=ntypeMaxLoc,                    &-KW
 
       If (lnblocks > 0) Then
       Do lb = 1,lnblocks
