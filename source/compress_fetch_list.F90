@@ -73,6 +73,8 @@
 !!    and
 !!    rewritten by Kevin Olson, 2007,2008.
 !!
+!! MODIFICATIONS
+!!  2022-06-14 K. Weide  Changed how and when rationalize_fetch_list is called
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -89,6 +91,7 @@
 !-----Use Statements
       Use mpi_morton
       Use paramesh_interfaces, only : amr_q_sort
+      Use paramesh_mpi_interfaces, only : rationalize_fetch_list
 
       Implicit None
 
@@ -150,10 +153,10 @@
           if (i > istack) exit
         End Do
         iend = i-1
-        If (istart < iend) Then
+        If (istart < iend .OR. fetch_list(3,iend) == 0) Then
 
           call rationalize_fetch_list(fetch_list,istart,iend,          & 
-                                      size(fetch_list,2))
+                                      size(fetch_list,2),mype)
 
         End If
         istart = iend+1

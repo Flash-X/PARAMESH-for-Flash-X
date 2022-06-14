@@ -28,6 +28,7 @@
 !!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces;
 !!                       changed pattern arg to process_fetch_list to a POINTER
 !!  2022-05-23 K. Weide  Added more optional args to mpi_amr_comm_setup
+!!  2022-06-14 K. Weide  Added mype arg to rationalize_fetch_list
 !!***
 
       module paramesh_mpi_interfaces
@@ -689,8 +690,8 @@
       subroutine rationalize_fetch_list (fetch_list,                   &
                                          istart,                       &
                                          iend,                         &
-                                         nptsneigh)
-      integer, intent(in) :: istart, iend, nptsneigh
+                                         nptsneigh,mype)
+      integer, intent(in) :: istart, iend, nptsneigh,mype
       integer, intent(inout) :: fetch_list(3,nptsneigh)
 
       end subroutine rationalize_fetch_list

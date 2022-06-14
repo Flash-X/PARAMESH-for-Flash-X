@@ -1,3 +1,34 @@
+2022-06-14  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
+
+	* source/rationalize_fetch_list.F90 (rationalize_fetch_list): added mype dummy argument.
+	(rationalize_fetch_list): process entries in fetch_list that have a
+	0 in the 'dtype' place by merging them with other entries for the
+	same block.
+	(rationalize_fetch_list): if a fetch_list has entries of dtype 0
+	that cannot be merged with other entries, convert them to fetch
+	requests for a small (diagonal if ndim>1) partial block.
+	(rationalize_fetch_list): use mype in determining which diagonal
+	to request.
+
+	* source/mpi_morton_bnd.F90 (mpi_morton_bnd): add special handling
+	for requesting parents of local leaf blocks for a
+	GRID_SUBPAT_GC_OPT subpattern. These are now added to the fetch
+	list with dtype 0, indicating that block data is not needed (but
+	the parent block still needs to be requested for its metadata).
+	This is currently necessary when using the block getter, because
+	its implementation may depend on receiving the parent metadata.
+
+	* source/gr_pmBlockGetter.F90 (neighInfo_2surr): tweaked lkup
+	error message texts.
+
+	* source/compress_fetch_list.F90 (compress_fetch_list): call
+	rationalize_fetch_list with mype arg.
+	(compress_fetch_list): call rationalize_fetch_list (sometime) even
+	for a list of length 1. This is necessary for handling the case
+	fetch_list(3,istart)==0 correctly (when istart==iend).
+
+	* headers/paramesh_mpi_interfaces.F90 (rationalize_fetch_list): added mype dummy argument.
+
 2022-06-13  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
 
 	* source/gr_mpiXchangeBlocks.F90 (gr_mpiXchangeBlocks): source

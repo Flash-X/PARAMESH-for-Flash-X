@@ -1,20 +1,37 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
+!!****if* source/rationalize_fetch_list
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   rationalize_fetch_list
+!!
+!! DESCRIPTION
+!!
+!!  This routine analyses the parts of a block which are required,
+!!  ensuring that a large enough part of the block is transmitted
+!!  to satisfy the guardcell filling operation (or other domain
+!!  data communication operation).
+!!
+!! MODIFICATIONS
+!!
+!!  2022-06-14 K. Weide  Process entries of dtype 0: merge with others
+!!                       Convert requests of dtype 0 to data req if necessary
+!!                       Added mype dummy argument
+!!***
 
        subroutine rationalize_fetch_list (fetch_list,                  &
                                           istart,                      &
                                           iend,                        &
-                                          nptsneigh)
-
-! This routine analyses the parts of a block which are required,
-! ensuring that a large enough part of the block is transmitted
-! to satisfy the guardcell filling operation.
+                                          nptsneigh,mype)
 
 
        use paramesh_dimensions
@@ -24,11 +41,11 @@
 
        implicit none
 
-       integer, intent(in) :: istart, iend, nptsneigh
+       integer, intent(in) :: istart, iend, nptsneigh, mype
        integer, intent(inout) :: fetch_list(3,nptsneigh)
 
        integer :: fetch_list_old(3,istart:iend)
-       integer :: imask(27)
+       integer :: imask(0:27)
        integer :: imask_loc(1)
        integer :: i,ib
        logical :: lfullblock
@@ -36,7 +53,16 @@
 ! initialize mask array
        imask = 0
 
-       if(istart.eq.iend) return
+       if(istart.eq.iend) then
+          if (fetch_list(3,istart) == 0) then
+             if (fetch_list(2,istart) < mype) then
+                fetch_list(3,istart) = 15 + k2d*3 + k3d*9
+             else
+                fetch_list(3,istart) = 13 - k2d*3 - k3d*9
+             endif
+          end if
+          return
+       end if
 
        do i = istart,iend
           fetch_list_old(3,i) = fetch_list(3,i)
@@ -158,18 +184,29 @@
 
 ! If 1D calculation
        if(ndim.eq.1) then 
-         if(imask(14).eq.1) fetch_list(3,istart:iend)=14
-         go to 2
+          if(imask(14).eq.1) then
+             fetch_list(3,istart:iend)=14
+          else if(sum(imask(1:)).lt.1) then
+             if (fetch_list(2,istart) < mype) then
+                fetch_list(3,istart:iend)=15
+             else
+                fetch_list(3,istart:iend)=13
+             end if
+          end if
        endif
 
        if(ndim.ge.2) then 
 
-       if(sum(imask).gt.1) then
-         imask_loc(1)=14
-       else
-         imask_loc = maxloc(imask)
-       endif
-       fetch_list(3,istart:iend)=imask_loc(1)
+          if(sum(imask(1:)).gt.1) then
+             imask_loc(1)=14
+          else if(sum(imask(1:)).gt.0) then
+             imask_loc = maxloc(imask(1:))
+          else if (fetch_list(2,istart) < mype) then
+             imask_loc(1)=18+k3d*9
+          else
+             imask_loc(1)=10-k3d*9
+          endif
+          fetch_list(3,istart:iend)=imask_loc(1)
 
        endif
 

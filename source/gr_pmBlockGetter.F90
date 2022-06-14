@@ -21,6 +21,7 @@
 
 !!  2021-01-09 K. Weide  Created for asynchronous domain data communications
 !!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
+!!  2021-06-14 K. Weide  Tweaked error message texts for lkup errors
 
 #include "constants.h"
 #include "Simulation.h"
@@ -1647,11 +1648,11 @@ contains
                 End If
              End Do
              If (.Not.lfound) Then
-                Write(*,*) 'Error in surr_blks_lkup for parent : ',       &
+                Write(*,*) 'Error in neighInfo_2surr lkup for parent : ',       &
                      'remote block ',parent(:,lb),                     &
                      ' not located on pe ',mype,                       &
                      ' while processing blk ',lb,mype
-                Call Driver_abort('gr_pmBlockGetter: surr_blks_lkup for parent failed')
+                Call Driver_abort('gr_pmBlockGetter: neighInfo_2surr lkup for parent failed')
              End If
 
              call neighinfo_surr(surr_blks(1,1,1,1,remote_block),in-n1,neighBlk,neighProc)
