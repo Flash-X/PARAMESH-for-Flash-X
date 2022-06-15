@@ -27,7 +27,8 @@
 !!   Integer, Intent(in)  :: remote_block   remote block 
 !!   Integer, Intent(in)  :: remote_pe      remote processor
 !!   Integer, Intent(in)  :: idest
-!!   Integer, Intent(out) :: dtype          message type - an integer between 1 and 27
+!!   Integer, Intent(out) :: dtype          message type - an integer from 1 to 27
+!!                                          (dtype = 0 should not occur)
 !!                                          indicating the section of a blck contained in
 !!                                          the message segment from (remote_block,remote_pe).
 !!   Integer, Intent(out) :: index0         the address index0+1 is where you should start

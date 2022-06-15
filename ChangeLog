@@ -1,14 +1,24 @@
 2022-06-14  Klaus Weide  <kweide@compute-240-14.cels.anl.gov>
 
+	* source/mpi_set_message_sizes.F90 (mpi_set_message_sizes): allow
+	messages of dtype 0 and assign them size 0.
+
+	* source/mpi_set_message_limits.F90 (mpi_set_message_limits): return empty cell ranges for dtype 0.
+
+	* source/mpi_pack_blocks.F90 (mpi_pack_blocks): allow for messages
+	w/o domain data (tree-only, dtype 0).
+
+	* source/amr_mpi_find_blk_in_buffer.F90: note that dtype = 0
+	should not occur here.
+
+	* headers/mpi_morton.F90 (mpi_morton): added 0-th element to message_size_* arrays.
+
 	* source/rationalize_fetch_list.F90 (rationalize_fetch_list): added mype dummy argument.
 	(rationalize_fetch_list): process entries in fetch_list that have a
 	0 in the 'dtype' place by merging them with other entries for the
 	same block.
 	(rationalize_fetch_list): if a fetch_list has entries of dtype 0
-	that cannot be merged with other entries, convert them to fetch
-	requests for a small (diagonal if ndim>1) partial block.
-	(rationalize_fetch_list): use mype in determining which diagonal
-	to request.
+	that cannot be merged with other entries, leave them in the list.
 
 	* source/mpi_morton_bnd.F90 (mpi_morton_bnd): add special handling
 	for requesting parents of local leaf blocks for a
@@ -23,9 +33,6 @@
 
 	* source/compress_fetch_list.F90 (compress_fetch_list): call
 	rationalize_fetch_list with mype arg.
-	(compress_fetch_list): call rationalize_fetch_list (sometime) even
-	for a list of length 1. This is necessary for handling the case
-	fetch_list(3,istart)==0 correctly (when istart==iend).
 
 	* headers/paramesh_mpi_interfaces.F90 (rationalize_fetch_list): added mype dummy argument.
 

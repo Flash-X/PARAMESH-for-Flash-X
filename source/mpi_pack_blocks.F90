@@ -21,6 +21,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!
+!! MODIFICATIONS
+!!  2022-06-14 K. Weide  Add support for messages w/o data (tree-only, dtype 0)
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -68,7 +71,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
 
-      integer :: loc_message_size(2*27),dtype
+      integer :: loc_message_size(0:2*27),dtype
       integer :: tot_no_blocks_to_be_received,lindex
       integer :: lb, irpe
       integer :: index 

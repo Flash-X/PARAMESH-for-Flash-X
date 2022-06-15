@@ -74,7 +74,7 @@
 !!    rewritten by Kevin Olson, 2007,2008.
 !!
 !! MODIFICATIONS
-!!  2022-06-14 K. Weide  Changed how and when rationalize_fetch_list is called
+!!  2022-06-14 K. Weide  Changed how rationalize_fetch_list is called
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -153,7 +153,7 @@
           if (i > istack) exit
         End Do
         iend = i-1
-        If (istart < iend .OR. fetch_list(3,iend) == 0) Then
+        If (istart < iend) Then
 
           call rationalize_fetch_list(fetch_list,istart,iend,          & 
                                       size(fetch_list,2),mype)

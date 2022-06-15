@@ -24,8 +24,8 @@
 !! MODIFICATIONS
 !!
 !!  2022-06-14 K. Weide  Process entries of dtype 0: merge with others
-!!                       Convert requests of dtype 0 to data req if necessary
-!!                       Added mype dummy argument
+!!                       Pass on requests of dtype 0 if not merged
+!!                       Added mype dummy argument (now unused)
 !!***
 
        subroutine rationalize_fetch_list (fetch_list,                  &
@@ -54,13 +54,6 @@
        imask = 0
 
        if(istart.eq.iend) then
-          if (fetch_list(3,istart) == 0) then
-             if (fetch_list(2,istart) < mype) then
-                fetch_list(3,istart) = 15 + k2d*3 + k3d*9
-             else
-                fetch_list(3,istart) = 13 - k2d*3 - k3d*9
-             endif
-          end if
           return
        end if
 
@@ -187,11 +180,7 @@
           if(imask(14).eq.1) then
              fetch_list(3,istart:iend)=14
           else if(sum(imask(1:)).lt.1) then
-             if (fetch_list(2,istart) < mype) then
-                fetch_list(3,istart:iend)=15
-             else
-                fetch_list(3,istart:iend)=13
-             end if
+             fetch_list(3,istart:iend)=0
           end if
        endif
 
@@ -201,10 +190,8 @@
              imask_loc(1)=14
           else if(sum(imask(1:)).gt.0) then
              imask_loc = maxloc(imask(1:))
-          else if (fetch_list(2,istart) < mype) then
-             imask_loc(1)=18+k3d*9
           else
-             imask_loc(1)=10-k3d*9
+             imask_loc(1)=0
           endif
           fetch_list(3,istart:iend)=imask_loc(1)
 
