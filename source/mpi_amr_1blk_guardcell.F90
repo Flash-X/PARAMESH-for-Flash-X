@@ -669,7 +669,7 @@
                      ja = 2-k2d; jb = 2+k2d
                      ia = 1; ib = 3
 #if NDIM >= 3
-                     if (max(nguard,nguard_work) .LE. 3NZB/2) then
+                     if (max(nguard,nguard_work) .LE. NZB/2) then
                         koff = mod((which_child(lb)-1)/4,2)
                         ka = 1+koff; kb = 1+K3D+koff
                      end if
