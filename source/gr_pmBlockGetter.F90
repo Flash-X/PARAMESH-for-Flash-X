@@ -466,7 +466,7 @@ contains
                      ! input data). Cf. mpi_morton_bnd.
                        if (All(psurr_blk(1,1:3,1:1+2*K2D,1:1+2*K3D) > -20)) then
 #if NDIM >= 3
-                          if (nguarda .LE. 3NZB/2) then
+                          if (nguarda .LE. NZB/2) then
                              koff = mod((which_child(blk)-1)/4,2)
                              ka = 1+koff; kb = 1+K3D+koff
                           end if
@@ -1414,7 +1414,7 @@ contains
       if (All(psurr_blk(1,1:3,1:1+2*K2D,1:1+2*K3D) > -20)) then
          nguarda = max(nguard,nguard_work)
 #if NDIM >= 3
-         if (nguarda .LE. 3NZB/2) then
+         if (nguarda .LE. NZB/2) then
             koff = mod((which_child(blk)-1)/4,2)
             ka = 1+koff; kb = 1+K3D+koff
          end if
