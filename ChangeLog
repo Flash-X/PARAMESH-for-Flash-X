@@ -1,0 +1,8 @@
+2022-09-29  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_dimensions.F90: introduce 'include
+	"gr_pmPdgDimenInit.fh"' for initializing PARAMESH constants
+	hardwired for several physicaldata groups. This relies on support
+	of the Flash-X congiguration mechanism (setup.py) for generating
+	the file to included (and other files included by THAT file).
+

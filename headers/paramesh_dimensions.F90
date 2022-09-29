@@ -292,22 +292,9 @@
 
       public :: gr_thePdgDimens
 #ifndef LIBRARY
-      integer, private :: i
-      type(pdgConst_t),parameter,dimension(NUM_PDGS) :: gr_thePdgDimens = &
-           (/(pdgConst_t( &
-           nxb, nyb, nzb,     &
-           nguard,            &
-           nvar,              &
-           il_bnd, iu_bnd,  &
-           jl_bnd, ju_bnd,  &
-           kl_bnd, ku_bnd,  &
-           il_bndi, iu_bndi,&
-           jl_bndi, ju_bndi,&
-           kl_bndi, ku_bndi,&
-           il_bnd1,iu_bnd1, &
-           jl_bnd1,ju_bnd1, &
-           kl_bnd1,ku_bnd1  &
-           ), i=1,NUM_PDGS)/)
+
+#     include "gr_pmPdgDimenInit.fh"
+
 #else
       type(pdgConst_t),save, dimension(NUM_PDGS) :: gr_thePdgDimens
       target :: gr_thePdgDimens
