@@ -1,3 +1,9 @@
+2022-09-30  Klaus Weide  <kweide@uchicago.edu>
+
+	* flash_avoid_orrery/amr_initialize.F90: add a crucial piece
+	piece of PDG initialization: call gr_pdgInitOne in a loop, once
+	for each PDG.
+
 2022-09-29  Klaus Weide  <kweide@uchicago.edu>
 
 	* headers/paramesh_dimensions.F90: introduce 'include
