@@ -997,8 +997,9 @@
       Allocate(ladd_strt(0:nprocs-1))
       Allocate(ladd_end(0:nprocs-1))
 
-
-      call gr_pdgInitOne(gr_thePdgs(1),gr_thePdgDimens(1), nfluxvar,nfluxes,maxblocksfl)
+      do i = 1, NUM_PDGS
+         call gr_pdgInitOne(gr_thePdgs(i),gr_thePdgDimens(i), nfluxvar,nfluxes,maxblocksfl)
+      end do
       unk    => gr_thePdgs(1) % unk
       unk1   => gr_thePdgs(1) % unk1
       flux_x => gr_thePdgs(1) % flux_x
