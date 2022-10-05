@@ -46,20 +46,26 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          July 1997
+!!   Modified for pdg:  Klaus Weide        Sept 2022
 !!
 !!***
 
+#include "Simulation.h"
       Subroutine amr_prolong_fun_init
 
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_interfaces, only : amr_prolong_cc_fun_init,         & 
                                       amr_prolong_face_fun_init
-
+      use physicaldata, only: gr_thePdgs
       Implicit None
+
+      integer :: ig
 
 !-----Begin executable code.
 
-      Call amr_prolong_cc_fun_init
-
+      do ig = 1, NUM_PDGS
+         Call amr_prolong_cc_fun_init(gr_thePdgs(ig),ig)
+      end do
       Call amr_prolong_face_fun_init
 
       Return

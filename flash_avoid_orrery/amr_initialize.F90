@@ -250,7 +250,8 @@
       gc_off_y     = Mod(nyb,2)
       gc_off_z     = Mod(nzb,2)
 #ifdef LIBRARY
-      call gr_pdgDimenInitOne(gr_thePdgDimens(1), nvar,nguard,nxb,nyb,nzb, npgs,k2d,k3d)
+!!$      call gr_pdgDimenInitOne(gr_thePdgDimens(1), nvar,nguard,nxb,nyb,nzb, npgs,k2d,k3d)
+
       il_bnd       = 1
       jl_bnd       = 1
       kl_bnd       = 1
@@ -282,6 +283,7 @@
       iu_bnd1      = nxb+2*nguard
       ju_bnd1      = nyb+2*nguard*k2d
       ku_bnd1      = nzb+2*nguard*k3d
+#  include "gr_pmPdgDimenInit.fh"
 #endif
       len_block1   = iu_bnd1*ju_bnd1*ku_bnd1*nvar
       len_blockfx1 = (iu_bnd1+1)*ju_bnd1*ku_bnd1 

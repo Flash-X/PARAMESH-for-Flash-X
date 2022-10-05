@@ -850,8 +850,12 @@
       end interface
 
       interface
-      subroutine amr_prolong_cc_fun_init
-      end subroutine amr_prolong_cc_fun_init
+         subroutine amr_prolong_cc_fun_init(pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
+           type(pdg_t), intent(INOUT) :: pdg
+           integer, intent(in)    :: ig
+         end subroutine amr_prolong_cc_fun_init
       end interface
 
       interface

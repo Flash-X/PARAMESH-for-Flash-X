@@ -1,3 +1,16 @@
+2022-10-04  Klaus Weide  <kweide@uchicago.edu>
+
+	* flash_avoid_orrery/amr_initialize.F90: use #include
+	"gr_pmPdgDimenInit.fh" for initialization also in LIBRARY mode.
+
+	* headers/paramesh_interfaces.F90: update
+	amr_prolong_cc_fun_init interface.
+
+	* source/amr_prolong_cc_fun_init.F90: add pdg,ig dummy args.
+
+	* source/amr_prolong_fun_init.F90: call amr_prolong_cc_fun_init in
+	a loop over groups.
+
 2022-09-30  Klaus Weide  <kweide@uchicago.edu>
 
 	* flash_avoid_orrery/amr_initialize.F90: add a crucial piece
