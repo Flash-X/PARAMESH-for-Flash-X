@@ -15,7 +15,7 @@
 #define DEBUG
 #endif
 
-! This routine should be moved to 'utilities', not part of the PARAMESH kernal
+! This routine should be moved to 'utilities', not part of the PARAMESH kernel
 
 subroutine mpiAmr_restrict_fulltree(mype,iopt,lcc,lfc,lec,lnc,pdgNo)
   Use physicaldata, only: gr_thePdgs

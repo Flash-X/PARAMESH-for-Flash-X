@@ -1,3 +1,18 @@
+2022-10-07  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_interfaces.F90: add pdg,ig dummy args to
+	amr_1blk_cc_prol_linear, amr_1blk_cc_prol_genorder interfaces.
+
+	* source/amr_1blk_cc_prol_genorder.F90: add pdg,ig args, make
+	implementation PDG-specifc.
+
+	* source/amr_1blk_cc_prol_linear.F90: add pdg arg, make
+	implementation PDG-specifc.
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90: Temporary changes to
+	call a couple of subsidiary rountines with pdg,ig arguments
+	(referring to the DEFAULT pdg, for now).
+
 2022-10-04  Klaus Weide  <kweide@uchicago.edu>
 
 	* flash_avoid_orrery/amr_initialize.F90: use #include

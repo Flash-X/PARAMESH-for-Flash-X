@@ -7,6 +7,9 @@
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
 
+! Modification history:
+!     Klaus Weide, January - October 2022
+!        Added pdg and/or ig dummy arguments to many interfaces
       module paramesh_mpi_interfaces
 
 

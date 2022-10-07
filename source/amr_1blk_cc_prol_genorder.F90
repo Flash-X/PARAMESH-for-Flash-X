@@ -121,28 +121,33 @@
 !!   Written by Kevin Olson,  March 2002 and based on similar routines
 !!   by Peter MacNeice.
 !!
+!! MODIFICATIONS
+!!  2022-10-07 Klaus Weide  Made PDG-aware
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(4): unk1
+!!REORDER(4): recv
+#include "Simulation.h"
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_1blk_cc_prol_genorder            & 
+Subroutine amr_1blk_cc_prol_genorder            &
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, & 
-         mype,ivar,order)
+         mype,ivar,order,pdg,ig)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
+  use gr_pmPdgDecl, ONLY : pdg_t
+  Use paramesh_dimensions, only: gr_thePdgDimens
+  Use paramesh_dimensions, ONLY: ndim, k2d, k3d
 
-      Implicit None
+  Implicit None
 
 !-----Input/Output Arguments
       Real,    Intent(inout) :: recv(:,:,:,:)
       Integer, Intent(in) :: ia,ib,ja,jb,ka,kb
       Integer, Intent(in) :: idest,ioff,joff,koff,mype
       Integer, Intent(in) :: ivar,order
+  type(pdg_t),intent(INOUT) :: pdg
+  Integer, Intent(in) :: ig
 
 !-----Local arrays and variables
 !-----maxorder is the maximum order of the Lagrange polynomial allowed                   
@@ -155,45 +160,77 @@
       Real :: weight_right
       Real :: weight_left
       Real :: tempy, tempx
-      Real, Save, Allocatable    :: weightx(:,:,:)
-      Real, Save, Allocatable    :: weighty(:,:,:)
-      Real, Save, Allocatable    :: weightz(:,:,:)
 
       Integer :: i,j,k,ii
       Integer :: offi,offj,offk
       Integer :: iorder
-      Integer :: icmin,jcmin,kcmin
+!!$      Integer :: icmin,jcmin,kcmin
       Integer :: ifmin,ifmax,jfmin,jfmax,kfmin,kfmax
       Integer :: ipar, jpar, kpar
-      Integer, Save, Allocatable :: imina(:,:),   & 
-                                    imaxa(:,:)
-      Integer, Save, Allocatable :: jmina(:,:),   & 
-                                    jmaxa(:,:)
-      Integer, Save, Allocatable :: kmina(:,:),   & 
-                                    kmaxa(:,:)
+  type aux_t
+      Real, Allocatable    :: weightx(:,:,:)
+      Real, Allocatable    :: weighty(:,:,:)
+      Real, Allocatable    :: weightz(:,:,:)
+
+      Integer, Allocatable :: imina(:,:), imaxa(:,:)
+      Integer, Allocatable :: jmina(:,:), jmaxa(:,:)
+      Integer, Allocatable :: kmina(:,:), kmaxa(:,:)
       
-      Logical, Save :: first_call = .True.
+      Logical :: first_call_thisPdg
+   end type aux_t
+   type(aux_t),allocatable,SAVE :: auxArr(:)
+   Logical, Save :: first_call_overall = .True.
  
 !-----Begin Exectuable Code Section
 
 !-----Computations done on first call to this routine
-      If (first_call) Then
+   If (first_call_overall) Then
+      allocate(auxArr(NUM_PDGS))
+      auxArr(:) % first_call_thisPdg = .True.
+   end If
+
+   ASSOCIATE(first_call_thisPdg => auxArr(ig) % first_call_thisPdg, &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1   &
+        )
 
 !--------For X direction
 
-         Allocate (imina(iu_bnd1,0:maxorder))
-         Allocate (imaxa(iu_bnd1,0:maxorder))
-         Allocate (weightx(0:iu_bnd1,iu_bnd1,0:maxorder))
+     if (first_call_thisPdg) then
+        Allocate (auxArr(ig) % imina(iu_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % imaxa(iu_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % weightx(0:iu_bnd1,iu_bnd1,0:maxorder))
 
-         Allocate (jmina(ju_bnd1,0:maxorder))
-         Allocate (jmaxa(ju_bnd1,0:maxorder))
-         Allocate (weighty(0:ju_bnd1,ju_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % jmina(ju_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % jmaxa(ju_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % weighty(0:ju_bnd1,ju_bnd1,0:maxorder))
 
-         Allocate (kmina(ku_bnd1,0:maxorder))
-         Allocate (kmaxa(ku_bnd1,0:maxorder))
-         Allocate (weightz(0:ku_bnd1,ku_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % kmina(ku_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % kmaxa(ku_bnd1,0:maxorder))
+        Allocate (auxArr(ig) % weightz(0:ku_bnd1,ku_bnd1,0:maxorder))
+     end if
+   end ASSOCIATE
 
-         first_call = .False.
+   ASSOCIATE(first_call_thisPdg => auxArr(ig) % first_call_thisPdg, &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+            imina   => auxArr(ig) % imina, imaxa => auxArr(ig) % imaxa,  &
+            jmina   => auxArr(ig) % jmina, jmaxa => auxArr(ig) % jmaxa,  &
+            kmina   => auxArr(ig) % kmina, kmaxa => auxArr(ig) % kmaxa,  &
+            weightx     => auxArr(ig) % weightx,           &
+            weighty     => auxArr(ig) % weighty,           &
+            weightz     => auxArr(ig) % weightz,           &
+            unk1        => pdg % unk1          &
+        )
+     if (first_call_thisPdg) then
+
+        first_call_thisPdg = .False.
 
          Do iorder = 0,maxorder
          
@@ -388,7 +425,7 @@
 
          End Do  ! End Do iorder = 0,maxorder
 
-      End If  ! End If (first_call)
+      End If  ! End If (first_call_thisPdg)
 
 
 
@@ -409,15 +446,16 @@
       If (joff > 0) offj = nyb*k2d/2
       If (koff > 0) offk = nzb*k3d/2
 
-      kcmin = ((kfmin-nguard-1+largei)/2 +       & 
-                      nguard - largei/2 )*k3d +  & 
-                      1 + offk
-      jcmin = ((jfmin-nguard-1+largei)/2 +       & 
-                      nguard - largei/2 )*k2d +  & 
-                      1 + offj
-      icmin = ((ifmin-nguard-1+largei)/2 +       & 
-                      nguard - largei/2 ) +      & 
-                      1 + offi
+      ! UNUSED:
+!!$      kcmin = ((kfmin-nguard-1+largei)/2 +       &
+!!$                      nguard - largei/2 )*k3d +  &
+!!$                      1 + offk
+!!$      jcmin = ((jfmin-nguard-1+largei)/2 +       &
+!!$                      nguard - largei/2 )*k2d +  &
+!!$                      1 + offj
+!!$      icmin = ((ifmin-nguard-1+largei)/2 +       &
+!!$                      nguard - largei/2 ) +      &
+!!$                      1 + offi
 
 
 !-----Main Interpolation loops.
@@ -473,8 +511,7 @@
       End Do  ! End Do i = ifmin,ifmax
       End Do  ! End Do j = jfmin,jfmax
       End Do  ! End Do k = kfmin,kfmax
+    end ASSOCIATE
 
-
-      Return
-      End Subroutine amr_1blk_cc_prol_genorder
+  End Subroutine amr_1blk_cc_prol_genorder
 

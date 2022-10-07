@@ -8,12 +8,13 @@
 !----------------------------------------------------------------------
 
 ! Modification history:
-!
-! Modification history:
 !     Michael L. Rilee, November 2002, *dbz*
 !        Initial support for divergenceless prolongation
 !     Michael L. Rilee, December 2002, *clean_divb*
 !        Support for projecting field onto divergenceless field
+!
+!     Klaus Weide, January - October 2022
+!        Added pdg and/or ig dummy arguments to many interfaces
 !
 !#ifdef HAVE_CONFIG_H
 !#include <config.h>
@@ -82,21 +83,28 @@
 
       interface
       subroutine amr_1blk_cc_prol_linear(recv,ia,ib,ja,jb,ka,kb,          & 
-     &       idest,ioff,joff,koff,mype,ivar)
+     &       idest,ioff,joff,koff,mype,ivar,pdg)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar
       real,    intent(inout) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
       end subroutine amr_1blk_cc_prol_linear
       end interface
 
       interface
       subroutine amr_1blk_cc_prol_genorder(recv,ia,ib,ja,jb,ka,kb,        & 
-     &       idest,ioff,joff,koff,mype,ivar,order)
+     &       idest,ioff,joff,koff,mype,ivar,order,pdg,ig)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar,order
       real,    intent(inout) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
+      Integer, Intent(in) :: ig
       end subroutine amr_1blk_cc_prol_genorder
       end interface
 
