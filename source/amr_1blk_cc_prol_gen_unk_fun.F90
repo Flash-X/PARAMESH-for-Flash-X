@@ -82,6 +82,7 @@
 !!  Written by Peter MacNeice January 2002.
 !!  Modified for GRID_WITH_MONOTONIC variant - Klaus Weide 2022-02-20
 !!  Changes to call amr_1blk_cc_prol_dg for Thornado - Austin Harris 2021-12-06
+!!  2022-10-07 Klaus Weide  Made PDG-aware (temporary, intermediate changes)
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -93,11 +94,11 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 
 !-----Use Statements
   use timings, ONLY: timing_mpi, timer_amr_1blk_cc_prol_gen_unk
+  use gr_pmPdgDecl, ONLY : pdg_t
 #ifndef GRID_WITH_MONOTONIC
-  Use paramesh_dimensions
-  Use physicaldata
-  Use tree
-  Use prolong_arrays
+  Use paramesh_dimensions, ONLY: nvar
+  Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk, &
+       gr_thePdgs
 
   Use paramesh_interfaces, only :                  &
                        amr_1blk_cc_prol_inject,    & 
@@ -117,6 +118,9 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
   integer, intent(in)    :: ia,ib,ja,jb,ka,kb,idest
   integer, intent(in)    :: ioff,joff,koff,mype
   integer, intent(in)    :: lb,lb_p,pe_p
+
+  type(pdg_t),POINTER :: pdg => gr_thePdgs(1) !DEV: temporary; should become dummy arg?
+  integer :: ig = DEFAULT_PDGNO !DEV: temporary; should become dummy arg?
 
 !-----Local variables
   double precision :: time1
@@ -149,13 +153,13 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 !-----Default multi-linear interpolation  
               Call amr_1blk_cc_prol_linear               &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, & 
-           mype,ivar)
+           mype,ivar,pdg)
 
            Elseif (interp_mask_unk(ivar) > 1) Then
 !-----High order Largrange ploynomial interpolation
               Call amr_1blk_cc_prol_genorder             &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, & 
-            mype,ivar,interp_mask_unk(ivar))
+            mype,ivar,interp_mask_unk(ivar),pdg,ig)
 
            End If  ! End If (interp_mask_unk(ivar) == 0)
 
