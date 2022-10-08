@@ -95,7 +95,6 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 !-----Use Statements
   use timings, ONLY: timing_mpi, timer_amr_1blk_cc_prol_gen_unk
   use gr_pmPdgDecl, ONLY : pdg_t
-#ifndef GRID_WITH_MONOTONIC
   Use paramesh_dimensions, ONLY: nvar
   Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk, &
        gr_thePdgs
@@ -106,7 +105,6 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
                        amr_1blk_cc_prol_genorder,  & 
                        amr_1blk_cc_prol_dg,    &
                        amr_1blk_cc_prol_user
-#endif
 
   implicit none
 
