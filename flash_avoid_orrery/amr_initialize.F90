@@ -69,6 +69,8 @@
 !!
 !!   Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-10-04 Klaus Weide  initialization for all PDGs
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

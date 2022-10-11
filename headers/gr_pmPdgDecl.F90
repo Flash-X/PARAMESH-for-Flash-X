@@ -1,3 +1,5 @@
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Added new logical doRedist flag
 module gr_pmPdgDecl
   implicit none
 
@@ -57,5 +59,6 @@ module gr_pmPdgDecl
      integer :: nfluxes
      integer :: maxblocksfl
 
+     logical :: doRedist = .TRUE.
   end type pdg_t
 end module gr_pmPdgDecl
