@@ -1,3 +1,5 @@
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Added initialization of doRedist flag to TRUE
 
 !!REORDER(5): unk, unk1, flux_[xyz], tflux_[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -102,6 +104,8 @@ subroutine gr_pdgInitOne(pdg,pdgDimen, nfluxvar,nfluxes,maxblocksfl)
     pdg % nfluxvar    = nfluxvar
     pdg % nfluxes     = nfluxes
     pdg % maxblocksfl = maxblocksfl
+
+    pdg % doRedist    = .TRUE.  !DEV: for now!
 
   end ASSOCIATE
 end subroutine gr_pdgInitOne

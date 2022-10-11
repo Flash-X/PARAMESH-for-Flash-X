@@ -121,47 +121,51 @@
 !!
 !!   Kevin Olson (1998)
 !!
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Made PDG-aware for unk redist, specify INTENTs
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f, unk_test, face[xyz]_test, edge[xyz]_test, unkn_test
+#include "Simulation.h"
 #include "paramesh_preprocessor.fh"
 
       Subroutine send_block_data (lb, new_loc, old_loc, free,          & 
                                   moved, sent,                         & 
                                   lnblocks_old, mype, nmoved,          & 
                                   test, point_to,                      & 
-                                  reqs, nsend, unk_int_type,           &
+                                  reqs, nsend, unk_int_types,           &
                                   facex_int_type, facey_int_type,      &
                                   facez_int_type, edgex_int_type,      &
                                   edgey_int_type, edgez_int_type,      &
                                   unkn_int_type)
       
 !-----Use statements   
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
+      Use gr_pmPdgDecl, ONLY: pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, npgs, k2d, k3d, &
+           maxblocks, nfacevar, nvaredge, nvarcorn
+      Use paramesh_dimensions, ONLY: nguard, nxb, nyb, nzb
+      Use physicaldata, ONLY: gr_thePdgs, &
+           facevarx, facevary, facevarz, unk_e_x, unk_e_y, unk_e_z, unk_n
+      Use tree, ONLY: maxblocks_tr, new_lnblocks, newchild
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output statements.
-      Integer :: new_loc(2,maxblocks_tr), old_loc(2,maxblocks_tr)
-      Logical :: free(maxblocks), moved(maxblocks), sent(maxblocks)
-      Integer :: lb, lnblocks_old, mype
-      Integer :: reqs(maxblocks_tr), nsend
-      Integer :: nmoved
-      Integer :: point_to(maxblocks),test(maxblocks)
-      Integer :: unk_int_type
-      Integer :: facex_int_type, facey_int_type, facez_int_type
-      Integer :: edgex_int_type, edgey_int_type, edgez_int_type
-      Integer :: unkn_int_type
+      Integer,intent(in) :: new_loc(2,maxblocks_tr), old_loc(2,maxblocks_tr)
+      Logical,intent(INOUT) :: free(maxblocks), moved(maxblocks), sent(maxblocks)
+      Integer,intent(in) :: lb, lnblocks_old, mype
+      Integer,intent(INOUT) :: reqs(maxblocks_tr), nsend
+      Integer,intent(INOUT) :: nmoved
+      Integer,intent(INOUT) :: point_to(maxblocks),test(maxblocks)
+      Integer,intent(in) :: unk_int_types(1:NUM_PDGS)
+      Integer,intent(in) :: facex_int_type, facey_int_type, facez_int_type
+      Integer,intent(in) :: edgex_int_type, edgey_int_type, edgez_int_type
+      Integer,intent(in) :: unkn_int_type
 
 !-----Local arrays and variables.
-      Integer,Save ::  is_unk,js_unk,ks_unk,ie_unk,je_unk,ke_unk
       Integer,Save ::  is_facex,js_facex,ks_facex,ie_facex,je_facex,ke_facex
       Integer,Save ::  is_facey,js_facey,ks_facey,ie_facey,je_facey,ke_facey
       Integer,Save ::  is_facez,js_facez,ks_facez,ie_facez,je_facez,ke_facez
@@ -171,21 +175,16 @@
       Integer,Save ::  is_unkn,js_unkn,ks_unkn,ie_unkn,je_unkn,ke_unkn
       Integer :: status(MPI_STATUS_SIZE)
       Integer :: lb2, ierr
+      integer :: ig
       Logical, Save :: first = .True.
       Logical :: success
+      type(pdg_t),pointer :: pdg
 
 !-----Begin executable code.
 
       If (first) Then
 
       first = .False.
-
-      is_unk = nguard*npgs+1
-      js_unk = nguard*k2d*npgs+1
-      ks_unk = nguard*k3d*npgs+1
-      ie_unk = nguard*npgs+nxb
-      je_unk = nguard*k2d*npgs+nyb
-      ke_unk = nguard*k3d*npgs+nzb
 
       is_facex = nguard*npgs+1
       js_facex = nguard*k2d*npgs+1
@@ -266,16 +265,26 @@
                               ierr)
                If (free(lb)) Then
 
-                If (nvar > 0) Then
+              do ig = 1, NUM_PDGS
+              pdg => gr_thePdgs(ig)
+              ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                   is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                   js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                   ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                   unk => pdg % unk &
+                   )
+                If (pdg % doRedist .AND. nvar > 0) Then
                 Call MPI_SSEND (                                       & 
          unk(1,is_unk,js_unk,ks_unk,point_to(lb)),                     & 
                                 1,                                     & 
-                                unk_int_type,                          & 
+                                unk_int_types(ig),                      &
                                 new_loc(2,lb),                         & 
                                 new_loc(1,lb),                         & 
                                 amr_mpi_meshComm,                        & 
                                 ierr)
-                End If  ! End If (nvar > 0)
+             End If  ! End If (nvar > 0)
+              end ASSOCIATE
+              end do
 
 !---------------send facevariables
                 If (nfacevar > 0) Then
@@ -357,15 +366,25 @@
 
                Else
 
-                If (nvar > 0) Then
+              do ig = 1, NUM_PDGS
+              pdg => gr_thePdgs(ig)
+              ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                   is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                   js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                   ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                   unk => pdg % unk &
+                   )
+                If (pdg % doRedist .AND. nvar > 0) Then
                 Call MPI_SSEND (unk(1,is_unk,js_unk,ks_unk,lb),        & 
                                 1,                                     & 
-                                unk_int_type,                          & 
+                                unk_int_types(ig),                      &
                                 new_loc(2,lb),                         & 
                                 new_loc(1,lb),                         & 
                                 amr_mpi_meshComm,                        & 
                                 ierr)
                 End If
+              end ASSOCIATE
+              end do
 
 !---------------send facevariables
                 If (nfacevar > 0) Then
@@ -452,10 +471,23 @@
             If (.Not.moved(lb).And.free(new_loc(1,lb))) Then
              If (free(lb)) Then
 
-               If (nvar > 0) Then
+              do ig = 1, NUM_PDGS
+              pdg => gr_thePdgs(ig)
+              ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                   is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                   js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                   ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                   ie_unk => gr_thePdgDimens(ig) % iu_bndi, &
+                   je_unk => gr_thePdgDimens(ig) % ju_bndi, &
+                   ke_unk => gr_thePdgDimens(ig) % ku_bndi, &
+                   unk => pdg % unk &
+                   )
+               If (pdg % doRedist .AND. nvar > 0) Then
       unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,new_loc(1,lb)) = & 
           unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,point_to(lb))
-               End If
+             End If  ! End If (nvar > 0)
+              end ASSOCIATE
+              end do
 
 !--------------move facevars
                If (nfacevar > 0) Then
@@ -508,10 +540,23 @@
 
              Else
 
-               If (nvar > 0) Then
+              do ig = 1, NUM_PDGS
+              pdg => gr_thePdgs(ig)
+              ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                   is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                   js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                   ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                   ie_unk => gr_thePdgDimens(ig) % iu_bndi, &
+                   je_unk => gr_thePdgDimens(ig) % ju_bndi, &
+                   ke_unk => gr_thePdgDimens(ig) % ku_bndi, &
+                   unk => pdg % unk &
+                   )
+               If (pdg % doRedist .AND. nvar > 0) Then
       unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,new_loc(1,lb)) = & 
          unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,lb)
                End If
+              end ASSOCIATE
+              end do
 
 !--------------move facevars
                If (nfacevar > 0) Then
@@ -601,10 +646,23 @@
  22         If (point_to(lb) <= maxblocks) Then
                test(point_to(lb)) = 1
 
-               If (nvar > 0) Then
+              do ig = 1, NUM_PDGS
+              pdg => gr_thePdgs(ig)
+              ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                   is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                   js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                   ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                   ie_unk => gr_thePdgDimens(ig) % iu_bndi, &
+                   je_unk => gr_thePdgDimens(ig) % ju_bndi, &
+                   ke_unk => gr_thePdgDimens(ig) % ku_bndi, &
+                   unk => pdg % unk &
+                   )
+               If (pdg % doRedist .AND. nvar > 0) Then
        unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,point_to(lb)) = & 
                unk(:,is_unk:ie_unk,js_unk:je_unk,ks_unk:ke_unk,lb)
                End If
+              end ASSOCIATE
+              end do
 
 !--------------move facevars
                If (nfacevar > 0) Then

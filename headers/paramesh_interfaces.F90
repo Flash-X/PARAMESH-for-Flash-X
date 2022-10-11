@@ -15,11 +15,14 @@
 !
 !     Klaus Weide, January - October 2022
 !        Added pdg and/or ig dummy arguments to many interfaces
+!        Added interface for send_block_data
+!        Adjusted intent for some new_loc arguments to IN
 !
 !#ifdef HAVE_CONFIG_H
 !#include <config.h>
 !#endif
 
+#include "FortranLangFeatures.fh"
 #include "paramesh_preprocessor.fh"
 
       module paramesh_interfaces
@@ -884,10 +887,36 @@
       interface
       subroutine amr_redist_blk(new_loc,nprocs,mype,lnblocks_old)
       integer, intent(in)    ::  nprocs
-      integer, intent(inout) ::  new_loc(:,:)
+      integer, CONTIGUOUS_INTENT(in) :: new_loc(:,:)
       integer, intent(in)    ::  lnblocks_old
       integer, intent(in)    ::  mype
       end subroutine amr_redist_blk
+      end interface
+
+      interface
+         Subroutine send_block_data (lb, new_loc, old_loc, free,       &
+                                  moved, sent,                         &
+                                  lnblocks_old, mype, nmoved,          &
+                                  test, point_to,                      &
+                                  reqs, nsend, unk_int_types,          &
+                                  facex_int_type, facey_int_type,      &
+                                  facez_int_type, edgex_int_type,      &
+                                  edgey_int_type, edgez_int_type,      &
+                                  unkn_int_type)
+           use paramesh_dimensions, ONLY: maxblocks
+           use tree, ONLY: maxblocks_tr
+           implicit none
+           Integer,intent(in) :: new_loc(2,maxblocks_tr), old_loc(2,maxblocks_tr)
+           Logical,intent(INOUT) :: free(maxblocks), moved(maxblocks), sent(maxblocks)
+           Integer,intent(in) :: lb, lnblocks_old, mype
+           Integer,intent(INOUT) :: reqs(maxblocks_tr), nsend
+           Integer,intent(INOUT) :: nmoved
+           Integer,intent(INOUT) :: point_to(maxblocks),test(maxblocks)
+           Integer,intent(in) :: unk_int_types(1:NUM_PDGS)
+           Integer,intent(in) :: facex_int_type, facey_int_type, facez_int_type
+           Integer,intent(in) :: edgex_int_type, edgey_int_type, edgez_int_type
+           Integer,intent(in) :: unkn_int_type
+         end Subroutine send_block_data
       end interface
 
 
@@ -1209,7 +1238,7 @@
       interface
       subroutine fill_old_loc(new_loc,old_loc,nprocs,mype)
       integer, intent(in)    :: mype,nprocs
-      integer, intent(inout) :: new_loc(:,:)
+      integer, intent(in)    :: new_loc(:,:)
       integer, intent(out)   :: old_loc(:,:)
       end subroutine fill_old_loc
       end interface

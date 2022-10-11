@@ -65,6 +65,8 @@
 !!
 !!   Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  initialization for all PDGs
 !!***     
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -276,6 +278,7 @@
       iu_bnd1      = nxb+2*nguard
       ju_bnd1      = nyb+2*nguard*k2d
       ku_bnd1      = nzb+2*nguard*k3d
+#  include "gr_pmPdgDimenInit.fh"
 #endif
       len_block1   = iu_bnd1*ju_bnd1*ku_bnd1*nvar
       len_blockfx1 = (iu_bnd1+1)*ju_bnd1*ku_bnd1 
@@ -996,8 +999,9 @@
       Allocate(ladd_strt(0:nprocs-1))
       Allocate(ladd_end(0:nprocs-1))
 
-
-      call gr_pdgInitOne(gr_thePdgs(1),gr_thePdgDimens(1), nfluxvar,nfluxes,maxblocksfl)
+      do i = 1, NUM_PDGS
+         call gr_pdgInitOne(gr_thePdgs(i),gr_thePdgDimens(i), nfluxvar,nfluxes,maxblocksfl)
+      end do
       unk    => gr_thePdgs(1) % unk
       unk1   => gr_thePdgs(1) % unk1
       flux_x => gr_thePdgs(1) % flux_x

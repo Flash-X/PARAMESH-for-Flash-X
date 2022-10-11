@@ -57,6 +57,8 @@
 !!
 !!   Kevin Olson (1996-2001).
 !!
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Changed intent of new_loc dummy to 'in'
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -76,7 +78,7 @@
       Include 'mpif.h'
 
 !-----Input/Output arguments.
-      integer, intent(inout) :: new_loc(:,:)
+      integer, intent(in)    :: new_loc(:,:)
       integer, intent(out)   :: old_loc(:,:)
       integer, intent(in)    :: nprocs,mype
 

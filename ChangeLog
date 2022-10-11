@@ -1,3 +1,14 @@
+2022-10-10  Klaus Weide  <kweide@uchicago.edu>
+
+	* bittree/amr_initialize.F90, bittree/mpi_amr_redist_blk.F90,
+	flash_avoid_orrery/amr_initialize.F90, headers/gr_pmPdgDecl.F90,
+	headers/paramesh_interfaces.F90, source/amr_initialize.F90,
+	source/fill_old_loc.F90, source/gr_pdgInit.F90,
+	source/mpi_amr_redist_blk.F90, source/send_block_data.F90: add
+	support for data redistribution (as part of regridding) for UNK
+	data of all PDGs. Can be suppressed with new `doRedist` flag in
+	the pdg_t derived type (for now initialized to .TRUE.).
+
 2022-10-07  Klaus Weide  <kweide@uchicago.edu>
 
 	* headers/paramesh_interfaces.F90: add pdg,ig dummy args to
