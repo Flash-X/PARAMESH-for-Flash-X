@@ -79,6 +79,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Made PDG-aware for unk: redist (if doRedist)
+!!  2022-10-11 Klaus Weide  USE gr_pmPdgDecl module, narrow USE statements
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -88,9 +89,13 @@
       Subroutine amr_redist_blk(new_loc,nprocs,mype,lnblocks_old)
 
 !-----Use statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
+      Use gr_pmPdgDecl, ONLY: pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, npgs, k2d, k3d, &
+           maxblocks, nfacevar, nvaredge, nvarcorn
+      Use paramesh_dimensions, ONLY: nguard, nxb, nyb, nzb
+      Use physicaldata, ONLY: gr_thePdgs, &
+           facevarx, facevary, facevarz, unk_e_x, unk_e_y, unk_e_z, unk_n
+      Use tree, ONLY: maxblocks_tr, new_lnblocks, newchild, lrefine
       Use paramesh_comm_data, ONLY: amr_mpi_meshComm, amr_mpi_real
       Use paramesh_interfaces, only : fill_old_loc, send_block_data
       use bittree, only: gr_btIdentify

@@ -1,3 +1,11 @@
+2022-10-11  Klaus Weide  <kweide@uchicago.edu>
+
+	* bittree/mpi_amr_redist_blk.F90: use gr_pmPdgDecl module. Narrow
+	USE statements.
+
+	* amr_morton_order_bittree.F90: use explicit interface for
+	amr_redist_blk.
+
 2022-10-10  Klaus Weide  <kweide@uchicago.edu>
 
 	* bittree/amr_initialize.F90, bittree/mpi_amr_redist_blk.F90,
