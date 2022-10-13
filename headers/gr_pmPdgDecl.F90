@@ -23,6 +23,15 @@ module gr_pmPdgDecl
      Integer :: jl_bnd1,ju_bnd1
      Integer :: kl_bnd1,ku_bnd1
      
+     ! Various variables that are treated specially in various places
+     ! in Grid implementation, based on the VARIABLE names given them:
+     logical :: densVar = -1
+     logical :: presVar = -1
+     logical :: enerVar = -1
+     logical :: eintVar = -1
+     logical :: velxVar = -1
+     logical :: velyVar = -1
+     logical :: velzVar = -1
   end type pdgConst_t
 
   type pdg_t                    ! pdg == physicaldata group
