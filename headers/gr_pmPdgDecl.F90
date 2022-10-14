@@ -1,5 +1,6 @@
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Added new logical doRedist flag
+!!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
 module gr_pmPdgDecl
   implicit none
 
