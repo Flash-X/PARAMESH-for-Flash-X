@@ -1,5 +1,7 @@
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Added new logical doRedist flag
+!!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
+!!  2022-10-14 Klaus Weide  Corrected type of densVar...velzVar to integer
 module gr_pmPdgDecl
   implicit none
 
@@ -23,6 +25,15 @@ module gr_pmPdgDecl
      Integer :: jl_bnd1,ju_bnd1
      Integer :: kl_bnd1,ku_bnd1
      
+     ! Various variables that are treated specially in various places
+     ! in Grid implementation, based on the VARIABLE names given them:
+     integer :: densVar = -1
+     integer :: presVar = -1
+     integer :: enerVar = -1
+     integer :: eintVar = -1
+     integer :: velxVar = -1
+     integer :: velyVar = -1
+     integer :: velzVar = -1
   end type pdgConst_t
 
   type pdg_t                    ! pdg == physicaldata group

@@ -29,10 +29,11 @@
 
       interface
       subroutine amr_1blk_bcset(mype,ibc,lb,pe,                          & 
-     &    idest,iopt,ibnd,jbnd,kbnd,surrblks)
+     &    idest,iopt,ibnd,jbnd,kbnd,surrblks,ig)
       integer, intent(in) :: mype,ibc,lb,pe
       integer, intent(in) :: idest,iopt,ibnd,jbnd,kbnd
       integer, intent(in) :: surrblks(:,:,:,:)
+      integer, intent(in) :: ig
       end subroutine amr_1blk_bcset
       end interface
 

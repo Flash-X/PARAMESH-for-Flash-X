@@ -1,3 +1,21 @@
+2022-10-14  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_1blk_guardcell_srl.F90: added ig argument to
+	amr_1blk_bcset calls.
+
+	* headers/paramesh_interfaces.F90: added ig dummy argument to
+	amr_1blk_bcset interface.
+
+	* gr_pmPdgDecl.F90: correct type of 7 slots densVar...velzVar to
+	integer.
+
+2022-10-13  Klaus Weide  <kweide@uchicago.edu>
+
+	* gr_pmPdgDecl.F90: add 7 slots densVar...velzVar to derived type
+	pdgConst_t, for generalizing previously hardwired references to
+	DENS_VAR,...,VELZ_VAR occurring in various Grid unit source files
+	to the multi-PDG situation.
+
 2022-10-11  Klaus Weide  <kweide@uchicago.edu>
 
 	* bittree/mpi_amr_redist_blk.F90: use gr_pmPdgDecl module. Narrow
