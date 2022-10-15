@@ -1,6 +1,7 @@
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Added new logical doRedist flag
 !!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
+!!  2022-10-14 Klaus Weide  Corrected type of densVar...velzVar to integer
 module gr_pmPdgDecl
   implicit none
 
@@ -26,13 +27,13 @@ module gr_pmPdgDecl
      
      ! Various variables that are treated specially in various places
      ! in Grid implementation, based on the VARIABLE names given them:
-     logical :: densVar = -1
-     logical :: presVar = -1
-     logical :: enerVar = -1
-     logical :: eintVar = -1
-     logical :: velxVar = -1
-     logical :: velyVar = -1
-     logical :: velzVar = -1
+     integer :: densVar = -1
+     integer :: presVar = -1
+     integer :: enerVar = -1
+     integer :: eintVar = -1
+     integer :: velxVar = -1
+     integer :: velyVar = -1
+     integer :: velzVar = -1
   end type pdgConst_t
 
   type pdg_t                    ! pdg == physicaldata group

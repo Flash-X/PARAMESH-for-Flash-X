@@ -6,6 +6,9 @@
 	* headers/paramesh_interfaces.F90: added ig dummy argument to
 	amr_1blk_bcset interface.
 
+	* gr_pmPdgDecl.F90: correct type of 7 slots densVar...velzVar to
+	integer.
+
 2022-10-13  Klaus Weide  <kweide@uchicago.edu>
 
 	* gr_pmPdgDecl.F90: add 7 slots densVar...velzVar to derived type
