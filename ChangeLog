@@ -1,3 +1,11 @@
+2022-10-14  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_1blk_guardcell_srl.F90: added ig argument to
+	amr_1blk_bcset calls.
+
+	* headers/paramesh_interfaces.F90: added ig dummy argument to
+	amr_1blk_bcset interface.
+
 2022-10-13  Klaus Weide  <kweide@uchicago.edu>
 
 	* gr_pmPdgDecl.F90: add 7 slots densVar...velzVar to derived type

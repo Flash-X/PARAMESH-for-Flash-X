@@ -19,6 +19,7 @@
 !!                               icoord,ldiag,nlayers0x, 
 !!                               nlayers0y,nlayers0z, 
 !!                               ipolar,
+!!                               pdg,ig,
 !!                               curBlock)
 !!   Call amr_1blk_guardcell_srl(integer,integer,integer,integer,
 !!                                integer,integer, 
@@ -27,6 +28,7 @@
 !!                               integer,logical,integer, 
 !!                               integer,integer, 
 !!                               integer array,
+!!                               TYPE(pdg_t),integer,
 !!                               OPTIONAL integer)
 !!
 !! ARGUMENTS
@@ -68,6 +70,8 @@
 !!                                    coordinates, ipolar=-1 means the block touches the
 !!                                    north polar axis, ipolar=+1 the south polar axis,
 !!                                    and ipolar=0 that it is not next to the polar axis.
+!!   pdg : TYPE(pdg_t),intent(INOUT)  Current physicaldata group object
+!!   ig : integer,,intent(IN)         Number of current physicaldata group
 !!   Integer, Intent(in),OPTIONAL :: curBlock  block ID for which the call to
 !!                                             amr_1blk_guardcell() call was made
 !!                                       (assuming we are called from amr_1blk_guardcell,
@@ -118,6 +122,7 @@
 !!
 !!   Modified:     Klaus Weide added curBlock argument    July 2012
 !!   Modified:     Klaus Weide added pdg stuff            Dec  2021
+!!   Modified:     Klaus Weide added ig to amr_1blk_bcset Oct  2022
 !!
 !!***
 
@@ -413,7 +418,7 @@
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,            & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
 
         End If  ! End If (remote_blk > 0)
 
@@ -552,7 +557,7 @@
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If
 
       End Do  ! End Do ii = 1,3,2
@@ -675,7 +680,7 @@
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End Do ii = 1,3,2
@@ -796,7 +801,7 @@
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End jj = 1,3,2
@@ -929,7 +934,7 @@
 
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End Do ii = 1,3,2
