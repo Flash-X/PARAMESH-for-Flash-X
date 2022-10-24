@@ -24,6 +24,7 @@ module gr_pmPdgDecl
      Integer :: il_bnd1,iu_bnd1
      Integer :: jl_bnd1,ju_bnd1
      Integer :: kl_bnd1,ku_bnd1
+     integer :: nspecies, speciesBegin, speciesEnd
      
      ! Various variables that are treated specially in various places
      ! in Grid implementation, based on the VARIABLE names given them:
@@ -34,6 +35,11 @@ module gr_pmPdgDecl
      integer :: velxVar = -1
      integer :: velyVar = -1
      integer :: velzVar = -1
+     integer :: tempVar = -1
+     integer :: gamcVar = -1
+     integer :: gameVar = -1
+     integer :: sumyMscalar = -1
+     integer :: yeMscalar = -1
   end type pdgConst_t
 
   type pdg_t                    ! pdg == physicaldata group
