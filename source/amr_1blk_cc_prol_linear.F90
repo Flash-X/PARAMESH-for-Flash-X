@@ -24,7 +24,7 @@
 !!
 !! ARGUMENTS
 !!
-!!  Real,    intent(inout) :: recv(:,:,:,:)
+!!  Real,    intent(in) :: recv(:,:,:,:)
 !!    Data array holding the data extracted from unk which will be prolonged
 !!    and placed into the unk1 array.
 !!
@@ -111,7 +111,7 @@ Subroutine amr_1blk_cc_prol_linear               &
       Implicit None
 
 !-----Input/Output Variables
-      Real,    Intent(inout) :: recv(:,:,:,:)
+      Real,    Intent(IN)    :: recv(:,:,:,:)
       Integer, Intent(in)    :: ia,ib,ja,jb,ka,kb
       Integer, Intent(in)    :: idest,ioff,joff,koff,mype
       Integer, Intent(in)    :: ivar

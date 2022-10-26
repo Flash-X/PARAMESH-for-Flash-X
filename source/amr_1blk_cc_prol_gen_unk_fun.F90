@@ -95,7 +95,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 !-----Use Statements
   use timings, ONLY: timing_mpi, timer_amr_1blk_cc_prol_gen_unk
   use gr_pmPdgDecl, ONLY : pdg_t
-  Use paramesh_dimensions, ONLY: nvar
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens
   Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk, &
        gr_thePdgs
 
@@ -104,12 +104,11 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
                        amr_1blk_cc_prol_linear,    & 
                        amr_1blk_cc_prol_genorder,  & 
                        amr_1blk_cc_prol_dg,    &
-                       amr_1blk_cc_prol_user
-
-  implicit none
+                       amr_1blk_cc_prol_user,  &
+                       amr_prolong_gen_unk1_fun
 
 !-----Include Statements
-  Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output variables
   real,    intent(inout) :: recv(:,:,:,:)
@@ -122,6 +121,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 
 !-----Local variables
   double precision :: time1
+  integer :: nvar
   integer :: ivar
 
 !-----Begin Executable code
@@ -130,11 +130,13 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
      time1 = mpi_wtime()
   end if  ! End If (timing_mpi)
 
+  nvar = gr_thePdgDimens(ig) % nvar
+
 #ifdef GRID_WITH_MONOTONIC
 ! Call the minimally changed subroutine from Paramesh2
   call amr_prolong_gen_unk1_fun &
      &     (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
-     &     mype,lb)
+     &     mype,lb,pdg,ig)
 #else
   Do ivar = 1, nvar
      If (int_gcell_on_cc(ivar)) Then
