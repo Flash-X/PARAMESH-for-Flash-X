@@ -18,11 +18,16 @@
 !        Added interface for send_block_data
 !        Adjusted intent for some new_loc arguments to IN
 !
+!!  2022-10-26 K. Weide  added amr_prolong_gen_unk1_fun interface
+!!                Changed intent for some recv arguments to IN
+!!***
+
 !#ifdef HAVE_CONFIG_H
 !#include <config.h>
 !#endif
 
 #include "FortranLangFeatures.fh"
+#include "Simulation.h"
 #include "paramesh_preprocessor.fh"
 
       module paramesh_interfaces
@@ -81,7 +86,7 @@
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar
-      real,    intent(inout) :: recv(:,:,:,:)
+      real,    intent(in) :: recv(:,:,:,:)
       end subroutine amr_1blk_cc_prol_inject
       end interface
 
@@ -93,7 +98,7 @@
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar
-      real,    intent(inout) :: recv(:,:,:,:)
+      real,    intent(IN) :: recv(:,:,:,:)
       type(pdg_t),intent(INOUT) :: pdg
       end subroutine amr_1blk_cc_prol_linear
       end interface
@@ -106,7 +111,7 @@
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar,order
-      real,    intent(inout) :: recv(:,:,:,:)
+      real,    intent(IN) :: recv(:,:,:,:)
       type(pdg_t),intent(INOUT) :: pdg
       Integer, Intent(in) :: ig
       end subroutine amr_1blk_cc_prol_genorder
@@ -125,6 +130,19 @@
       integer, intent(in) :: ivar
       real,    intent(inout) :: recv(:,:,:,:)
       end subroutine amr_1blk_cc_prol_dg
+      end interface
+
+      interface amr_prolong_gen_unk1_fun
+         subroutine amr_prolong_gen_unk1_fun &
+     &       (recv, ia, ib, ja, jb, ka, kb, idest, &
+     &        ioff, joff, koff, mype, isg, pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
+           real, CONTIGUOUS_INTENT(IN), dimension(:,:,:,:) :: recv
+           integer, intent(IN) :: idest, isg, mype, ia, ib, ja, jb, ka, kb,ioff,joff,koff
+           type(pdg_t),intent(INOUT) :: pdg
+           Integer, Intent(in) :: ig
+         end subroutine amr_prolong_gen_unk1_fun
       end interface
 
       interface

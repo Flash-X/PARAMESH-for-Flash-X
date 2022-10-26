@@ -1,6 +1,21 @@
+2022-10-26  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_interface.F90: add amr_prolong_gen_unk1_fun
+	interface. Change intent for some recv arguments to IN. Add
+	explicit '#include "Simulation.h"'. The recv argument to
+	amr_prolong_gen_unk1_fun is now declared CONTIGUOUS_INTENT(IN), dimension(:,:,:,:).
+
+	* source/amr_1blk_cc_prol_inject.F90,amr_1blk_cc_prol_linear.F90,amr_1blk_cc_prol_genorder.F90:
+	Change intent for recv arguments to IN.
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90: use gr_thePdgDimens
+	from paramesh_dimensions (so far only for nvar).
+	Use explicit interface for amr_prolong_gen_unk1_fun.
+	Pass arguments pdg,ig when calling mr_prolong_gen_unk1_fun.
+
 2022-10-20  Klaus Weide  <kweide@uchicago.edu>
 
-	* headers/ gr_pmPdgDecl.F90: add 8 more slots to type pdgConst_t:
+	* headers/gr_pmPdgDecl.F90: add 8 more slots to type pdgConst_t:
 	nspecies, speciesBegin, speciesEnd, tempVar, gamcVar, gameVar,
 	sumyMscalar, yeMscalar.
 
