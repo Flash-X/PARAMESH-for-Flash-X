@@ -1,3 +1,10 @@
+2022-10-28  Klaus Weide  <kweide@uchicago.edu>
+
+	* sourc//mpi_amr_guardcell.F90: tweak generation of 'nlayers'
+	argument to amr_guardcell_onePdg in amr_guardcell_pdgNo for pdgNo
+	ranges, and skip action completely if a PDG has no guard cells.
+	Tweak handling of (mostly ignored) 'nlayers' argument in amr_guardcell_onePdg.
+
 2022-10-26  Klaus Weide  <kweide@uchicago.edu>
 
 	* headers/paramesh_interface.F90: add amr_prolong_gen_unk1_fun
