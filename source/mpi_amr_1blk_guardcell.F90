@@ -200,6 +200,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
+!!  2022-11-02 K. Weide  Made UNNECESSARY nlayers0[xyz] increase (large nguard)
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -342,10 +343,14 @@
          End If
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in
+      ! mpi_amr_comm_setup (or similar places)!
       If (nxb/nguard < 2) nlayers0x = min(nlayers0x+1,   nguard)
       If (nyb/nguard < 2) nlayers0y = min(nlayers0y+k2d, nguard)
       If (nzb/nguard < 2) nlayers0z = min(nlayers0z+k3d, nguard)
-      
+#endif
+
       If (iopt == 1 .And.                                              & 
           All(interp_mask_unk(:) < 20)   .And.                         & 
           All(interp_mask_facex(:) < 20) .And.                         & 

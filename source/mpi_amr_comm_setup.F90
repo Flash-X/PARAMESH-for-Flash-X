@@ -148,6 +148,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, n[xyz]b, gcell_on_cc
+!!  2022-11-02 K. Weide  Made UNNECESSARY nlayerst[xyz] increase (large nguard)
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -400,12 +401,15 @@
 
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in amr_1blk_guardcell!
       If (lguard) Then
          If (nxb/nguard < 2) nlayerstx = min(nlayerstx+1,   nguard)
          If (nyb/nguard < 2) nlayersty = min(nlayersty+k2d, nguard)
          If (nzb/nguard < 2) nlayerstz = min(nlayerstz+k3d, nguard)
       End If
-      
+#endif
+
       If (Present(flux_dir)) Then
          flux_dirt = flux_dir
       Else

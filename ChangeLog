@@ -1,5 +1,15 @@
 2022-11-02  Klaus Weide  <kweide@uchicago.edu>
 
+	* source/mpi_amr_1blk_guardcell.F90,source/mpi_amr_comm_setup.F90:
+	comment out (ifdef MAYBE_UNNECESSARY) nlayers-increasing code for
+	cases of large nguard-to-n[xyz]b ratios: (1) it is unclear how
+	this helped at all (maybe it is a leftover from old PARAMESH
+	versions that had dedicated f_to_c routines for guard cell filling
+	at f/c boundaries); (2) nxb/nguard < 2 etc. should be avoided
+	anyway for various reasons; (3) for valid operations, this code
+	needs to be enabled (or disabled) consistently between the two
+	source files, which is rather ugly and error-prone.
+
 	* source/amr_perm_to_1blk.F90,source/mpi_amr_comm_setup.F90,source/mpi_get_buffer.F90:
 	use PDG-specific constants and variables where needed, instead of
 	global ones from the paramesh_dimensions and physicaldata modules.
