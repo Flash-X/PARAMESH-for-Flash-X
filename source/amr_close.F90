@@ -54,6 +54,7 @@
 !! HISTORY
 !!
 !!   2017-10-04 modified to not call MPI_Finalize for FLASH   - Klaus Weide
+!!   2022-10-31 moved gcell_on_cc flag array into pdg_t       - Klaus Weide
 !!***
 
 # include "paramesh_preprocessor.fh"
@@ -82,7 +83,6 @@
       Deallocate(interp_mask_unk)
       Deallocate(interp_mask_unk_res)
       Deallocate(gcell_on_cc_pointer)
-      Deallocate(gcell_on_cc)
       Deallocate(int_gcell_on_cc)
       Deallocate(checkp_on_cc)
       If (nvar > 0) Then

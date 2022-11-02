@@ -3,7 +3,7 @@
 	* bittree/amr_initialize.F90,flash_avoid_orrery/amr_initialize.F90,
 	flash_avoid_orrery/physicaldata.F90,headers/gr_pmPdgDecl.F90,
 	headers/physicaldata.F90,source/amr_initialize.F90,
-	source/gr_pdgClose.F90,source/gr_pdgInit.F90,
+	source/amr_close.F90,source/gr_pdgClose.F90,source/gr_pdgInit.F90,
 	source/mpi_amr_guardcell.F90: move gcell_on_cc flag array into
 	pdg_t.
 
