@@ -1,7 +1,10 @@
 !! MODIFICATIONS
+!!  2021-11-14 Klaus Weide  Initial work for multiple "Physicaldata groups"
+!!  2021-12-08 Klaus Weide  Added tflux_x, tflux_y, tflux_z to pdg_t
 !!  2022-10-10 Klaus Weide  Added new logical doRedist flag
 !!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
 !!  2022-10-14 Klaus Weide  Corrected type of densVar...velzVar to integer
+!!  2022-10-31 Klaus Weide  Added gcell_on_cc to pdg_t
 module gr_pmPdgDecl
   implicit none
 
@@ -62,6 +65,8 @@ module gr_pmPdgDecl
      Real, Allocatable :: bndtempx1(:,:,:,:)
      Real, Allocatable :: bndtempy1(:,:,:,:)
      Real, Allocatable :: bndtempz1(:,:,:,:)
+
+     Logical,Allocatable :: gcell_on_cc(:)
 
      ! from prolong_arrays.F90
      Real, Allocatable :: prol_dx(:)

@@ -38,6 +38,9 @@
 !!
 !!  Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2021-12-15 K. Weide  Support for PDG: use gr_thePdgs for per-PDG data items
+!!  2022-10-31 K. Weide  moved gcell_on_cc into pdg_t, add TARGET to mask arrays
 !!***
 
 
@@ -74,16 +77,17 @@
 
 ! the solution for cell-centered quantities.
       Public :: unk, interp_mask_unk, interp_mask_unk_res
-      Public :: gcell_on_cc,int_gcell_on_cc
+!!$      Public :: gcell_on_cc
+      Public :: int_gcell_on_cc
       Public :: ngcell_on_cc
       Public :: checkp_on_cc
       Public :: gcell_on_cc_pointer
 !!$      Real,Allocatable,Save ::  unk(:,:,:,:,:)
       Real,pointer ::  unk(:,:,:,:,:)
-      Integer,Allocatable,Save :: interp_mask_unk(:)
-      Integer,Allocatable,Save :: interp_mask_unk_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_unk(:)
+      Integer,Allocatable,Save,target :: interp_mask_unk_res(:)
       Integer,Allocatable,Save :: gcell_on_cc_pointer(:)
-      Logical,Allocatable,Save :: gcell_on_cc(:)
+!!$      Logical,Allocatable,Save :: gcell_on_cc(:)
       Logical,Allocatable,Save :: int_gcell_on_cc(:)
       Logical,Allocatable,Save :: checkp_on_cc(:)
       Integer, Save :: ngcell_on_cc
@@ -309,14 +313,14 @@
       Real,Allocatable,Save ::  facevarx(:,:,:,:,:)
       Real,Allocatable,Save ::  facevary(:,:,:,:,:)
       Real,Allocatable,Save ::  facevarz(:,:,:,:,:)
-      Integer,Allocatable,Save :: interp_mask_facex(:)
-      Integer,Allocatable,Save :: interp_mask_facey(:)
-      Integer,Allocatable,Save :: interp_mask_facez(:)
-      Integer,Allocatable,Save :: interp_mask_facex_res(:)
-      Integer,Allocatable,Save :: interp_mask_facey_res(:)
-      Integer,Allocatable,Save :: interp_mask_facez_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facex(:)
+      Integer,Allocatable,Save,target :: interp_mask_facey(:)
+      Integer,Allocatable,Save,target :: interp_mask_facez(:)
+      Integer,Allocatable,Save,target :: interp_mask_facex_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facey_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facez_res(:)
       Integer,Allocatable,Save :: gcell_on_fc_pointer(:,:)
-      Logical,Allocatable,Save :: gcell_on_fc(:,:)
+      Logical,Allocatable,Save,target :: gcell_on_fc(:,:)
       Logical,Allocatable,Save :: int_gcell_on_fc(:,:)
       Logical,Allocatable,Save :: checkp_on_fc(:,:)
       Integer, Save :: ngcell_on_fc(3)

@@ -1,3 +1,10 @@
+!! AUTHORS
+!!
+!!   Klaus Weide
+!!
+!! MODIFICATIONS
+!!
+!!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
 subroutine gr_pdgCloseOne(pdg)
   use gr_pmPdgDecl, ONLY : pdg_t
   use paramesh_dimensions, ONLY: maxblocks, npblks
@@ -33,6 +40,8 @@ subroutine gr_pdgCloseOne(pdg)
     deallocate(pdg % prol_indexx)
     deallocate(pdg % prol_indexy)
     deallocate(pdg % prol_indexz)
+
+    deallocate(pdg % gcell_on_cc)
 
     pdg % nfluxvar    = 0
     pdg % nfluxes     = 0

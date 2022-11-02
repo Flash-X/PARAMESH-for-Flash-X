@@ -1,5 +1,6 @@
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Added initialization of doRedist flag to TRUE
+!!  2022-10-31 Klaus Weide  Added allocation, initialization of gcell_on_cc
 
 !!REORDER(5): unk, unk1, flux_[xyz], tflux_[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -93,6 +94,8 @@ subroutine gr_pdgInitOne(pdg,pdgDimen, nfluxvar,nfluxes,maxblocksfl)
     Allocate(pdg % bndtempx1(nfluxes,1:2,jl_bndi:ju_bndi,kl_bndi:ku_bndi))
     Allocate(pdg % bndtempy1(nfluxes,il_bndi:iu_bndi,1:2,kl_bndi:ku_bndi))
     Allocate(pdg % bndtempz1(nfluxes,il_bndi:iu_bndi,jl_bndi:ju_bndi,1:2))
+    Allocate(pdg % gcell_on_cc(nvar))
+    pdg % gcell_on_cc(1:nvar)     = .true.
 
     Allocate(pdg % prol_dx(il_bnd1:iu_bnd1))
     Allocate(pdg % prol_dy(jl_bnd1:ju_bnd1))

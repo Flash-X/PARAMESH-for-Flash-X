@@ -67,6 +67,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  initialization for all PDGs
+!!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
 !!***     
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -345,7 +346,6 @@
        Allocate(interp_mask_unk(1))
        Allocate(interp_mask_unk_res(1))
        Allocate(gcell_on_cc_pointer(1))
-       Allocate(gcell_on_cc(1))
        Allocate(int_gcell_on_cc(1))
        Allocate(checkp_on_cc(1))
 
@@ -383,7 +383,6 @@
        Allocate(interp_mask_unk(nvar))
        Allocate(interp_mask_unk_res(nvar))
        Allocate(gcell_on_cc_pointer(nvar))
-       Allocate(gcell_on_cc(nvar))
        Allocate(int_gcell_on_cc(nvar))
        Allocate(checkp_on_cc(nvar))
 
@@ -1057,7 +1056,6 @@
       Do i = 1, nvar
         gcell_on_cc_pointer(i) = i
       End Do  ! End Do i = 1,nvar
-      gcell_on_cc(:)     = .true.
       int_gcell_on_cc(:) = .true.
 
       Do i = 1, nfacevar

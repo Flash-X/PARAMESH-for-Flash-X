@@ -82,6 +82,7 @@
 !! MODIFICATIONS
 !!  2022-05-27 K. Weide  Additions for pdg, call amr_guardcell_onePdg in loop
 !!  2022-10-28 K. Weide  Tweaked nlayers handling, skip PDGs whose nguard is 0
+!!  2022-10-31 K. Weide  Use gcell_on_cc from gr_thePdgDimens
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -140,7 +141,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
                               unk_e_x1,  unk_e_y1,  unk_e_z1
       Use physicaldata, only: unk_n, unk_n1
       Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
-      Use physicaldata, only: gcell_on_cc,gcell_on_fc,gcell_on_ec,gcell_on_nc
+      Use physicaldata, only:                     gcell_on_fc,    gcell_on_ec,    gcell_on_nc
       Use physicaldata, only: diagonals,advance_all_levels,force_consistency,no_permanent_guardcells
       Use workspace
       Use tree
@@ -200,7 +201,8 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
             nguard      => gr_thePdgDimens(ig) % nguard,   &
             nvar        => gr_thePdgDimens(ig) % nvar,     &
             unk         => pdg % unk,      &
-            unk1        => pdg % unk1      &
+            unk1        => pdg % unk1,      &
+            gcell_on_cc => pdg % gcell_on_cc      &
             )
 
       If (iopt == 1) Then

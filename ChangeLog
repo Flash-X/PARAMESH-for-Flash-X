@@ -1,6 +1,19 @@
+2022-10-31  Klaus Weide  <kweide@uchicago.edu>
+
+	* bittree/amr_initialize.F90,flash_avoid_orrery/amr_initialize.F90,
+	flash_avoid_orrery/physicaldata.F90,headers/gr_pmPdgDecl.F90,
+	headers/physicaldata.F90,source/amr_initialize.F90,
+	source/gr_pdgClose.F90,source/gr_pdgInit.F90,
+	source/mpi_amr_guardcell.F90: move gcell_on_cc flag array into
+	pdg_t.
+
+	* flash_avoid_orrery/physicaldata.F90,headers/physicaldata.F90:
+	add TARGET attribute to various mask and interpolation-order
+	arrays.
+
 2022-10-28  Klaus Weide  <kweide@uchicago.edu>
 
-	* sourc//mpi_amr_guardcell.F90: tweak generation of 'nlayers'
+	* source/mpi_amr_guardcell.F90: tweak generation of 'nlayers'
 	argument to amr_guardcell_onePdg in amr_guardcell_pdgNo for pdgNo
 	ranges, and skip action completely if a PDG has no guard cells.
 	Tweak handling of (mostly ignored) 'nlayers' argument in amr_guardcell_onePdg.
