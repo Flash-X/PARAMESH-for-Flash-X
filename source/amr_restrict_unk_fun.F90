@@ -51,12 +51,14 @@
 !!   Written :     Peter MacNeice          January 1997
 !!   Modified by Kevin Olson for high order restriction, 2004.
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Added 'ig' dummy argument and used it for 'nvar'
 !!***
 
-Subroutine amr_restrict_unk_fun(datain,dataout)
+Subroutine amr_restrict_unk_fun(datain,dataout, ig)
 
 !-----Use statements.
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens
   Use physicaldata
   Use paramesh_interfaces, only : amr_restrict_unk_genorder,       &
                                       amr_restrict_unk_user,           &
@@ -67,13 +69,14 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
 !-----Input/Output arguments.
   Real, Intent(in)    :: datain(:,:,:,:)
   Real, Intent(inout) :: dataout(:,:,:,:)
+  integer, intent(in) :: ig
 
 !-----Local variables.
   Integer :: ivar, order
 
 !-----Begin Executable code.
 
-  Do ivar = 1, nvar
+  Do ivar = 1, gr_thePdgDimens(ig) % nvar
 
      If (int_gcell_on_cc(ivar)) Then
 

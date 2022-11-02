@@ -106,6 +106,11 @@
 !!
 !!   Peter MacNeice (February 1999).
 !!
+!!   Klaus Weide, January - October 2022
+!!      Added pdg and/or ig dummy arguments to many interfaces
+!!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -368,7 +373,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                  iopt,idest,pdg,ig)
                        if (iopt.eq.1) call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, &
                             il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-                            why=gr_callReason_RESTRICT)
+                            why=gr_callReason_RESTRICT, ig=ig)
 
                        If (curvilinear) Then
 !--------compute geometry variables for the child block (remote_block,remote_pe)
@@ -465,7 +470,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 !----------Compute restricted cell-centered data from the data in the buffer
                           If (lcc) Then
 
-                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp, ig)
                              kc = koff + nguard0*k3d
                              jc = joff + nguard0*k2d
                              ic = ioff + nguard0
@@ -860,7 +865,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                  if (iopt.eq.1) call flash_unconvert_cc_hook(unk(:,:,:,:,lb), nvar, &
                            il_bnd,iu_bnd, jl_bnd,ju_bnd, kl_bnd,ku_bnd, &
    &                       where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
-                           nlayers_in_data=nguard0)
+                           ig=ig, nlayers_in_data=nguard0)
 
 #ifdef FLASH_PMFEATURE_UNUSED
 !-----If using odd sized grid blocks then parent copies any face bounding

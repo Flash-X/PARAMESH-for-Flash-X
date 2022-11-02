@@ -20,6 +20,7 @@
 !
 !!  2022-10-26 K. Weide  added amr_prolong_gen_unk1_fun interface
 !!                Changed intent for some recv arguments to IN
+!!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -1059,9 +1060,10 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_fun(datain,dataout)
+      subroutine amr_restrict_unk_fun(datain,dataout, ig)
       real, intent(in)    :: datain(:,:,:,:)
       real, intent(inout) :: dataout(:,:,:,:)
+      integer, intent(in) :: ig
       end subroutine amr_restrict_unk_fun
       end interface
 

@@ -1,3 +1,11 @@
+2022-11-02  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_interfaces.F90,source/amr_restrict_unk_fun.F90,source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90:
+	add ig to amr_restrict_unk_fun interface.
+
+	* source/mpi_amr_1blk_guardcell.F90,source/mpi_amr_prolong.F90:
+	supply 'ig' argument to flash_(un)?convert_cc_hook calls.
+
 2022-10-31  Klaus Weide  <kweide@uchicago.edu>
 
 	* bittree/amr_initialize.F90,flash_avoid_orrery/amr_initialize.F90,

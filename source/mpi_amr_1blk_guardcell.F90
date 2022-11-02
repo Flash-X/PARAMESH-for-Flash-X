@@ -198,6 +198,8 @@
 !!   Michael Gehmeyr & Peter MacNeice (November 1999) with modifications by 
 !!   Kevin Olson for layered guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -774,7 +776,7 @@
          if (lcc .and. iopt.eq.1)  & 
      &        call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, & 
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &         why=gr_callReason_PROLONG)
+     &         why=gr_callReason_PROLONG, ig=ig)
 
 
         End If  ! End If ( (parent_lb > 0) .And. ...)
@@ -790,7 +792,8 @@
         if (lcc .and. iopt.eq.1)  & 
      &       call flash_unconvert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &       il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG)
+     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG, &
+     &       ig=ig)
 !------------------------------------
 
       End If  ! End If (lcoarse)
