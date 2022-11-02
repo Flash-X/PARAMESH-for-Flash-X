@@ -64,6 +64,9 @@
 !!
 !!   Written :     Peter MacNeice          February 1999
 !!   Modified:     Klaus Weide             December 2021  for pdg stuff
+!!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Use PDG-specific constants and variables where needed
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -74,7 +77,8 @@
 
 !-----Use statements.
       use gr_pmPdgDecl, ONLY : pdg_t
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, nguard_work, &
+           k2d, k3d, nfacevar, ndim, nvaredge, nvarcorn
       Use physicaldata
       Use tree
       Use workspace
@@ -106,6 +110,13 @@
 
 !-----Begin executable code.
 
+    ASSOCIATE(nvar   => gr_thePdgDimens(ig) % nvar, &
+              nguard => gr_thePdgDimens(ig) % nguard, &
+              nxb    => gr_thePdgDimens(ig) % nxb,    &
+              nyb    => gr_thePdgDimens(ig) % nyb,    &
+              nzb    => gr_thePdgDimens(ig) % nzb,    &
+              unk    => pdg % unk, &
+              unk1   => pdg % unk1)
       nguard0 = nguard*npgs
       nguard_work0 = nguard_work*npgs
 
@@ -586,6 +597,6 @@
           End If  ! End If (lb <= lnblocks)
 
       End If  ! End If (iopt == 1)
-
+    end ASSOCIATE
       Return
       End Subroutine amr_perm_to_1blk

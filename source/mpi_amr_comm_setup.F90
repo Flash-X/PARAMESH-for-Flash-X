@@ -146,6 +146,8 @@
 !!   Peter MacNeice (June 2000) with modifications by Kevin Olson for
 !!   directional guardcell filling and flux conservation.
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, n[xyz]b, gcell_on_cc
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -160,7 +162,8 @@
 
 !-----Use statements.
       use gr_pmPdgDecl, ONLY : pdg_t
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, k2d, k3d, &
+           nfacevar, nvaredge, nvarcorn, nguard_work
       Use physicaldata
       Use workspace
       Use tree
@@ -236,7 +239,11 @@
 
 !-----Begin executable code.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    ASSOCIATE(nvar   => gr_thePdgDimens(ig) % nvar,   &
+              nguard => gr_thePdgDimens(ig) % nguard, &
+              nxb    => gr_thePdgDimens(ig) % nxb,    &
+              nyb    => gr_thePdgDimens(ig) % nyb,    &
+              nzb    => gr_thePdgDimens(ig) % nzb)
 
 #ifdef AIX
       buffer_dim = nvar*iu_bnd1*ju_bnd1*ku_bnd1*maxblocks
@@ -269,7 +276,7 @@
      &           ,' max_no_to_send ', &
      &           max_no_to_send,' tag_offset ',tag_offset, &
      &           ' nprocs ',nprocs, & 
-     &           '  gcell_on_cc ', gcell_on_cc,' iopt ',iopt
+     &           '  gcell_on_cc ', pdg % gcell_on_cc,' iopt ',iopt
 #endif /* DEBUG */
       If (iopt == 1) Then
 
@@ -277,7 +284,7 @@
 
 !-----install user selection for guardcell variables on reset defaults.
       If (lguard) Then
-        int_gcell_on_cc = gcell_on_cc
+        int_gcell_on_cc = pdg % gcell_on_cc
         int_gcell_on_fc = gcell_on_fc
         int_gcell_on_ec = gcell_on_ec
         int_gcell_on_nc = gcell_on_nc
@@ -555,7 +562,7 @@
          Call mpi_unpack_edges(mype,buffer_dim_recv,temprecv_buf)
 
       End If  ! End If (lguard.or.lprolong)
-
+    end ASSOCIATE
 #ifndef AIX
       If (Allocated(send_buf)) Deallocate(send_buf)
 #endif
