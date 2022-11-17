@@ -28,6 +28,8 @@
 	source/process_fetch_list.F90, source/rationalize_fetch_list.F90:
 	clean up some USE statements, removing some that are unnecessary
 	and adding ONLY to others.
+	* source/amr_mpi_find_blk_in_buffer.F90: add output statements for
+	debugging, disabled by default, to this crucial subroutine.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

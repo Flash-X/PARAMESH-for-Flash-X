@@ -67,7 +67,11 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          May 2001
-!    Modified:     Klaus Weide             Dec 2021  minor tweaks
+!!   Modified:     Klaus Weide             Dec 2021  minor tweaks
+!!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Added more output for debugging, by default disabled
+!!
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -79,6 +83,9 @@
       Use tree, only : lnblocks, strt_buffer, laddress
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
+#ifdef DEBUG
+      Use physicaldata, ONLY : mpi_pattern_id
+#endif
 
       implicit none
 
@@ -100,7 +107,9 @@
 !-----Begin executable code.
 
       If (remote_pe.ne.mype) Then
-
+#ifdef DEBUG
+        print*,'@',mype,' amr_mpi_find_blk_in_buffer: Case 1 for',remote_block, remote_pe
+#endif
         rem_blk = remote_block
         rem_pe  = remote_pe
 
@@ -118,13 +127,18 @@
         End Do
 
       ElseIf (remote_pe == mype.and.remote_block > lnblocks) Then
-
+#ifdef DEBUG
+        print*,'@',mype,' amr_mpi_find_blk_in_buffer: Case 2 for',remote_block, remote_pe
+#endif
         rem_blk = laddress(1,remote_block)
         rem_pe  = laddress(2,remote_block)
         iseg_no = remote_block - strt_buffer + 1
         llfound = .True.
 
       else    ! avoid compiler warnings
+#ifdef DEBUG
+        print*,'@',mype,' amr_mpi_find_blk_in_buffer: Case 3 for',remote_block, remote_pe
+#endif
         rem_pe = mype
 !!$        dtype  = 14
 !!$        index0 = -1
@@ -203,7 +217,9 @@
 
 !-------If the requested segment is not located stop with error message
         If (seg_no == 0) Then
+#ifndef DEBUG
           If (idest == 2) return
+#endif
 #ifdef DEBUG
           Write(*,*) 'Paramesh error : ',                              & 
            'message segment required is not in the list of ',          & 
@@ -232,6 +248,12 @@
 
       End If  ! If (rem_pe.ne.mype)
 
+#ifdef DEBUG
+      400 format(1x,'@ ',I0,50x,' remote: ',I3,'@',I0,' idest ',I0,' -- found ',&
+                 L1,' dtype ',I0,' seg_no ',I0,' iaddr ',I0)!,3(1x,1P,G11.4))
+      print 400,mype,rem_blk,rem_pe,idest,lfound,dtype,iaddress!,temprecv_buf(iaddress:iaddress+2)
+      print*,temprecv_buf(iaddress:iaddress+2)
+#endif
       Return
       End Subroutine amr_mpi_find_blk_in_buffer
 ! Local Variables:
