@@ -25,11 +25,13 @@
 	headers/mpi_morton.F90, headers/paramesh_dimensions.F90,
 	headers/prolong_arrays.F90, source/amr_migrate_tree_data.F90,
 	source/fill_old_loc.F90, source/local_tree_build.F90,
-	source/process_fetch_list.F90, source/rationalize_fetch_list.F90:
-	clean up some USE statements, removing some that are unnecessary
-	and adding ONLY to others.
+	source/process_fetch_list.F90, source/rationalize_fetch_list.F90,
+	amr_1blk_guardcell_reset.F90: clean up some USE statements,
+	removing some that are unnecessary and adding ONLY to others.
 	* source/amr_mpi_find_blk_in_buffer.F90: add output statements for
 	debugging, disabled by default, to this crucial subroutine.
+	* source/amr_1blk_cc_prol_genorder.F90: correct
+	'first_call_overall' logic, tweak Robodoc synopsis.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 
