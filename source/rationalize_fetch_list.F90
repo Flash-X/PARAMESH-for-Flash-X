@@ -17,7 +17,7 @@
 ! to satisfy the guardcell filling operation.
 
 
-       use paramesh_dimensions
+       use paramesh_dimensions, ONLY: ndim
        use physicaldata
        use tree
        use mpi_morton

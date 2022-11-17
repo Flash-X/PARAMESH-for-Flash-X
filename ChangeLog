@@ -15,7 +15,19 @@
 	Include "Flashx_mpi_implicitNone.fh".
 	* source/empi_get_flux_buffer.F90: make subroutine
 	mpiGet_flux_buffer PDG-aware. Change subroutine
-	mpiGet_Sbuffer_size_fluxes to take 'nfluxes' as argument. Some cleanup.
+	mpiGet_Sbuffer_size_fluxes to take 'nfluxes' as argument. Some
+	cleanup.
+	* flash_avoid_orrery/amr_migrate_tree_data.F90,
+	flash_avoid_orrery/amr_morton_process.F90,
+	flash_avoid_orrery/local_tree_build.F90,
+	flash_avoid_orrery/mpi_amr_exchange_nodetype.F90,
+	flash_avoid_orrery/mpi_amr_refine_blocks.F90,
+	headers/mpi_morton.F90, headers/paramesh_dimensions.F90,
+	headers/prolong_arrays.F90, source/amr_migrate_tree_data.F90,
+	source/fill_old_loc.F90, source/local_tree_build.F90,
+	source/process_fetch_list.F90, source/rationalize_fetch_list.F90:
+	clean up some USE statements, removing some that are unnecessary
+	and adding ONLY to others.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

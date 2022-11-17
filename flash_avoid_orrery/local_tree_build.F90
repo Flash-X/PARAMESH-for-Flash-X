@@ -68,9 +68,9 @@ Subroutine local_tree_build ()
   
   !-----Use Statements.
   Use local_tree_common
-  Use physicaldata
+  Use physicaldata, ONLY: use_reduced_orrery
   Use tree
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: ndim
   Use paramesh_comm_data
   Use mpi_morton, Only : lperiodicx, lperiodicy, lperiodicz
   

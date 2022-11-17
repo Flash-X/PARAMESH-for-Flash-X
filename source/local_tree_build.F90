@@ -66,7 +66,6 @@ Subroutine local_tree_build ()
   Use local_tree_common
   Use physicaldata
   Use tree
-  Use paramesh_dimensions
   Use paramesh_comm_data
   Use mpi_morton, Only : lperiodicx, lperiodicy, lperiodicz
   

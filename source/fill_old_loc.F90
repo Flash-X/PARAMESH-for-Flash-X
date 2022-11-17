@@ -66,7 +66,6 @@
       Subroutine fill_old_loc(new_loc,old_loc,nprocs,mype)
 
 !-----Use statements
-      Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use io
