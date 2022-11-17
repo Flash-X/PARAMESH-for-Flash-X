@@ -22,6 +22,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!  2022-11-08 K. Weide  mpiPack_blocks: use gr_thePdgDimens to get 'nvar';
+!!  2022-11-08 K. Weide  Tweaked USE statements for PDG support;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -41,18 +44,16 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           nbndvar, nvaredge, nvarcorn
       use physicaldata
-      use tree
       use paramesh_comm_data
 
       use mpi_morton
 
       use paramesh_mpi_interfaces, only : mpiGet_buffer
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
@@ -98,7 +99,7 @@
       endif
 
       invar = 0
-      if (lcc) invar = nvar
+      if (lcc) invar = gr_thePdgDimens(ig) % nvar
       if(lcc.and.lguard_in_progress) invar = ngcell_on_cc
 
       ibndvarX = 0                                                              
@@ -299,6 +300,10 @@
 !
 !
 ! Written :     Kevin Olson          January 2007
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Added 'pdg%nfluxes' to mpiGet_Sbuffer_size_fluxes call;
+!!                       cleaned up some USE statements;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -317,9 +322,6 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
-      use paramesh_dimensions
-      use physicaldata
-      use tree
       use paramesh_comm_data
 
       use mpi_morton
@@ -328,9 +330,7 @@
      &                                    mpiGet_Sbuffer_size_fluxes, &
      &                                    mpi_get_Sbuffer_size_edges
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
@@ -397,7 +397,7 @@
               elseif (fluxes) then
 
               call mpiGet_Sbuffer_size_fluxes( mype,lb,dtype,index, &
-     &                                          ig,flux_dir)
+     &                                          ig,pdg%nfluxes,flux_dir)
 
               elseif (edges) then
 

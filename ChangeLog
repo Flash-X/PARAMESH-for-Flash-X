@@ -1,3 +1,30 @@
+2022-11-08  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_mpi_interfaces.F90: update interfaces of
+	mpiSet_message_sizes, mpi_amr_get_remote_block,
+	mpiGet_Sbuffer_size_fluxes for PDG support.
+	* source/mpi_set_message_sizes.F90: add 'ig' argument to
+	 subroutine now called mpiSet_message_sizes, make the subroutine
+	PDG-aware.
+	* source/mpi_amr_get_remote_block.F90: change subroutine to take
+	argument 'pdg'. Add ONLY to some USE statements. Include
+	"Flashx_mpi_implicitNone.fh". Tweak / add some debugging output.
+	* source/mpi_pack_blocks.F90: in mpiPack_blocks, use
+	gr_thePdgDimens to get 'nvar'. Tweak USE statements for PDG
+	support. Add 'pdg%nfluxes' to mpiGet_Sbuffer_size_fluxes call.
+	Include "Flashx_mpi_implicitNone.fh".
+	* source/empi_get_flux_buffer.F90: make subroutine
+	mpiGet_flux_buffer PDG-aware. Change subroutine
+	mpiGet_Sbuffer_size_fluxes to take 'nfluxes' as argument. Some cleanup.
+
+2022-11-03  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_comm_setup.F90: rename called routine to
+	mpiSet_message_sizes.
+	* source/mpi_amr_1blk_guardcell.F90: call routine
+	mpi_amr_get_remote_block with additional argument 'pdg'. Add code
+	for debugging, mostly commented out.
+
 2022-11-02  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_amr_1blk_guardcell.F90,source/mpi_amr_comm_setup.F90:
@@ -42,7 +69,7 @@
 
 2022-10-26  Klaus Weide  <kweide@uchicago.edu>
 
-	* headers/paramesh_interface.F90: add amr_prolong_gen_unk1_fun
+	* headers/paramesh_interfaces.F90: add amr_prolong_gen_unk1_fun
 	interface. Change intent for some recv arguments to IN. Add
 	explicit '#include "Simulation.h"'. The recv argument to
 	amr_prolong_gen_unk1_fun is now declared CONTIGUOUS_INTENT(IN), dimension(:,:,:,:).

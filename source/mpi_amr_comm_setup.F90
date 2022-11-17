@@ -6,7 +6,7 @@
 ! Copyright (C) 2003, 2004 United States Government as represented by the
 ! National Aeronautics and Space Administration, Goddard Space Flight
 ! Center.  All Rights Reserved.
-! Copyright (C) 2021 The University of Chicago
+! Copyright (C) 2022 The University of Chicago
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -120,7 +120,7 @@
 !!   mpi_amr_read_prol_comm
 !!   mpi_amr_read_flux_comm
 !!   mpi_amr_read_restrict_comm
-!!   mpi_set_message_sizes
+!!   mpiSet_message_sizes
 !!   mpi_xchange_blocks
 !!
 !! RETURNS
@@ -149,6 +149,7 @@
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, n[xyz]b, gcell_on_cc
 !!  2022-11-02 K. Weide  Made UNNECESSARY nlayerst[xyz] increase (large nguard)
+!!  2022-11-03 K. Weide  Updated mpiSet_message_sizes call
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -186,7 +187,7 @@
                                       mpi_amr_read_prol_comm,          & 
                                       mpi_amr_read_flux_comm,          & 
                                       mpi_amr_read_restrict_comm,      & 
-                                      mpi_set_message_sizes,           & 
+                                      mpiSet_message_sizes,           &
                                       mpi_xchange_blocks
 #ifdef DEBUG
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
@@ -416,7 +417,7 @@
          flux_dirt = 0
       End If
 
-      Call mpi_set_message_sizes(iopt,nlayerstx,nlayersty,nlayerstz)
+      Call mpiSet_message_sizes(iopt,ig,nlayerstx,nlayersty,nlayerstz)
 
       If (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
 
