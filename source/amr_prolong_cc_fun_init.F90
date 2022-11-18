@@ -86,9 +86,9 @@ Subroutine amr_prolong_cc_fun_init(pdg,ig)
   Integer :: i1,j1,k1,i1p,j1p,k1p
 
 !-----Begin executable code.
-  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nyb,      &
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
             nyb         => gr_thePdgDimens(ig) % nyb,      &
-            nzb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
             nguard      => gr_thePdgDimens(ig) % nguard,   &
             il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
             iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
