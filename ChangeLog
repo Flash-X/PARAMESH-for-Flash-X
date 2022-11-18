@@ -32,6 +32,17 @@
 	debugging, disabled by default, to this crucial subroutine.
 	* source/amr_1blk_cc_prol_genorder.F90: correct
 	'first_call_overall' logic, tweak Robodoc synopsis.
+	* source/amr_prolong_cc_fun_init.F90: correct n[xz]b associations.
+	* source/mpi_lib.F90: clean up some USE paramesh_dimensions
+	statements, removing some that are unnecessary and adding ONLY:
+	ndim to others.
+	* source/mpi_unpack_blocks.F90: clean up some USE
+	paramesh_dimensions statements.
+	* source/amr_check_refine.F90, source/mpi_amr_check_derefine.F90, source/mpi_amr_local_surr_blks_lkup.F90: use paramesh_dimensions
+	with ONLY.
+	* source/amr_morton_order.F90: remove some unnecessay USE statements.
+	* source/mpi_amr_global_domain_limits.F90: remove unnecessary
+	REORDER directives and Use paramesh_dimensions statements.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

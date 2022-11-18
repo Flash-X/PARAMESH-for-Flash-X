@@ -24,6 +24,8 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -37,7 +39,7 @@
 !      R_buffer       receive buffer 
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: maxblocks_alloc
       use physicaldata
       use tree
       use mpi_morton
@@ -117,6 +119,9 @@
 !
 !
 ! Written :     Kevin Olson January 2007
+!! MODIFICATIONS
+!!  2021-12-15 Klaus Weide  Made PDG-aware
+!!  2022-11-08 Klaus Weide  Removed unnecessary Use paramesh_dimensions
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -131,7 +136,6 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
-      use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
