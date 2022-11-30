@@ -74,6 +74,9 @@
 	source/amr_restrict_unk_genorder.F90,
 	source/amr_restrict_unk_fun.F90: add ig dummy argument to amr_restrict_unk_genorder.
 	* source/amr_1blk_cc_prol_work_mg.F90: make PDG-aware using DEFAULT_PDGNO.
+	* flash_avoid_orrery/gr_initParameshArrays.F90,
+	source/amr_close.F90, source/mpi_morton_bnd_restrict.F90: add ONLY
+	to USE paramesh_dimensions.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

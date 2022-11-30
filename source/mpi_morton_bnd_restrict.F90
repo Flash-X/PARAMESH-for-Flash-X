@@ -58,6 +58,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson, August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Added ONLY to USE paramesh_dimensions
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -69,8 +71,7 @@
                                           tag_offset)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
+      Use physicaldata, ONLY: advance_all_levels
       Use tree
       Use timings
       Use mpi_morton

@@ -56,13 +56,14 @@
 !!   2017-10-04 modified to not call MPI_Finalize for FLASH   - Klaus Weide
 !!   2022-10-31 moved gcell_on_cc flag array into pdg_t       - Klaus Weide
 !!  2022-11-08 moved cell_ geometry arrays from physicaldata to pdg_t - K. Weide
+!!  2022-11-08 Added ONLY list to USE paramesh_dimensions             - K. Weide
 !!***
 
 # include "paramesh_preprocessor.fh"
       Subroutine amr_close
 
 !-----Use Statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: nvar, nfacevar, nvaredge, nvarcorn, nvar_work
       Use physicaldata
       Use workspace
       Use mpi_morton
