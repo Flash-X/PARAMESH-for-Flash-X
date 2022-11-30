@@ -75,6 +75,8 @@
 !!   Written : Peter MacNeice      December 2001
 !!   Cylindrical axisymmetric added by Sergey Pancheshnyi.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]

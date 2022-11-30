@@ -5,6 +5,7 @@
 !!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
 !!  2022-10-14 Klaus Weide  Corrected type of densVar...velzVar to integer
 !!  2022-10-31 Klaus Weide  Added gcell_on_cc to pdg_t
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 module gr_pmPdgDecl
   implicit none
 

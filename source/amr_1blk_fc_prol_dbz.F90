@@ -25,6 +25,8 @@
 !
 !     Klaus Weide, May 2016
 !        moved amr_minmod inside subroutine balpro
+!
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 
 
        subroutine prol_fc_dbz_init(n,i_divf_fc_vars)

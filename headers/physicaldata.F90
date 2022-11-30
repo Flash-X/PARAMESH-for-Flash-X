@@ -41,6 +41,7 @@
 !! MODIFICATIONS
 !!  2021-12-15 K. Weide  Support for PDG: use gr_thePdgs for per-PDG data items
 !!  2022-10-31 K. Weide  moved gcell_on_cc into pdg_t, add TARGET to mask arrays
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 

@@ -1,6 +1,7 @@
 !! MODIFICATIONS
 !!  2022-10-10 Klaus Weide  Added initialization of doRedist flag to TRUE
 !!  2022-10-31 Klaus Weide  Added allocation, initialization of gcell_on_cc
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 
 !!REORDER(5): unk, unk1, flux_[xyz], tflux_[xyz]
 !!REORDER(4): recvar[xyz]f

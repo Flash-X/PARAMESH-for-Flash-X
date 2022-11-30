@@ -5,6 +5,7 @@
 !! MODIFICATIONS
 !!
 !!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 subroutine gr_pdgCloseOne(pdg)
   use gr_pmPdgDecl, ONLY : pdg_t
   use paramesh_dimensions, ONLY: maxblocks, npblks

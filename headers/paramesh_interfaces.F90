@@ -21,6 +21,7 @@
 !!  2022-10-26 K. Weide  added amr_prolong_gen_unk1_fun interface
 !!                Changed intent for some recv arguments to IN
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 !#ifdef HAVE_CONFIG_H

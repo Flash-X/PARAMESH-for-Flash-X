@@ -111,6 +111,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
