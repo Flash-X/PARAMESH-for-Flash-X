@@ -15,11 +15,13 @@
 !! SYNOPSIS
 !!
 !!   Call amr_1blk_cc_prol_inject (recv,ia,ib,ja,jb,ka,kb,idest,
-!!                                 ioff,joff,koff,mype,ivar)
+!!                                 ioff,joff,koff,mype,ivar,
+!!                                 pdg,ig)
 !!   Call amr_1blk_cc_prol_inject (real,
 !!                                 integer, integer, integer, integer,
 !!                                 integer, integer, integer, integer,
-!!                                 integer, integer, integer, integer)
+!!                                 integer, integer, integer, integer,
+!!                                 type(pdg_t), integer)
 !!
 !! ARGUMENTS
 !!
@@ -89,6 +91,8 @@
 !!
 !! Written :     Peter MacNeice          January 1997
 !!
+!! MODIFICATIONS
+!!  2022-11-03 Klaus Weide  Made PDG-aware
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -97,11 +101,11 @@
 
       Subroutine amr_1blk_cc_prol_inject               & 
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,  & 
-         mype,ivar)
+         mype,ivar,pdg,ig)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
+  use gr_pmPdgDecl, ONLY : pdg_t
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens, k2d, k3d
       Use tree
       Use prolong_arrays
 
@@ -112,6 +116,8 @@
       Integer, Intent(in)    :: ia,ib,ja,jb,ka,kb
       Integer, Intent(in)    :: idest,ioff,joff,koff,mype
       Integer, Intent(in)    :: ivar
+  type(pdg_t),intent(INOUT) :: pdg
+      Integer, Intent(in)    :: ig
 
 !-----Local Variables
       Real    :: dx,dy,dz,cx,cy,cz
@@ -141,6 +147,12 @@
       kcl=ka
       kcu=kb
 
+  ASSOCIATE(nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nxb         => gr_thePdgDimens(ig) % nxb,                      &
+            nyb         => gr_thePdgDimens(ig) % nyb,                      &
+            nzb         => gr_thePdgDimens(ig) % nzb,                      &
+            unk1        => pdg % unk1          &
+        )
       offi = 0
       offj = 0
       offk = 0
@@ -184,6 +196,6 @@
            End Do  ! End Do j=jcl,jcu
       End Do  ! End Do k=kcl,kcu
 
-
+    end ASSOCIATE
       Return
       End Subroutine amr_1blk_cc_prol_inject

@@ -65,6 +65,7 @@
 	* headers/paramesh_interfaces.F90,
 	source/amr_restrict_unk_genorder.F90,
 	source/amr_restrict_unk_fun.F90: add ig dummy argument to amr_restrict_unk_genorder.
+	* source/amr_1blk_cc_prol_work_mg.F90: make PDG-aware using DEFAULT_PDGNO.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 
@@ -73,6 +74,8 @@
 	* source/mpi_amr_1blk_guardcell.F90: call routine
 	mpi_amr_get_remote_block with additional argument 'pdg'. Add code
 	for debugging, mostly commented out.
+	* source/amr_1blk_cc_prol_work_genorder.F90: make PDG-aware using DEFAULT_PDGNO.
+	* source/amr_1blk_cc_prol_inject.F90: make PDG-aware.
 
 2022-11-02  Klaus Weide  <kweide@uchicago.edu>
 
