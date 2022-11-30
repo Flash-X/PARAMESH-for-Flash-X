@@ -58,6 +58,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -65,7 +67,8 @@
       Subroutine mpi_morton_bnd(mype,nprocs,tag_offset)
 
 !-----Use Statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: ndim, k2d, k3d, maxblocks, &
+           gr_thePdgDimens, nguard_work, nmax_lays
       Use physicaldata
       Use tree
       Use timings
@@ -76,10 +79,8 @@
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Integer, intent(in)    ::  mype,nprocs
@@ -93,7 +94,7 @@
       integer :: ia,ib,ja,jb,ka,kb
       Integer :: ierror
       Integer :: max_no_of_blocks
-      Integer :: istack, ioff, joff, koff, itemp
+      Integer :: istack, ioff, joff, koff
       Integer :: isize, isrc, idest, itag, kk
       Integer :: nguarda, iproc
       Integer :: npts_neigh1,npts_neigh2
@@ -108,7 +109,7 @@
 
       accuracy = 100./10.**precision(accuracy)
       eps = accuracy                                                                                                     
-      nguarda = max(nguard,nguard_work)
+      nguarda = max(gr_thePdgDimens(1)%nguard,nguard_work)
 
       npts_neigh1 = npts_neigh
       npts_neigh2 = npts_neigh+100

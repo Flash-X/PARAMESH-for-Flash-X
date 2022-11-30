@@ -77,6 +77,9 @@
 	* flash_avoid_orrery/gr_initParameshArrays.F90,
 	source/amr_close.F90, source/mpi_morton_bnd_restrict.F90: add ONLY
 	to USE paramesh_dimensions.
+	* source/mpi_morton_bnd.F90,source/mpi_morton_bnd_fluxcon.F90,source/mpi_morton_bnd_prolong.F90:
+	tweaked for PDG, use DEFAULT PDG for the purpose of setting
+	'nguarda', make some USE statements more specific.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 
