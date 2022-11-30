@@ -58,6 +58,9 @@
 !!   Written :     Peter MacNeice          June 1997
 !!   Modified for pdg:  Klaus Weide        Sept 2022
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Fixed association for nxb and nzb
+!!
 !!***
 
 #include "paramesh_preprocessor.fh"
