@@ -83,6 +83,7 @@
 !!
 !!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
 !!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_to_perm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -656,7 +657,7 @@ contains
 
 !-----copy data back to permanent storage arrays
 
-       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest )
+       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest, pdg,ig)
 
       End If  ! End If (lrefine(lb) == lreflevel)
 

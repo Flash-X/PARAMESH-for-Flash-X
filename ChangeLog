@@ -59,6 +59,9 @@
 	source/amr_1blk_cc_prol_gen_unk_fun.F90,
 	source/mpi_amr_1blk_guardcell_c_to_f.F90,
 	source/mpi_amr_prolong.F90: add pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun.
+	* headers/paramesh_interfaces.F90,
+	source/amr_1blk_to_perm.F90,
+	source/mpi_amr_prolong.F90: add pdg,ig arguments to amr_1blk_to_perm.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 
