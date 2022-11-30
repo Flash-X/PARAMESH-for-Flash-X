@@ -10,6 +10,7 @@
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
+#include "Simulation.h"
 
       subroutine mpi_get_edge_buffer(mype,lb,dtype,offset, & 
      &                          buffer_size,S_buffer)
@@ -21,6 +22,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  PDG-related changes (using ASSOCIATE), more
+!!                          specific USE statements, some cleanup.
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -33,19 +37,20 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, ndim, &
+                                     maxblocks_alloc, l2p5d, k2d, k3d
+      use physicaldata, ONLY: nedges, ldtcomplete, &
+                              bedge_facex_y, bedge_facex_z, &
+                              bedge_facey_x, bedge_facey_z, &
+                              bedge_facez_x, bedge_facez_y
       use tree
-      use workspace
       use paramesh_comm_data
 
       use mpi_morton
 
       use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 
@@ -55,8 +60,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0
 
       integer :: index,ierrorcode,ierr
       integer :: ia,ib,ja,jb,ka,kb
@@ -66,9 +69,6 @@
       integer :: i, j, k, n, ii
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
       ilimit = shape(S_buffer)
 
@@ -98,6 +98,10 @@
      &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
+      ASSOCIATE(nxb     => gr_thePdgDimens(DEFAULT_PDGNO) % nxb, &
+                nyb     => gr_thePdgDimens(DEFAULT_PDGNO) % nyb, &
+                nzb     => gr_thePdgDimens(DEFAULT_PDGNO) % nzb, &
+                nguard0 => gr_thePdgDimens(DEFAULT_PDGNO) % nguard * npgs)
 
 ! pack the bedge_facex_y and bedge_facex_z arrays for block lb
 
@@ -400,6 +404,7 @@
 
       endif
       endif
+    end ASSOCIATE
 
 ! Add tree info to buffer
 
@@ -516,10 +521,10 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, ndim, &
+                                     l2p5d, k2d, k3d
+      use physicaldata, ONLY: nedges
       use tree
-      use workspace
       use paramesh_comm_data
 
       use mpi_morton
@@ -537,8 +542,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0
 
       integer :: index,ierrorcode,ierr
       integer :: ia,ib,ja,jb,ka,kb
@@ -549,9 +552,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
 ! take over incoming index offset for block lb to be sent to remote pe
 
@@ -716,6 +716,10 @@
 
 
 
+      ASSOCIATE(nxb     => gr_thePdgDimens(DEFAULT_PDGNO) % nxb, &
+                nyb     => gr_thePdgDimens(DEFAULT_PDGNO) % nyb, &
+                nzb     => gr_thePdgDimens(DEFAULT_PDGNO) % nzb, &
+                nguard0 => gr_thePdgDimens(DEFAULT_PDGNO) % nguard * npgs)
 ! Now treat single edges
 ! first x edges
       if(ndim.eq.3) then
@@ -858,6 +862,7 @@
 
       endif
       endif
+    end ASSOCIATE
 
 ! Add tree info to buffer
 
