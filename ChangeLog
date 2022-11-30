@@ -85,6 +85,7 @@
 	statements, some cleanup.
 	* source/mpi_get_buffer.F90,source/mpi_put_buffer.F90: PDG-related
 	and other adaptations and cleanup.
+	* source/mpi_put_buffer.F90: remove unused logical variables l_srl_only, ldiag.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

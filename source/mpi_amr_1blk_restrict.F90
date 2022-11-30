@@ -112,6 +112,7 @@
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
+!!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -197,7 +198,6 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
-  Logical :: l_srl_only,ldiag
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
 
