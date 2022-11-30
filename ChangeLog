@@ -1,3 +1,11 @@
+2022-11-29  Klaus Weide  <kweide@uchicago.edu>
+
+	* bittree/amr_initialize.F90: remove allocation of cell_* geometry
+	arrays from here, since the arrays themselves were moved from
+	the physicaldata module into pdg_t. Also comment out some
+	other allocations (tflux_x, etc.), making this version more like
+	the one in the "source" directory.
+
 2022-11-08  Klaus Weide  <kweide@uchicago.edu>
 
 	* headers/paramesh_mpi_interfaces.F90: update interfaces of
