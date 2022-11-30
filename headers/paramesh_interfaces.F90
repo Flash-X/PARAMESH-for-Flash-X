@@ -22,6 +22,7 @@
 !!                Changed intent for some recv arguments to IN
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
+!!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -73,12 +74,16 @@
       end interface
 
       interface
-      subroutine amr_1blk_cc_prol_gen_unk_fun(recv,ia,ib,ja,jb,ka,kb,    & 
-     &       idest,ioff,joff,koff,mype,lb,pe_p,lb_p)
+         subroutine amr_1blk_cc_prol_gen_unk_fun(recv,ia,ib,ja,jb,ka,kb, &
+     &       idest,ioff,joff,koff,mype,lb,pe_p,lb_p, pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: lb,lb_p,pe_p
       real,    intent(inout) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_1blk_cc_prol_gen_unk_fun
       end interface
 

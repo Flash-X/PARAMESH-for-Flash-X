@@ -83,6 +83,7 @@
 !!  Modified for GRID_WITH_MONOTONIC variant - Klaus Weide 2022-02-20
 !!  Changes to call amr_1blk_cc_prol_dg for Thornado - Austin Harris 2021-12-06
 !!  2022-10-07 Klaus Weide  Made PDG-aware (temporary, intermediate changes)
+!!  2022-11-08 Klaus Weide  Made PDG-aware properly with pdg,ig arguments
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -90,14 +91,13 @@
 
 subroutine amr_1blk_cc_prol_gen_unk_fun                &
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,  & 
-         mype,lb,pe_p,lb_p)
+         mype,lb,pe_p,lb_p, pdg,ig)
 
 !-----Use Statements
   use timings, ONLY: timing_mpi, timer_amr_1blk_cc_prol_gen_unk
   use gr_pmPdgDecl, ONLY : pdg_t
   Use paramesh_dimensions, ONLY: gr_thePdgDimens
-  Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk, &
-       gr_thePdgs
+  Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk
 
   Use paramesh_interfaces, only :                  &
                        amr_1blk_cc_prol_inject,    & 
@@ -115,9 +115,8 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
   integer, intent(in)    :: ia,ib,ja,jb,ka,kb,idest
   integer, intent(in)    :: ioff,joff,koff,mype
   integer, intent(in)    :: lb,lb_p,pe_p
-
-  type(pdg_t),POINTER :: pdg => gr_thePdgs(1) !DEV: temporary; should become dummy arg?
-  integer :: ig = DEFAULT_PDGNO !DEV: temporary; should become dummy arg?
+  type(pdg_t),intent(INOUT) :: pdg
+  integer, intent(in)    :: ig
 
 !-----Local variables
   double precision :: time1
