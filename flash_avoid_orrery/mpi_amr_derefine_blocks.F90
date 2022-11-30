@@ -53,6 +53,9 @@
 !!
 !!   Kevin Olson, 1997
 !!
+!! MODIFICATIONS
+!!  2010       Chris Daley  FLASH's custom version for orrery avoidance
+!!  2022-11-08 Klaus Weide  changes to support multiple PDGs
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -68,14 +71,11 @@
       Use constants
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, intent(inout) :: lnblocks_old
       Integer, intent(in)    :: mype
-
-!-----Include statements.
-      Include 'mpif.h'
 
 !-----Local arrays and variables
       Real    :: eps,accuracy
@@ -450,20 +450,22 @@
 Subroutine amr_derefine_blocks_flash (lnblocks_old, mype)
 
   !-----Use statements
-  Use paramesh_dimensions
-  Use physicaldata
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, k1d, k2d, k3d, &
+       maxblocks_alloc, &
+       nfacevar, nvaredge, nvarcorn
+  Use physicaldata, ONLY: gr_thePdgs, lsingular_line, spherical_pm, polar_pm, &
+       surr_blks_valid, empty_cells, &
+       facevarx, facevary, facevarz, &
+       unk_e_x, unk_e_y, unk_e_z, unk_n
   Use tree
   Use constants
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-  Implicit None
+#include "Flashx_mpi_implicitNone.fh"
 
   !-----Input/Output arguments.
   Integer, intent(inout) :: lnblocks_old
   Integer, intent(in)    :: mype
-
-  !-----Include statements.
-  Include 'mpif.h'
 
   !-----Local arrays and variables
   Integer :: new_loc(maxblocks_tr)
@@ -478,6 +480,7 @@ Subroutine amr_derefine_blocks_flash (lnblocks_old, mype)
   Integer :: nodetype_chi(nchild,maxblocks_tr)     
   Integer :: errorcode
   Integer :: li, lj, lk, faceAxis, faceSide, irf
+  Integer :: ig
   Integer, dimension(mdim) :: gCell, gs, gr
 
   !-----Begin Executable code.
@@ -635,7 +638,11 @@ Subroutine amr_derefine_blocks_flash (lnblocks_old, mype)
 
   Do i = 1,lnblocks_old
      If (new_loc(i).ne.i.and.new_loc(i) > 0) Then
-        If (nvar > 0) unk(:,:,:,:,new_loc(i)) = unk(:,:,:,:,i)
+        do ig = 1, NUM_PDGS
+           If (gr_thePdgDimens(ig) % nvar > 0) &
+                gr_thePdgs(ig) % unk(:,:,:,:,new_loc(i)) = &
+                gr_thePdgs(ig) % unk(:,:,:,:,i)
+        end do
         If (nfacevar > 0) Then
            facevarx(:,:,:,:,new_loc(i)) = facevarx(:,:,:,:,i)
            facevary(:,:,:,:,new_loc(i)) = facevary(:,:,:,:,i)

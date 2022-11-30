@@ -53,6 +53,7 @@
 	source/mpi_amr_prolong_fc_divbconsist.F90,
 	source/mpi_amr_restrict_fulltree.F90: move cell_* geometry arrays
 	from the physicaldata module into pdg_t.
+	* flash_avoid_orrery/mpi_amr_derefine_blocks.F90: update for PDG support.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 
