@@ -81,21 +81,25 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_prolong_fc_divbconsist(mype,level,nfield,ig)
+Subroutine amr_prolong_fc_divbconsist(mype,level,nfield,ig)
 
 !-----Use statements.
-      Use paramesh_dimensions
+  use gr_pmPdgDecl, ONLY: pdg_t
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, k2d, k3d, npgs, &
+           iface_off, &
+           gc_off_x, gc_off_y, gc_off_z, &
+           nbndvar, &
+           il_bnd, iu_bnd, jl_bnd, ju_bnd, kl_bnd, ku_bnd, &
+           nguard, nxb, nyb, nzb
       Use physicaldata
       Use tree
       Use mpi_morton
-      Use paramesh_mpi_interfaces, only :                              & 
-                             mpiAmr_get_remote_block_fvar
+      Use paramesh_interfaces, only : amr_block_geometry
+      Use paramesh_mpi_interfaces, only : mpiAmr_get_remote_block_fvar
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, intent(in) ::  mype
@@ -127,6 +131,7 @@
       Real :: areax1,areax2,areay1,areay2,areaz1,areaz2
       Real :: bsum,divbmax,divb
       Logical :: cnewchild
+      type(pdg_t),POINTER :: pdgP
 
 !-----Begin executable code.
 
@@ -147,6 +152,11 @@
       efact = 1.
       If (ndim == 2) efact = .5
 
+       If (curvilinear) Then
+          pdgP => gr_thePdgs(1)
+       Else
+          nullify(pdgP)
+       end If
 !-----cycle through the grid blocks on this processor
       If (lnblocks > 0) Then
       Do isg = 1,lnblocks
@@ -157,8 +167,7 @@
 
 !------get block geometry information
        If (curvilinear) Then
-       call amr_block_geometry(isg,mype)
-       Else
+       call amr_block_geometry(isg,mype, pdgP,ig)
        dx = (bnd_box(2,1,isg)-bnd_box(1,1,isg))/real(nxb)
        dy = 1.
        dz = 1.
@@ -168,6 +177,9 @@
                dz = (bnd_box(2,3,isg)-bnd_box(1,3,isg))/real(nzb)
        End If
 
+       ASSOCIATE(cell_area1 => pdgP % cell_area1, &
+                 cell_area2 => pdgP % cell_area2, &
+                 cell_area3 => pdgP % cell_area3)
 !------Cycle over the blocks faces
        Do jf = 1,nfaces
 
@@ -596,7 +608,7 @@
           End If  ! End If (.Not.newchild)
 
        End Do  ! End Do jf = 1,nfaces
-
+     end ASSOCIATE
       End If  ! End If If (nodetype(isg) == 1.And.newchild(isg) ...
       End Do  ! End Do isg = 1, lnblocks
       End If  ! End If (lnblocks > 0)
@@ -621,7 +633,7 @@
                End Do
                End Do
 
-      End If  ! End If (nodetype(isg) == 10
+      End If  ! End If (nodetype(isg) == 1
       End Do  ! End Do isg = 1, lnblocks
       End If  ! End If lnblock > 0)
 

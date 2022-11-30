@@ -43,6 +43,16 @@
 	* source/amr_morton_order.F90: remove some unnecessay USE statements.
 	* source/mpi_amr_global_domain_limits.F90: remove unnecessary
 	REORDER directives and Use paramesh_dimensions statements.
+	* flash_avoid_orrery/amr_initialize.F90,
+	flash_avoid_orrery/physicaldata.F90, headers/gr_pmPdgDecl.F90,
+	headers/paramesh_interfaces.F90, headers/physicaldata.F90,
+	source/amr_1blk_fc_prol_dbz.F90, source/amr_block_geometry.F90,
+	source/amr_close.F90, source/amr_initialize.F90,
+	source/gr_pdgClose.F90, source/gr_pdgInit.F90,
+	source/mpi_amr_1blk_restrict.F90,
+	source/mpi_amr_prolong_fc_divbconsist.F90,
+	source/mpi_amr_restrict_fulltree.F90: move cell_* geometry arrays
+	from the physicaldata module into pdg_t.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

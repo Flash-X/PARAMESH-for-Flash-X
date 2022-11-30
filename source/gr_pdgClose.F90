@@ -27,6 +27,17 @@ subroutine gr_pdgCloseOne(pdg)
     deallocate(                & 
        pdg % flux_z)
 
+    Deallocate(pdg % cell_vol)
+    Deallocate(pdg % cell_area1)
+    Deallocate(pdg % cell_area2)
+    Deallocate(pdg % cell_area3)
+    Deallocate(pdg % cell_leng1)
+    Deallocate(pdg % cell_leng2)
+    Deallocate(pdg % cell_leng3)
+    Deallocate(pdg % cell_face_coord1)
+    Deallocate(pdg % cell_face_coord2)
+    Deallocate(pdg % cell_face_coord3)
+
     deallocate(pdg % recvarxf)
     deallocate(pdg % recvaryf)
     deallocate(pdg % recvarzf)

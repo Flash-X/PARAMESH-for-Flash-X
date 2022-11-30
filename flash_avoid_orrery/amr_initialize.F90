@@ -70,6 +70,7 @@
 !! MODIFICATIONS
 !!  2022-10-04 Klaus Weide  initialization for all PDGs
 !!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
+!!  2022-11-08 Klaus Weide  moved cell_ geometry arrays of physicaldata to pdg_t
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -972,30 +973,30 @@
 
 
       If (curvilinear) Then
-       Allocate(cell_vol(il_bnd1:iu_bnd1, &
-                         jl_bnd1:ju_bnd1, &
-                         kl_bnd1:ku_bnd1))
-       Allocate(cell_area1(il_bnd1:iu_bnd1+1, &
-                           jl_bnd1:ju_bnd1,   & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_area2(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_area3(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1,     & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng1(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng2(il_bnd1:iu_bnd1+1,   &
-                           jl_bnd1:ju_bnd1,     & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng3(il_bnd1:iu_bnd1+1,   &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_face_coord1(il_bnd1:iu_bnd1+1))
-       Allocate(cell_face_coord2(jl_bnd1:ju_bnd1+k2d))
-       Allocate(cell_face_coord3(kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_vol(il_bnd1:iu_bnd1, &
+!!$                         jl_bnd1:ju_bnd1, &
+!!$                         kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area1(il_bnd1:iu_bnd1+1, &
+!!$                           jl_bnd1:ju_bnd1,   & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area2(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area3(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1,     & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng1(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng2(il_bnd1:iu_bnd1+1,   &
+!!$                           jl_bnd1:ju_bnd1,     & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng3(il_bnd1:iu_bnd1+1,   &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_face_coord1(il_bnd1:iu_bnd1+1))
+!!$       Allocate(cell_face_coord2(jl_bnd1:ju_bnd1+k2d))
+!!$       Allocate(cell_face_coord3(kl_bnd1:ku_bnd1+k3d))
        Allocate(cell_vol_w(ilw1:iuw1,jlw1:juw1,klw1:kuw1))
       end if  ! End If (curvilinear)
 
@@ -1003,7 +1004,8 @@
       Allocate(ladd_end(0:nprocs-1))
 
       do i = 1, NUM_PDGS
-         call gr_pdgInitOne(gr_thePdgs(i),gr_thePdgDimens(i), nfluxvar,nfluxes,maxblocksfl)
+         call gr_pdgInitOne(gr_thePdgs(i),gr_thePdgDimens(i), nfluxvar,nfluxes,maxblocksfl, &
+                            curvilinear)
       end do
       unk    => gr_thePdgs(1) % unk
       unk1   => gr_thePdgs(1) % unk1

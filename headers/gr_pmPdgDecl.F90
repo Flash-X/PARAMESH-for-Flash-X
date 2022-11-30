@@ -59,6 +59,18 @@ module gr_pmPdgDecl
      Real, Allocatable :: tflux_y(:,:,:,:,:)
      Real, Allocatable :: tflux_z(:,:,:,:,:)
 
+! arrays used to store geometry information for the working block
+     Real, Allocatable  :: cell_vol(:,:,:)
+     Real, Allocatable  :: cell_area1(:,:,:)
+     Real, Allocatable  :: cell_area2(:,:,:)
+     Real, Allocatable  :: cell_area3(:,:,:)
+     Real, Allocatable  :: cell_leng1(:,:,:)
+     Real, Allocatable  :: cell_leng2(:,:,:)
+     Real, Allocatable  :: cell_leng3(:,:,:)
+     Real, Allocatable  :: cell_face_coord1(:)
+     Real, Allocatable  :: cell_face_coord2(:)
+     Real, Allocatable  :: cell_face_coord3(:)
+
      Real, Allocatable :: recvarxf(:,:,:,:)
      Real, Allocatable :: recvaryf(:,:,:,:)
      Real, Allocatable :: recvarzf(:,:,:,:)

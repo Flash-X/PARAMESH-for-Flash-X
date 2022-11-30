@@ -123,16 +123,14 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !-----Use Statements
   use gr_pmPdgDecl, ONLY : pdg_t
-!  Use paramesh_dimensions
+
   Use paramesh_dimensions, only: gr_thePdgDimens
   Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
                                  nbndvar,nbndvare
-!  Use physicaldata
   Use physicaldata, only: interp_mask_unk_res,     &
                           interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
                           interp_mask_ec_res,      &
                           interp_mask_nc_res
-  Use physicaldata, only: cell_vol,cell_area1,cell_area2,cell_area3
   Use physicaldata, only: facevarx,   facevary,   facevarz, &
                           facevarx1,  facevary1,  facevarz1
   Use physicaldata, only: curvilinear, curvilinear_conserve
@@ -224,7 +222,11 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
             kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
             ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
             unk         => pdg % unk,      &
-            unk1        => pdg % unk1      &
+            unk1        => pdg % unk1,     &
+            cell_vol    => pdg % cell_vol,   &
+            cell_area1  => pdg % cell_area1,   &
+            cell_area2  => pdg % cell_area2,   &
+            cell_area3  => pdg % cell_area3    &
             )
 
   nguard0 = nguard*npgs
@@ -377,7 +379,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
                        If (curvilinear) Then
 !--------compute geometry variables for the child block (remote_block,remote_pe)
-                          Call amr_block_geometry(remote_block,remote_pe)
+                          Call amr_block_geometry(remote_block,remote_pe,pdg,ig)
 
                           If (curvilinear_conserve) Then
 
@@ -461,7 +463,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !--------Now reset geometry factors to appropriate values for the 
 !--------current block lb
-                          Call amr_block_geometry(lb,mype)
+                          Call amr_block_geometry(lb,mype,pdg,ig)
 
                        End If  ! End If (curvilinear)
 

@@ -1202,20 +1202,20 @@
 
 
 ! arrays used to store geometry information for the working block
-      Public :: cell_vol
-      Public :: cell_area1,cell_area2,cell_area3
-      Public :: cell_leng1,cell_leng2,cell_leng3
-      Public :: cell_face_coord1,cell_face_coord2,cell_face_coord3
-      Real, Allocatable  :: cell_vol(:,:,:)
-      Real, Allocatable  :: cell_area1(:,:,:)
-      Real, Allocatable  :: cell_area2(:,:,:)
-      Real, Allocatable  :: cell_area3(:,:,:)
-      Real, Allocatable  :: cell_leng1(:,:,:)
-      Real, Allocatable  :: cell_leng2(:,:,:)
-      Real, Allocatable  :: cell_leng3(:,:,:)
-      Real, Allocatable  :: cell_face_coord1(:)
-      Real, Allocatable  :: cell_face_coord2(:)
-      Real, Allocatable  :: cell_face_coord3(:)
+!!$      Public :: cell_vol
+!!$      Public :: cell_area1,cell_area2,cell_area3
+!!$      Public :: cell_leng1,cell_leng2,cell_leng3
+!!$      Public :: cell_face_coord1,cell_face_coord2,cell_face_coord3
+!!$      Real, Allocatable  :: cell_vol(:,:,:)
+!!$      Real, Allocatable  :: cell_area1(:,:,:)
+!!$      Real, Allocatable  :: cell_area2(:,:,:)
+!!$      Real, Allocatable  :: cell_area3(:,:,:)
+!!$      Real, Allocatable  :: cell_leng1(:,:,:)
+!!$      Real, Allocatable  :: cell_leng2(:,:,:)
+!!$      Real, Allocatable  :: cell_leng3(:,:,:)
+!!$      Real, Allocatable  :: cell_face_coord1(:)
+!!$      Real, Allocatable  :: cell_face_coord2(:)
+!!$      Real, Allocatable  :: cell_face_coord3(:)
 
 ! workspace arrays used for inter-block communications
       Public :: recvarxf,recvaryf,recvarzf

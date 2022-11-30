@@ -494,9 +494,13 @@
 
 
       interface
-      subroutine amr_block_geometry(lb,pe)
-      integer, intent(in) :: lb,pe
-      end subroutine amr_block_geometry
+         subroutine amr_block_geometry(lb,pe,pdg,ig)
+           use gr_pmPdgDecl, ONLY: pdg_t
+           implicit none
+           integer, intent(in) :: lb,pe
+           type(pdg_t), intent(INOUT) :: pdg
+           integer, intent(in) :: ig
+         end subroutine amr_block_geometry
       end interface
 
       interface

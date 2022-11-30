@@ -79,9 +79,11 @@
      &        idest,ioff,joff,koff,          & 
      &        mype,lb,parent_pe,parent_blk   & 
      & )
-      !**************************************************************
-        use paramesh_dimensions 
-        use physicaldata
+         !**************************************************************
+        use gr_pmPdgDecl, ONLY: pdg_t
+        use paramesh_interfaces, ONLY: amr_block_geometry
+        use paramesh_dimensions
+        use physicaldata, ONLY: gr_thePdgs, cylindrical_pm, facevarx1, facevary1, facevarz1
         use tree
         ! use prolong_arrays 
 
@@ -121,7 +123,7 @@
 
         real  :: cell_face_coord1_child (il_bnd1:iu_bnd1+1),&
                  cell_face_coord2_child (jl_bnd1:ju_bnd1+1)
-
+        type(pdg_t),POINTER :: pdgP
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         mlrdbg =.false. ! .true.
@@ -158,14 +160,15 @@
 
         ! DL added this call for cylindrical
         if (cylindrical_pm) then
-           Call amr_block_geometry(plb,plp)
-           cell_face_coord1_parent = cell_face_coord1
-           cell_face_coord2_parent = cell_face_coord2
-           if (ndim == 3) cell_face_coord3_parent = cell_face_coord3
+           pdgP => gr_thePdgs(1)
+           Call amr_block_geometry(plb,plp, pdgP, 1)
+           cell_face_coord1_parent = pdgP % cell_face_coord1
+           cell_face_coord2_parent = pdgP % cell_face_coord2
+           if (ndim == 3) cell_face_coord3_parent = pdgP %  cell_face_coord3
         
-           Call amr_block_geometry(lb,mype)
-           cell_face_coord1_child = cell_face_coord1
-           cell_face_coord2_child = cell_face_coord2
+           Call amr_block_geometry(lb,mype, pdgP, 1)
+           cell_face_coord1_child = pdgP % cell_face_coord1
+           cell_face_coord2_child = pdgP % cell_face_coord2
         endif
 
         

@@ -218,15 +218,15 @@
          Deallocate(ttbedge_facez_y)
       End If  ! End of If (var_dt)
 
-      If (curvilinear) Then
-         Deallocate(cell_vol)
-         Deallocate(cell_area1)
-         Deallocate(cell_area2)
-         Deallocate(cell_area3)
-         Deallocate(cell_leng1)
-         Deallocate(cell_leng2)
-         Deallocate(cell_leng3)
-      End If  ! End of If (curvilinear)
+!!$      If (curvilinear) Then
+!!$         Deallocate(cell_vol)
+!!$         Deallocate(cell_area1)
+!!$         Deallocate(cell_area2)
+!!$         Deallocate(cell_area3)
+!!$         Deallocate(cell_leng1)
+!!$         Deallocate(cell_leng2)
+!!$         Deallocate(cell_leng3)
+!!$      End If  ! End of If (curvilinear)
 
 !!$      Deallocate(recvarxf)
 !!$      Deallocate(recvaryf)

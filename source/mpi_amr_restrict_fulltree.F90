@@ -55,14 +55,13 @@ contains
                           interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
                           interp_mask_ec_res,      &
                           interp_mask_nc_res
-    Use physicaldata, only: cell_vol,cell_area1,cell_area2,cell_area3,cell_leng1,cell_leng2,cell_leng3
     Use physicaldata, only: facevarx,   facevary,   facevarz, &
                           facevarx1,  facevary1,  facevarz1
     Use physicaldata, only: unk_n , unk_e_x ,unk_e_y ,unk_e_z, &
                               unk_n1, unk_e_x1,unk_e_y1,unk_e_z1
     Use physicaldata, only: curvilinear, curvilinear_conserve
     Use physicaldata, only: diagonals,lrestrict_in_progress
-    Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+    Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec
     use tree
     use workspace
     use paramesh_comm_data
@@ -172,7 +171,14 @@ contains
             kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
             ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
             unk         => pdg % unk,      &
-            unk1        => pdg % unk1      &
+            unk1        => pdg % unk1,     &
+            cell_vol    => pdg % cell_vol,   &
+            cell_area1  => pdg % cell_area1,   &
+            cell_area2  => pdg % cell_area2,   &
+            cell_area3  => pdg % cell_area3,   &
+            cell_leng1  => pdg % cell_leng1,   &
+            cell_leng2  => pdg % cell_leng2,   &
+            cell_leng3  => pdg % cell_leng3    &
             )
     BLOCK
       real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
@@ -382,7 +388,7 @@ contains
          write(*,*) 'pe ',mype,' blk ',lb,' searching for child ', & 
      &     jchild ,' at address ',remote_block,remote_pe,' for geom '
 #endif /* DEBUG */
-         call amr_block_geometry(remote_block,remote_pe)
+         call amr_block_geometry(remote_block,remote_pe,pdg,ig)
 
          if (curvilinear_conserve) then
 
@@ -462,7 +468,7 @@ contains
          endif
 
 ! now reset geometry factors to appropriate values for the current block lb
-         call amr_block_geometry(lb,mype)
+         call amr_block_geometry(lb,mype,pdg,ig)
 
          endif
 !-----------------------
