@@ -62,6 +62,9 @@
 	* headers/paramesh_interfaces.F90,
 	source/amr_1blk_to_perm.F90,
 	source/mpi_amr_prolong.F90: add pdg,ig arguments to amr_1blk_to_perm.
+	* headers/paramesh_interfaces.F90,
+	source/amr_restrict_unk_genorder.F90,
+	source/amr_restrict_unk_fun.F90: add ig dummy argument to amr_restrict_unk_genorder.
 
 2022-11-03  Klaus Weide  <kweide@uchicago.edu>
 

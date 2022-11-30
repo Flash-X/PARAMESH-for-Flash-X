@@ -53,6 +53,7 @@
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  Added 'ig' dummy argument and used it for 'nvar'
+!!  2022-11-08 K. Weide  Pass ig to amr_restrict_unk_genorder
 !!***
 
 Subroutine amr_restrict_unk_fun(datain,dataout, ig)
@@ -85,7 +86,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout, ig)
 !-----------Call the default interpolation routine for interpolation 
             order = interp_mask_unk_res(ivar)
             If (order <=0 .or. order > 5) order = 1
-            Call amr_restrict_unk_genorder(datain,dataout,order,ivar)
+            Call amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
 
          Elseif (interp_mask_unk_res(ivar) == 40) Then
 !--------User defined interpolation to be used for

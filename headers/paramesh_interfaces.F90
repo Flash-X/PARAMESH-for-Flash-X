@@ -24,6 +24,7 @@
 !!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_to_perm
+!!  2022-11-08 K. Weide  added ig argument to amr_restrict_unk_genorder
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -1075,10 +1076,11 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar)
+      subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
       real, intent(in)    :: datain(:,:,:,:)
       real, intent(inout) :: dataout(:,:,:,:)
       integer, intent(in) :: order, ivar
+      integer, intent(in) :: ig
       end subroutine amr_restrict_unk_genorder
       end interface
 
