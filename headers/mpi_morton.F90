@@ -17,8 +17,6 @@
 
       Module mpi_morton
 
-      Use paramesh_dimensions
-
       Private
 
       Public :: npts_neigh

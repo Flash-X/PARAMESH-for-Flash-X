@@ -25,6 +25,9 @@ subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
 !!
 !! MODIFICATIONS
 !!  2022-05-27 K. Weide  Changed for pdg stuff, renamed subroutines
+!!  2022-11-08 K. Weide  mpiPack_blocks: use gr_thePdgDimens to get 'nvar';
+!!  2022-11-08 K. Weide  Tweaked USE statements for PDG support;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -46,9 +49,9 @@ subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           nbndvar, nvaredge, nvarcorn
       use physicaldata
-      use tree
       use paramesh_comm_data
 
       use mpi_morton, ONLY: is_buf, ir_buf, &
@@ -107,7 +110,7 @@ subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
       endif
 
       invar = 0
-      if (lcc) invar = nvar
+      if (lcc) invar = gr_thePdgDimens(ig) % nvar
       if(lcc.and.lguard_in_progress) invar = ngcell_on_cc
 
       ibndvarX = 0                                                              
@@ -311,6 +314,10 @@ subroutine mpi_Sbuffer_size(pattern,mype,nprocs,iopt, &
 !
 ! Written :     Kevin Olson          January 2007
 ! Modified :    Klaus Weide          May 2022
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Added 'pdg%nfluxes' to mpiGet_Sbuffer_size_fluxes call;
+!!                       cleaned up some USE statements;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -331,9 +338,6 @@ subroutine mpi_Sbuffer_size(pattern,mype,nprocs,iopt, &
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-      use paramesh_dimensions
-      use physicaldata
-      use tree
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpiGet_Sbuffer_size, &
@@ -407,9 +411,8 @@ subroutine mpi_Sbuffer_size(pattern,mype,nprocs,iopt, &
 
               elseif (fluxes) then
 
-
                  call mpiGet_Sbuffer_size_fluxes( mype,lb,dtype,index, &
-     &                                          ig,flux_dir)
+     &                                          ig,pdg%nfluxes,flux_dir)
 
               elseif (edges) then
 

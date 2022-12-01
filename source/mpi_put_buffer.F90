@@ -42,10 +42,12 @@
 !      R_buffer       receive buffer
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  PDG-related and other adaptations and cleanup
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           ndim, k2d, k3d, nfacevar, l2p5d, nvaredge, nvarcorn
       use physicaldata
       use tree
-      use workspace
       use mpi_morton
       use paramesh_comm_data
 
@@ -64,8 +66,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0 
       integer :: index
       integer :: dtype,vtype
       integer :: ia, ib, ja, jb, ka, kb
@@ -80,9 +80,6 @@
       Call MPI_COMM_RANK(amr_mpi_meshComm, mype, ierr)
 #endif /* DEBUG */
 
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
 ! take over incoming index offset for block lb to be sent to remote pe
 
@@ -110,7 +107,7 @@
 
 
 ! logical switch controls whether unk data are being packed
-      invar = nvar
+      invar = gr_thePdgDimens(ig) % nvar
 !      if (lcc.and.lguard_in_progress.and.ngcell_on_cc.gt.0)
       if (lcc.and.lguard_in_progress) & 
      &         invar = ngcell_on_cc
@@ -366,10 +363,10 @@
 !                     is unpacked
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           ndim, k2d, k3d, nfacevar, l2p5d, nvaredge, nvarcorn
       use physicaldata
       use tree
-      use workspace
       use mpi_morton
       use paramesh_comm_data
 
@@ -387,8 +384,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0 
       integer :: index
       integer :: vtype
       integer :: ia, ib, ja, jb, ka, kb
@@ -403,9 +398,6 @@
       Call MPI_COMM_RANK(amr_mpi_meshComm, mype, ierr)
 #endif /* DEBUG */
 
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
 ! take over incoming index offset for block lb to be sent to remote pe
 
@@ -431,7 +423,7 @@
 
 
 ! logical switch controls whether unk data are being packed
-      invar = nvar
+      invar = gr_thePdgDimens(ig) % nvar
       if (lcc.and.lguard_in_progress) & 
      &         invar = ngcell_on_cc
       if (lcc) then

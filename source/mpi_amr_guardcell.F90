@@ -81,6 +81,8 @@
 !!
 !! MODIFICATIONS
 !!  2022-05-27 K. Weide  Additions for pdg, call amr_guardcell_onePdg in loop
+!!  2022-10-28 K. Weide  Tweaked nlayers handling, skip PDGs whose nguard is 0
+!!  2022-10-31 K. Weide  Use gcell_on_cc from gr_thePdgDimens
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -91,6 +93,7 @@ Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &
                                nlayersx,nlayersy,nlayersz, &
                                maxNodetype_gcWanted,pdgNo)
   Use paramesh_interfaces, Only : amr_guardcell_onePdg
+  use paramesh_dimensions, ONLY: gr_thePdgDimens
   Use physicaldata, only: gr_thePdgs
   implicit none
   Integer, intent(in) :: mype,iopt,nlayers
@@ -99,6 +102,7 @@ Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &
   integer, intent(in), optional :: pdgNo
 
   integer :: npdg, ig,sg,eg
+  integer :: nlayersMax
   npdg = 1
   if (present(pdgNo)) npdg = pdgNo
   if (npdg == -1) then
@@ -107,7 +111,13 @@ Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &
      sg = npdg; eg = npdg
   end if
   do ig = sg,eg
-     call amr_guardcell_onePdg(mype,iopt,nlayers, gr_thePdgs(ig),ig, &
+     if (sg < eg) then
+        nlayersMax = gr_thePdgDimens(ig) % nguard
+        if (nlayersMax .LE. 0) CYCLE !Nothing to do for this PDG!
+     else
+        nlayersMax = nlayers
+     end if
+     call amr_guardcell_onePdg(mype,iopt,nlayersMax, gr_thePdgs(ig),ig, &
                                nlayersx,nlayersy,nlayersz, &
                                maxNodetype_gcWanted=maxNodetype_gcWanted)
   end do
@@ -131,7 +141,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
                               unk_e_x1,  unk_e_y1,  unk_e_z1
       Use physicaldata, only: unk_n, unk_n1
       Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
-      Use physicaldata, only: gcell_on_cc,gcell_on_fc,gcell_on_ec,gcell_on_nc
+      Use physicaldata, only:                     gcell_on_fc,    gcell_on_ec,    gcell_on_nc
       Use physicaldata, only: diagonals,advance_all_levels,force_consistency,no_permanent_guardcells
       Use workspace
       Use tree
@@ -194,7 +204,8 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
             nguard      => gr_thePdgDimens(ig) % nguard,   &
             nvar        => gr_thePdgDimens(ig) % nvar,     &
             unk         => pdg % unk,      &
-            unk1        => pdg % unk1      &
+            unk1        => pdg % unk1,      &
+            gcell_on_cc => pdg % gcell_on_cc      &
             )
 
       If (iopt == 1) Then
@@ -259,12 +270,14 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       Else  ! no_permanent_guardcells
 
 !------make sure that nlayers and iopt are set consistently.
-       If (iopt == 1.and.nlayers.ne.nguard) Then
+       If (iopt == 1.and.nlayers > nguard) Then
          If (mype == 0) Then
            Write(*,*) 'PARAMESH ERROR !'
            Write(*,*) 'Error in guardcell - iopt and nlayers'
            Write(*,*) 'are not consistent. For iopt=1 you must'
            Write(*,*) 'set nlayers=nguard.'
+           Write(*,*) 'iopt, nlayers, nguard, ig =',&
+                       iopt, nlayers, nguard, ig
          Endif
          Call amr_abort
         Else If (iopt >= 2.and.nlayers > nguard_work) Then

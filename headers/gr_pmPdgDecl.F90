@@ -1,7 +1,11 @@
 !! MODIFICATIONS
+!!  2021-11-14 Klaus Weide  Initial work for multiple "Physicaldata groups"
+!!  2021-12-08 Klaus Weide  Added tflux_x, tflux_y, tflux_z to pdg_t
 !!  2022-10-10 Klaus Weide  Added new logical doRedist flag
 !!  2022-10-13 Klaus Weide  Added 7 slots densVar...velzVar to pdgConst_t
 !!  2022-10-14 Klaus Weide  Corrected type of densVar...velzVar to integer
+!!  2022-10-31 Klaus Weide  Added gcell_on_cc to pdg_t
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 module gr_pmPdgDecl
   implicit none
 
@@ -56,12 +60,26 @@ module gr_pmPdgDecl
      Real, Allocatable :: tflux_y(:,:,:,:,:)
      Real, Allocatable :: tflux_z(:,:,:,:,:)
 
+! arrays used to store geometry information for the working block
+     Real, Allocatable  :: cell_vol(:,:,:)
+     Real, Allocatable  :: cell_area1(:,:,:)
+     Real, Allocatable  :: cell_area2(:,:,:)
+     Real, Allocatable  :: cell_area3(:,:,:)
+     Real, Allocatable  :: cell_leng1(:,:,:)
+     Real, Allocatable  :: cell_leng2(:,:,:)
+     Real, Allocatable  :: cell_leng3(:,:,:)
+     Real, Allocatable  :: cell_face_coord1(:)
+     Real, Allocatable  :: cell_face_coord2(:)
+     Real, Allocatable  :: cell_face_coord3(:)
+
      Real, Allocatable :: recvarxf(:,:,:,:)
      Real, Allocatable :: recvaryf(:,:,:,:)
      Real, Allocatable :: recvarzf(:,:,:,:)
      Real, Allocatable :: bndtempx1(:,:,:,:)
      Real, Allocatable :: bndtempy1(:,:,:,:)
      Real, Allocatable :: bndtempz1(:,:,:,:)
+
+     Logical,Allocatable :: gcell_on_cc(:)
 
      ! from prolong_arrays.F90
      Real, Allocatable :: prol_dx(:)

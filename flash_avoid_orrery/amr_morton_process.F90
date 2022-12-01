@@ -71,7 +71,6 @@ Subroutine amr_morton_process()
 !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
                                 GRID_SUBPAT_RESTRICT_ANC
-      Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use timings
@@ -147,7 +146,9 @@ Subroutine amr_morton_process_flash()
   !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
                                 GRID_SUBPAT_RESTRICT_ANC
-  Use paramesh_dimensions
+#ifdef DEBUG_SURR_BLKS
+  Use paramesh_dimensions, ONLY: ndim, k1d, k2d, k3d, maxblocks_alloc
+#endif
   Use physicaldata
   Use tree
   Use timings

@@ -24,7 +24,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
-! Modified for commatrixRecv arg : Klaus Weide          May 2022
+!! MODIFICATIONS
+!!  Modified for commatrixRecv arg : Klaus Weide          May 2022
+!!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -39,7 +41,7 @@
 !      R_buffer       receive buffer 
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: maxblocks_alloc
       use physicaldata
       use tree
       use paramesh_comm_data
@@ -118,7 +120,10 @@
 !
 !
 ! Written :     Kevin Olson January 2007
-! Modified :    Klaus Weide          May 2022
+!! MODIFICATIONS
+!!  Modified :    Klaus Weide          May 2022
+!!  2021-12-15 Klaus Weide  Made PDG-aware
+!!  2022-11-08 Klaus Weide  Removed unnecessary Use paramesh_dimensions
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -135,7 +140,6 @@
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-      use paramesh_dimensions
       use physicaldata
       use tree
       use paramesh_comm_data

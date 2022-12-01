@@ -66,6 +66,8 @@
 !!    Major simplification and rewrite by Kevin Olson, August 2007.
 !!    Optional arg subPatNo                 Klaus Weide May 2022
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Added ONLY to USE paramesh_dimensions
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -81,8 +83,7 @@
            GRID_SUBPAT_RESTRICT_DEFAULT, GRID_SUBPAT_RESTRICT_ANC
       use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr, &
            gr_pmPrintCommPattern
-      Use paramesh_dimensions
-      Use physicaldata
+      Use physicaldata, ONLY: advance_all_levels
       Use tree
       Use timings
       Use mpi_morton, ONLY: npts_neigh

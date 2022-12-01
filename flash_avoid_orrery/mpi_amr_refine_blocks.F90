@@ -78,7 +78,7 @@
 
       Subroutine amr_refine_blocks (nprocs,mype)
 
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: ndim
       Use physicaldata
       Use tree
       Use mpi_morton
@@ -973,7 +973,7 @@
 !to create a new subroutine.
 Subroutine amr_refine_blocks_flash (nprocs,mype)
 
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: ndim, k1d, k2d, k3d, maxblocks
   Use physicaldata
   Use tree
   Use mpi_morton

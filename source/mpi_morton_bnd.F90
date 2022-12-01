@@ -65,9 +65,10 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
-!! HISTORY
+!! MODIFICATIONS
 !!    PM_OPTIMIZE_MORTONBND_FETCHLIST mods  Klaus Weide November 2018
 !!    Optional arg subPatNo                 Klaus Weide May 2022
+!!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -78,7 +79,8 @@
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, &
            GRID_PAT_GC, GRID_SUBPAT_GC_OPT
       use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: ndim, k2d, k3d, maxblocks, &
+           gr_thePdgDimens, nguard_work, nmax_lays
       Use physicaldata
       Use tree
       Use timings
@@ -108,7 +110,7 @@
 #ifdef PM_UNIQUE_MPI_TAGS
       Integer :: max_no_of_blocks
 #endif
-      Integer :: istack, ioff, joff, koff, itemp
+      Integer :: istack, ioff, joff, koff
       Integer :: isize, isrc, idest, itag, kk
       Integer :: nguarda, iproc
       Integer :: npts_neigh1,npts_neigh2
@@ -127,7 +129,7 @@
 
       accuracy = 100./10.**precision(accuracy)
       eps = accuracy                                                                                                     
-      nguarda = max(nguard,nguard_work)
+      nguarda = max(gr_thePdgDimens(1)%nguard,nguard_work)
 
       doAllNodeTypes = .FALSE.
       if (advance_all_levels) doAllNodeTypes = .TRUE.

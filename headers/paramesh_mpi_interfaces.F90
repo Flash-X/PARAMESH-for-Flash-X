@@ -7,11 +7,15 @@
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
 
-!! MODIFICATIONS
-!!
+! Modification history:
+!     Klaus Weide, January - October 2022
+!        Added pdg and/or ig dummy arguments to many interfaces
 !!  2022-05-13 K. Weide  Added pattern args of type gr_pmCommPattern_t
 !!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces
 !!  2022-05-27 K. Weide  Added pdg,ig args; changed routine names; gr_pmPdgDecl
+!!  2022-11-02 K. Weide  added pdg to mpi_amr_get_remote_block interface
+!!  2022-11-08 K. Weide  Added 'ig' argument to mpiSet_message_sizes
+!!  2022-11-08 K. Weide  Added 'nfluxes' argument to mpiGet_Sbuffer_size_fluxes
 
       module paramesh_mpi_interfaces
 
@@ -42,11 +46,14 @@
 
       interface
       subroutine mpi_amr_get_remote_block(mype,remote_pe,remote_block, & 
-     &    idest,iopt,lcc,lfc,lec,lnc,ig, &
+     &    idest,iopt,lcc,lfc,lec,lnc,pdg,ig, &
      &    nlayersx,nlayersy,nlayersz)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
       integer, intent(in) :: mype,remote_pe,remote_block
       integer, intent(in) :: idest,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
       integer, intent(in)  :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_amr_get_remote_block
@@ -515,22 +522,25 @@
 
       interface
       subroutine mpiGet_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
-     &                                       ig,flux_dir)
+     &                                       ig,nfluxes,flux_dir)
       implicit none
       integer, intent(in)    :: dtype
       integer, intent(in)    :: lb,mype
       integer, intent(inout) :: offset
       integer, intent(in)    :: ig
+      integer, intent(in)    :: nfluxes
       integer, optional, intent(in) :: flux_dir
       end subroutine mpiGet_Sbuffer_size_fluxes
       end interface
 
       interface
-      subroutine mpi_set_message_sizes(iopt, & 
+      subroutine mpiSet_message_sizes(iopt, ig, &
      &                                 nlayersx,nlayersy,nlayersz)
+      implicit none
       integer, intent(in)    :: iopt
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      end subroutine mpi_set_message_sizes
+      end subroutine mpiSet_message_sizes
       end interface
 
       interface

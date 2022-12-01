@@ -59,7 +59,7 @@
 #include "paramesh_preprocessor.fh"
   
 Subroutine mpi_amr_exchange_nodetype (myPE, localNumBlocks)
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: k1d, k2d, k3d, maxblocks
   Use physicaldata
   Use tree
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm

@@ -84,6 +84,7 @@
 #else
       Integer, Save :: nguard
 #endif
+
 #ifndef LIBRARY
 #ifdef FL_NON_PERMANENT_GUARDCELLS
       integer, parameter :: npgs = 0

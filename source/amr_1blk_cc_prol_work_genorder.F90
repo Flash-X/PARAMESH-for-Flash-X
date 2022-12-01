@@ -43,6 +43,7 @@
 !!
 !! INCLUDE
 !!   
+!!   Simulation.h
 !!   paramesh_preprocessor.fh
 !!
 !! USES
@@ -118,10 +119,13 @@
 !!   Written by Kevin Olson,  March 2002 and based on similar routines
 !!   by Peter MacNeice.
 !!
+!! MODIFICATIONS
+!!  2022-11-03 Klaus Weide  Tweaked for multi-PDG changes in paramesh_dimensions
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
+#include "Simulation.h"
 #include "paramesh_preprocessor.fh"
 
 
@@ -131,8 +135,8 @@
 
 
 !-----Use Statement
-      Use paramesh_dimensions
-      Use physicaldata
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, k2d, k3d, nguard_work, &
+                                     iuw1, juw1, kuw1
       Use tree
       Use workspace
 
@@ -176,6 +180,11 @@
 
 !-----Begin Executable Code
 
+   ASSOCIATE(nguard     => gr_thePdgDimens(DEFAULT_PDGNO) % nguard,  &
+             nxb         => gr_thePdgDimens(DEFAULT_PDGNO) % nxb,   &
+             nyb         => gr_thePdgDimens(DEFAULT_PDGNO) % nyb,   &
+             nzb         => gr_thePdgDimens(DEFAULT_PDGNO) % nzb    &
+        )
       If (first_call) Then
          first_call = .False.
 
@@ -386,7 +395,6 @@
       End If  ! End If (first_call)
 
 
-
 ! Set the bounds on the loop controlling the interpolation.
       ifmin=ia
       ifmax=ib
@@ -476,6 +484,7 @@
       End Do  ! End Do j = jfmin,jfmax
       End Do  ! End Do k = Kfmin,Kfmax
 
+  end ASSOCIATE
 
       Return
       End Subroutine amr_1blk_cc_prol_work_genorder

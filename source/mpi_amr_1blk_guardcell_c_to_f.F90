@@ -124,6 +124,8 @@
 !!   Kevin Olson (2003) for layered guardcell filling.
 !!   Klaus Weide (2021) for pdg stuff
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -318,7 +320,7 @@ Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                         1,ioff,joff,koff,mype,         & 
-                                        lb,parent_pe,parent_blk)
+                                        lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                         ia,ib,ja,jb,ka,kb,             & 
@@ -513,7 +515,7 @@ Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                           ia,ib,ja,jb,ka,kb,           & 
@@ -690,7 +692,7 @@ Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                          1,ioff,joff,koff,mype,        & 
-                                         lb,parent_pe,parent_blk)
+                                         lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                          ia,ib,ja,jb,ka,kb,            & 
@@ -860,7 +862,7 @@ Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                            ia,ib,ja,jb,ka,kb,          & 
@@ -1027,7 +1029,7 @@ Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
 
           Elseif (iopt >= 2) Then
              call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 

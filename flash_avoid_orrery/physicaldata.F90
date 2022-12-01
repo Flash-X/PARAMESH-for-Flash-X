@@ -39,6 +39,10 @@
 !!
 !!  Peter MacNeice and Kevin Olson
 !!
+!! MODIFICATIONS
+!!  2021-12-15 K. Weide  Support for PDG: use gr_thePdgs for per-PDG data items
+!!  2022-10-31 K. Weide  moved gcell_on_cc into pdg_t, add TARGET to mask arrays
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 
@@ -75,16 +79,17 @@
 
 ! the solution for cell-centered quantities.
       Public :: unk, interp_mask_unk, interp_mask_unk_res
-      Public :: gcell_on_cc,int_gcell_on_cc
+!!$      Public :: gcell_on_cc
+      Public :: int_gcell_on_cc
       Public :: ngcell_on_cc
       Public :: checkp_on_cc
       Public :: gcell_on_cc_pointer
 !!$      Real,Allocatable,Save ::  unk(:,:,:,:,:)
       Real,pointer ::  unk(:,:,:,:,:)
-      Integer,Allocatable,Save :: interp_mask_unk(:)
-      Integer,Allocatable,Save :: interp_mask_unk_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_unk(:)
+      Integer,Allocatable,Save,target :: interp_mask_unk_res(:)
       Integer,Allocatable,Save :: gcell_on_cc_pointer(:)
-      Logical,Allocatable,Save :: gcell_on_cc(:)
+!!$      Logical,Allocatable,Save :: gcell_on_cc(:)
       Logical,Allocatable,Save :: int_gcell_on_cc(:)
       Logical,Allocatable,Save :: checkp_on_cc(:)
       Integer, Save :: ngcell_on_cc
@@ -310,14 +315,14 @@
       Real,Allocatable,Save ::  facevarx(:,:,:,:,:)
       Real,Allocatable,Save ::  facevary(:,:,:,:,:)
       Real,Allocatable,Save ::  facevarz(:,:,:,:,:)
-      Integer,Allocatable,Save :: interp_mask_facex(:)
-      Integer,Allocatable,Save :: interp_mask_facey(:)
-      Integer,Allocatable,Save :: interp_mask_facez(:)
-      Integer,Allocatable,Save :: interp_mask_facex_res(:)
-      Integer,Allocatable,Save :: interp_mask_facey_res(:)
-      Integer,Allocatable,Save :: interp_mask_facez_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facex(:)
+      Integer,Allocatable,Save,target :: interp_mask_facey(:)
+      Integer,Allocatable,Save,target :: interp_mask_facez(:)
+      Integer,Allocatable,Save,target :: interp_mask_facex_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facey_res(:)
+      Integer,Allocatable,Save,target :: interp_mask_facez_res(:)
       Integer,Allocatable,Save :: gcell_on_fc_pointer(:,:)
-      Logical,Allocatable,Save :: gcell_on_fc(:,:)
+      Logical,Allocatable,Save,target :: gcell_on_fc(:,:)
       Logical,Allocatable,Save :: int_gcell_on_fc(:,:)
       Logical,Allocatable,Save :: checkp_on_fc(:,:)
       Integer, Save :: ngcell_on_fc(3)
@@ -1204,20 +1209,20 @@
 
 
 ! arrays used to store geometry information for the working block
-      Public :: cell_vol
-      Public :: cell_area1,cell_area2,cell_area3
-      Public :: cell_leng1,cell_leng2,cell_leng3
-      Public :: cell_face_coord1,cell_face_coord2,cell_face_coord3
-      Real, Allocatable  :: cell_vol(:,:,:)
-      Real, Allocatable  :: cell_area1(:,:,:)
-      Real, Allocatable  :: cell_area2(:,:,:)
-      Real, Allocatable  :: cell_area3(:,:,:)
-      Real, Allocatable  :: cell_leng1(:,:,:)
-      Real, Allocatable  :: cell_leng2(:,:,:)
-      Real, Allocatable  :: cell_leng3(:,:,:)
-      Real, Allocatable  :: cell_face_coord1(:)
-      Real, Allocatable  :: cell_face_coord2(:)
-      Real, Allocatable  :: cell_face_coord3(:)
+!!$      Public :: cell_vol
+!!$      Public :: cell_area1,cell_area2,cell_area3
+!!$      Public :: cell_leng1,cell_leng2,cell_leng3
+!!$      Public :: cell_face_coord1,cell_face_coord2,cell_face_coord3
+!!$      Real, Allocatable  :: cell_vol(:,:,:)
+!!$      Real, Allocatable  :: cell_area1(:,:,:)
+!!$      Real, Allocatable  :: cell_area2(:,:,:)
+!!$      Real, Allocatable  :: cell_area3(:,:,:)
+!!$      Real, Allocatable  :: cell_leng1(:,:,:)
+!!$      Real, Allocatable  :: cell_leng2(:,:,:)
+!!$      Real, Allocatable  :: cell_leng3(:,:,:)
+!!$      Real, Allocatable  :: cell_face_coord1(:)
+!!$      Real, Allocatable  :: cell_face_coord2(:)
+!!$      Real, Allocatable  :: cell_face_coord3(:)
 
 ! workspace arrays used for inter-block communications
       Public :: recvarxf,recvaryf,recvarzf

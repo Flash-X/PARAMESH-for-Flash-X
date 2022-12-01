@@ -46,11 +46,16 @@
 !!
 !!   Peter MacNeice, February 1999.
 !!
+!! MODIFICATIONS
+!!  2022-11-30 Klaus Weide  USE statements with updated ONLY lists.
 !!***
 
       Subroutine amr_1blk_guardcell_reset
 
-      Use physicaldata
+      Use physicaldata, ONLY: lnew_parent, &
+           pcache_blk_u, pcache_pe_u, &
+           pcache_blk_w, pcache_pe_w
+      Use physicaldata, ONLY: pcache_gcregions_u, pcache_gcregions_w
 
       Implicit None
 

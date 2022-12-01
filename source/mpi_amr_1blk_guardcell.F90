@@ -198,6 +198,10 @@
 !!   Michael Gehmeyr & Peter MacNeice (November 1999) with modifications by 
 !!   Kevin Olson for layered guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
+!!  2022-11-02 K. Weide  Made UNNECESSARY nlayers0[xyz] increase (large nguard)
+!!  2022-11-03 K. Weide  Updated mpi_amr_get_remote_block call, debugging tweaks
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -297,6 +301,12 @@
                 ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
                 kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
                 ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+                il_bndi     => gr_thePdgDimens(ig) % il_bndi,  &
+                iu_bndi     => gr_thePdgDimens(ig) % iu_bndi,  &
+                jl_bndi     => gr_thePdgDimens(ig) % jl_bndi,  &
+                ju_bndi     => gr_thePdgDimens(ig) % ju_bndi,  &
+                kl_bndi     => gr_thePdgDimens(ig) % kl_bndi,  &
+                ku_bndi     => gr_thePdgDimens(ig) % ku_bndi,  &
                 unk1        => pdg % unk1      &
             )
       pbnd_box(:,:) = 0.
@@ -344,10 +354,14 @@
          End If
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in
+      ! mpi_amr_comm_setup (or similar places)!
       If (nxb/nguard < 2) nlayers0x = min(nlayers0x+1,   nguard)
       If (nyb/nguard < 2) nlayers0y = min(nlayers0y+k2d, nguard)
       If (nzb/nguard < 2) nlayers0z = min(nlayers0z+k3d, nguard)
-      
+#endif
+
       If (iopt == 1 .And.                                              & 
           All(interp_mask_unk(:) < 20)   .And.                         & 
           All(interp_mask_facex(:) < 20) .And.                         & 
@@ -780,6 +794,21 @@
       idest = 1
       Call amr_perm_to_1blk(lcc,lfc,lec,lnc,lb,pe,iopt,idest,pdg,ig)
 
+!!$550   format('amr_1blk_guardcell: lb',I3,' parent',I4,' lcoarse ',L1)
+!!$      print 550, lb,parent(1,lb),lcoarse
+!!$        print 552,'J+',maxval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,1)), maxval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,1))
+!!$        print 552,'Jm',maxval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,1)), maxval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,1))
+!!$        print 552,'J-',maxval(unk1(1,        1:nguard,         1:nguard ,1,1)), maxval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,1))
+!!$        print 553,('-',i=1,80)
+!!$        print 552,'j+',minval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,1)), minval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,1))
+!!$        print 552,'jm',minval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,1)), minval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,1))
+!!$        print 552,'j-',minval(unk1(1,        1:nguard,         1:nguard ,1,1)), minval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,1))
       If (iopt == 1) Then
           pcache_pe  = pcache_pe_u
           pcache_blk = pcache_blk_u
@@ -841,10 +870,31 @@
         End If
 
         idest = 2
+#ifdef DEBUG_ALL
+551     format(1x,'@ ',I0,' fill 1blk slot ',I1,' parent',I4,'@',I0,' nlayers0[xy]:',I3,I3)
+        print 551,mype, idest,parent_lb,parent_pe,nlayers0x,nlayers0y
+#endif
         Call mpi_amr_get_remote_block(mype,parent_pe,parent_lb,        & 
-                                      idest,iopt,lcc,lfc,lec,lnc,ig,   &
+                                      idest,iopt,lcc,lfc,lec,lnc,pdg,ig, &
                                       nlayers0x,nlayers0y,nlayers0z)
-
+552     format(1x,'@ ',I0,3x,A2,1x,3(9P,G22.15:1x))
+553     format(1x,'@ ',I0,3x,80(A1))
+#ifdef DEBUG_ALL
+        print*,'Shape(unk1):',SHAPE(unk1),',Per-regions maxvals:'
+        print 552,mype,'J+',maxval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,2)), maxval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,2))
+        print 552,mype,'Jm',maxval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,2)), maxval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,2))
+        print 552,mype,'J-',maxval(unk1(1,        1:nguard,         1:nguard ,1,2)), maxval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,2))
+        print 553,mype,('-',i=1,80)
+        print 552,mype,'j+',minval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,2)), minval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,2))
+        print 552,mype,'jm',minval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,2)), minval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,2))
+        print 552,mype,'j-',minval(unk1(1,        1:nguard,         1:nguard ,1,2)), minval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,2))
+#endif
 !-------Do guardcell filling for lb's parent from any surrounding blocks at 
 !-------the same refinement level as this parent.
 !-------Diagonal elements are required to ensure that all cells are filled
@@ -895,15 +945,15 @@
            if (p_gcregions_eff == -1) then
               call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-     &         why=gr_callReason_PROLONG)
+     &         why=gr_callReason_PROLONG, ig=ig)
            else if (any(psurrblks(1,1:3,2-k2d:2+k2d,2-k3d:2+k3d) <= -20)) then
               call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-     &         why=gr_callReason_PROLONG)
+     &         why=gr_callReason_PROLONG, ig=ig)
            else
               call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, &
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-     &         why=gr_callReason_PROLONG, &
+     &         why=gr_callReason_PROLONG, ig=ig, &
                presentRegions=p_gcregions_eff)
            end if
         end if                  ! if (lcc
@@ -921,7 +971,8 @@
         if (lcc .and. iopt.eq.1)  & 
      &       call flash_unconvert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &       il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG)
+     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG, &
+     &       ig=ig)
 !------------------------------------
 
       End If  ! End If (lcoarse)

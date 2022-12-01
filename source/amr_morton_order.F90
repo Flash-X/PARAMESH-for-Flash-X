@@ -80,6 +80,9 @@
 !!
 !!   Kevin Olson (1996-2001).
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Removed unnecessary USE statements
+!!
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -89,8 +92,6 @@
                                    reorder_grid)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
       Use tree
       Use io
       Use paramesh_interfaces, only : amr_compute_morton,              & 

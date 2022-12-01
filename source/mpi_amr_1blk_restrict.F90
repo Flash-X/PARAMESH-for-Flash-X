@@ -109,10 +109,15 @@
 !!
 !!   Peter MacNeice (February 1999).
 !!
-!! MODIFICATIONS
+!!   Klaus Weide, January - October 2022
+!!      Added pdg and/or ig dummy arguments to many interfaces
 !!
+!! MODIFICATIONS
 !!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
 !!  2022-05-27 K. Weide  renamed, additions for pdg stuff, disabled ec,nc code
+!!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
+!!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -125,16 +130,14 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !-----Use Statements
   use gr_pmPdgDecl, ONLY : pdg_t
-!  Use paramesh_dimensions
+
   Use paramesh_dimensions, only: gr_thePdgDimens
   Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
                                  nbndvar,nbndvare
-!  Use physicaldata
   Use physicaldata, only: interp_mask_unk_res,     &
                           interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
                           interp_mask_ec_res,      &
                           interp_mask_nc_res
-  Use physicaldata, only: cell_vol,cell_area1,cell_area2,cell_area3
   Use physicaldata, only: facevarx,   facevary,   facevarz, &
                           facevarx1,  facevary1,  facevarz1
   Use physicaldata, only: curvilinear, curvilinear_conserve
@@ -202,7 +205,6 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
-  Logical :: l_srl_only,ldiag
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
 
@@ -226,7 +228,11 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
             kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
             ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
             unk         => pdg % unk,      &
-            unk1        => pdg % unk1      &
+            unk1        => pdg % unk1,     &
+            cell_vol    => pdg % cell_vol,   &
+            cell_area1  => pdg % cell_area1,   &
+            cell_area2  => pdg % cell_area2,   &
+            cell_area3  => pdg % cell_area3    &
             )
 
   nguard0 = nguard*npgs
@@ -385,11 +391,11 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                  iopt,idest,pdg,ig)
                        if (iopt.eq.1) call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, &
                             il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-                            why=gr_callReason_RESTRICT)
+                            why=gr_callReason_RESTRICT, ig=ig)
 
                        If (curvilinear) Then
 !--------compute geometry variables for the child block (remote_block,remote_pe)
-                          Call amr_block_geometry(remote_block,remote_pe)
+                          Call amr_block_geometry(remote_block,remote_pe,pdg,ig)
 
                           If (curvilinear_conserve) Then
 
@@ -473,7 +479,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !--------Now reset geometry factors to appropriate values for the 
 !--------current block lb
-                          Call amr_block_geometry(lb,mype)
+                          Call amr_block_geometry(lb,mype,pdg,ig)
 
                        End If  ! End If (curvilinear)
 
@@ -482,7 +488,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 !----------Compute restricted cell-centered data from the data in the buffer
                           If (lcc) Then
 
-                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp, ig)
                              kc = koff + nguard0*k3d
                              jc = joff + nguard0*k2d
                              ic = ioff + nguard0
@@ -877,7 +883,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                  if (iopt.eq.1) call flash_unconvert_cc_hook(unk(:,:,:,:,lb), nvar, &
                            il_bnd,iu_bnd, jl_bnd,ju_bnd, kl_bnd,ku_bnd, &
    &                       where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
-                           nlayers_in_data=nguard0)
+                           ig=ig, nlayers_in_data=nguard0)
 
 #ifdef FLASH_PMFEATURE_UNUSED
 !-----If using odd sized grid blocks then parent copies any face bounding

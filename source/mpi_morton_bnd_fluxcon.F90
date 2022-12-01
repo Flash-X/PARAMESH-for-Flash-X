@@ -41,7 +41,7 @@
 !!
 !! CALLS
 !!
-!!    mpi_amr_write_guard_comm
+!!    mpi_amr_write_flux_comm
 !!    process_fetch_list
 !!    gr_pmCommPatternPtr
 !!
@@ -61,6 +61,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -70,15 +72,16 @@
 !-----Use Statements
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t, GRID_PAT_FCORR
       use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr
-      Use paramesh_dimensions
-      Use physicaldata
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           ndim, k2d, k3d, nguard_work, nmax_lays
+      Use physicaldata, ONLY: nedgevar1, spherical_pm, lsingular_line
       Use tree
       Use timings
       Use mpi_morton, ONLY: npts_neigh, no_of_diagonal_edges, edge_mark
       Use constants
 
       Use paramesh_interfaces, only : amr_abort
-      Use paramesh_mpi_interfaces, only : mpi_amr_write_guard_comm,    & 
+      Use paramesh_mpi_interfaces, only : mpi_amr_write_flux_comm,    & 
                                           process_fetch_list
       use Driver_interface, ONLY : Driver_abort
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
@@ -116,7 +119,7 @@
 
       accuracy = 100./10.**precision(accuracy)
       eps = accuracy                                                                                                     
-      nguarda = max(nguard,nguard_work)
+      nguarda = max(gr_thePdgDimens(1)%nguard,nguard_work)
 
       npts_neigh1 = npts_neigh
       npts_neigh2 = npts_neigh+100

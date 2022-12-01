@@ -16,12 +16,14 @@
 !!
 !!   Call amr_1blk_cc_prol_genoder (recv, ia, ib, ja, jb, ka, kb,  &
 !!                                  idest, ioff, joff, koff,       &
-!!                                  mype, ivar, order)
+!!                                  mype, ivar, order,             &
+!!                                 pdg,ig)
 !!
 !!   Call amr_1blk_cc_prol_genorder (real, integer, integer, 
 !!                                   integer, integer, integer, integer,
 !!                                   integer, integer, integer, integer,
-!!                                   integer, integer, integer)
+!!                                   integer, integer, integer,
+!!                                 type(pdg_t), integer)
 !!
 !!
 !! ARGUMENTS
@@ -123,6 +125,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-10-07 Klaus Weide  Made PDG-aware
+!!  2022-11-08 Klaus Weide  Corrected 'first_call_overall' logic, Robodoc tweaks
 !!***
 
 !!REORDER(4): unk1
@@ -187,6 +190,7 @@ Subroutine amr_1blk_cc_prol_genorder            &
    If (first_call_overall) Then
       allocate(auxArr(NUM_PDGS))
       auxArr(:) % first_call_thisPdg = .True.
+      first_call_overall = .FALSE.
    end If
 
    ASSOCIATE(first_call_thisPdg => auxArr(ig) % first_call_thisPdg, &

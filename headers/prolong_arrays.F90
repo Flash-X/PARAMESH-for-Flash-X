@@ -17,8 +17,6 @@
 
       Module prolong_arrays
 
-      Use paramesh_dimensions
-
       Private
 
 

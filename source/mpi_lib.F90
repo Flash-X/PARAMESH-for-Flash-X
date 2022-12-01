@@ -323,7 +323,7 @@
 !      nprocs         number of processors
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: ndim
       use physicaldata
       use tree
       use mpi_morton
@@ -584,7 +584,6 @@
 !      nprocs         number of processors
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
@@ -623,7 +622,6 @@
 !
 !------------------------------------------------------------------------
       use gr_pmCommPatternData, ONLY: gr_pmDeallocateCommPatterns
-      use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
@@ -850,7 +848,7 @@
 !
 !------------------------------------
 
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: ndim
       use physicaldata
       use tree
 
@@ -917,7 +915,6 @@
 !------------------------------------------------------------------------
 
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-      use paramesh_dimensions
       use physicaldata
       use tree
       use workspace
@@ -1096,7 +1093,6 @@
 !
 !------------------------------------------------------------------------
 
-      use paramesh_dimensions
       use physicaldata
       use tree
       use workspace

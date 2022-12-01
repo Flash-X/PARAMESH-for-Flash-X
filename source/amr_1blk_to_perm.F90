@@ -60,21 +60,31 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          February 1999
-!!  
+!!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Made PDG-aware, added pdg,ig arguments
 !!*** 
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest)
+subroutine amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest, pdg,ig)
 
 !-----Use Statements
-      use paramesh_dimensions
-      use physicaldata
-      use tree
+  use gr_pmPdgDecl, ONLY: pdg_t
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, nguard_work, &
+           ndim, k2d, k3d, nfacevar, nvaredge, nvarcorn, &
+           ilw, iuw, jlw, juw, klw, kuw
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
+                              unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n, unk_n1
+      Use physicaldata, only: ngcell_on_cc,       ngcell_on_fc,   ngcell_on_ec,   ngcell_on_nc
+      Use physicaldata, only: gcell_on_cc_pointer,gcell_on_fc_pointer,gcell_on_ec_pointer,gcell_on_nc_pointer
       use timings
-      use workspace
+      use workspace, ONLY: work, work1
 
       Implicit None
 
@@ -84,6 +94,8 @@
 !-----Input/Output Arguments
       Integer, Intent(in) :: lb,iopt,idest
       Logical, Intent(in) :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 !-----Local arrays and variables
       Integer :: iopt0, ivar, ivar_next
@@ -95,7 +107,16 @@
       If (timing_mpi) Then
          time1 = mpi_wtime()
       End If
-
+  ASSOCIATE(nguard => gr_thePdgDimens(ig) % nguard, &
+            il_bnd => gr_thePdgDimens(ig) % il_bnd, &
+            jl_bnd => gr_thePdgDimens(ig) % jl_bnd, &
+            kl_bnd => gr_thePdgDimens(ig) % kl_bnd, &
+            iu_bnd => gr_thePdgDimens(ig) % iu_bnd, &
+            ju_bnd => gr_thePdgDimens(ig) % ju_bnd, &
+            ku_bnd => gr_thePdgDimens(ig) % ku_bnd, &
+            nvar   => gr_thePdgDimens(ig) % nvar,   &
+            unk    => pdg % unk,                    &
+            unk1   => pdg % unk1)
       nguard0 = nguard*(1-npgs)
       nguard_work0 = nguard_work*(1-npgs)
 
@@ -280,6 +301,7 @@
                      kl_bnd+nguard0*k3d:ku_bnd+(nguard0+1)*k3d,idest)
          End If  ! End If (ngcell_on_nc < nvarcorn)
       End If  ! End If (lnc)
+  end ASSOCIATE
 
       If (timing_mpi) Then
             timer_amr_1blk_to_perm(iopt) =                             & 

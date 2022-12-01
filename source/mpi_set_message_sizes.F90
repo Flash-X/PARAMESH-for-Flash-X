@@ -11,7 +11,7 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_set_message_sizes(iopt, & 
+subroutine mpiSet_message_sizes(iopt, ig, &
      &                                 nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -21,6 +21,8 @@
 !
 !
 ! Written :     Peter MacNeice          April 2001
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Added 'ig' argument, made the subroutine PDG-aware
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -28,16 +30,14 @@
 !                     is sized 
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
-      use tree
-      use paramesh_comm_data
-
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, nguard_work, &
+           ndim, k2d, k3d, l2p5d
       use mpi_morton
 
       implicit none
 
       integer, intent(in)  ::  iopt
+      integer, intent(in)  ::  ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 ! local variables
@@ -47,7 +47,10 @@
       integer :: i, lnxb, lnyb, lnzb, i2
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+  ASSOCIATE(nguard => gr_thePdgDimens(ig) % nguard, &
+            nxb    => gr_thePdgDimens(ig) % nxb,    &
+            nyb    => gr_thePdgDimens(ig) % nyb,    &
+            nzb    => gr_thePdgDimens(ig) % nzb)
       if(iopt.eq.1) then
         nguard0 = nguard
       else
@@ -238,7 +241,7 @@
 
       end do
 
- 2    continue
+  end ASSOCIATE
 
       return
-      end subroutine mpi_set_message_sizes
+end subroutine mpiSet_message_sizes

@@ -50,13 +50,14 @@
 !! HISTORY
 !!
 !!  2003 - 2022 Adapted for FLASH and Flash-X    U of Chicago
+!!  2022-11-08 Klaus Weide  Added ONLY to USE paramesh_dimensions
 !!***
 subroutine gr_initParameshArrays(restart,&
                                      &  xlboundary, xrboundary, &
                                      &  ylboundary, yrboundary, &
                                      &  zlboundary, zrboundary)
 
-   use paramesh_dimensions
+   use paramesh_dimensions, ONLY: nvar
    use physicaldata
    use workspace
    use tree

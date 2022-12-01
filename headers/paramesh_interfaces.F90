@@ -20,6 +20,11 @@
 !
 !!  2022-10-26 K. Weide  added amr_prolong_gen_unk1_fun interface
 !!                Changed intent for some recv arguments to IN
+!!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
+!!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
+!!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_to_perm
+!!  2022-11-08 K. Weide  added ig argument to amr_restrict_unk_genorder
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -71,12 +76,16 @@
       end interface
 
       interface
-      subroutine amr_1blk_cc_prol_gen_unk_fun(recv,ia,ib,ja,jb,ka,kb,    & 
-     &       idest,ioff,joff,koff,mype,lb,pe_p,lb_p)
+         subroutine amr_1blk_cc_prol_gen_unk_fun(recv,ia,ib,ja,jb,ka,kb, &
+     &       idest,ioff,joff,koff,mype,lb,pe_p,lb_p, pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: lb,lb_p,pe_p
       real,    intent(inout) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_1blk_cc_prol_gen_unk_fun
       end interface
 
@@ -460,18 +469,14 @@
       end subroutine amr_1blk_save_soln
       end interface
 
-
       interface
-      subroutine amr_1blk_t_to_perm( lcc,lfc,lec,lnc,lb,idest)
-      integer, intent(in) :: lb,idest
-      logical, intent(in) :: lcc,lfc,lec,lnc
-      end subroutine amr_1blk_t_to_perm
-      end interface
-
-      interface
-      subroutine amr_1blk_to_perm(lcc,lfc,lec,lnc,lb,iopt,idest)
+         subroutine amr_1blk_to_perm(lcc,lfc,lec,lnc,lb,iopt,idest,pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
       integer, intent(in) :: lb,iopt,idest
       logical, intent(in) :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_1blk_to_perm
       end interface
 
@@ -497,9 +502,13 @@
 
 
       interface
-      subroutine amr_block_geometry(lb,pe)
-      integer, intent(in) :: lb,pe
-      end subroutine amr_block_geometry
+         subroutine amr_block_geometry(lb,pe,pdg,ig)
+           use gr_pmPdgDecl, ONLY: pdg_t
+           implicit none
+           integer, intent(in) :: lb,pe
+           type(pdg_t), intent(INOUT) :: pdg
+           integer, intent(in) :: ig
+         end subroutine amr_block_geometry
       end interface
 
       interface
@@ -1063,17 +1072,19 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_fun(datain,dataout)
+      subroutine amr_restrict_unk_fun(datain,dataout, ig)
       real, intent(in)    :: datain(:,:,:,:)
       real, intent(inout) :: dataout(:,:,:,:)
+      integer, intent(in) :: ig
       end subroutine amr_restrict_unk_fun
       end interface
 
       interface
-      subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar)
+      subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
       real, intent(in)    :: datain(:,:,:,:)
       real, intent(inout) :: dataout(:,:,:,:)
       integer, intent(in) :: order, ivar
+      integer, intent(in) :: ig
       end subroutine amr_restrict_unk_genorder
       end interface
 

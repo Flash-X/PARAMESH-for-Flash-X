@@ -51,16 +51,15 @@
 !!
 !!   Written by Peter MacNeice.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Removed unnecessary REORDER, Use paramesh_dimensions
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpi_amr_global_domain_limits
 
 !-----Use statements.
-      Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use paramesh_comm_data

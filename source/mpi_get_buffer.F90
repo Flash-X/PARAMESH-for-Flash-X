@@ -48,10 +48,16 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, unk
+!!  2022-11-08 K. Weide  PDG-related and other adaptations and cleanup
       use gr_pmPdgDecl, ONLY : pdg_t
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, maxblocks_alloc, &
+           nfacevar, ndim, l2p5d, nvaredge, k2d, k3d, nvarcorn
       use physicaldata
-      use tree
+      use tree, ONLY: mdim, coord, bsize, bnd_box, parent, child, newchild, &
+           which_child, neigh, lrefine, nodetype, surr_blks, empty, &
+           mchild, mfaces
       use workspace
       use paramesh_comm_data
 
@@ -71,14 +77,12 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0
-      integer :: nguard_work0
 
       integer :: index,ierrorcode,ierr
       integer :: ilimit
       integer :: i, j, k
       integer :: ia, ib, ja, jb, ka, kb
-      integer :: n, ii
+      integer :: ii
       integer :: vtype
       integer :: invar,ivar,ivar_next
 
@@ -88,8 +92,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
+      ASSOCIATE(nvar   => gr_thePdgDimens(ig) %	nvar)
 
       ilimit = size(S_buffer,1)
 
@@ -167,7 +170,7 @@
           if (no_permanent_guardcells) then
           S_buffer(index+ivar-1) = gt_unk(ivar_next,i,j,k,lb)
           else
-          S_buffer(index+ivar-1) = unk(ivar_next,i,j,k,lb)
+          S_buffer(index+ivar-1) = pdg % unk(ivar_next,i,j,k,lb)
           end if
       enddo
         index = index + invar
@@ -401,7 +404,7 @@
       endif                    ! lnc
 
       endif                    ! end of iopt iftest
-
+    end ASSOCIATE
 ! Add tree info to buffer
 
       do i = 1,mdim
@@ -530,10 +533,11 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
-      use tree
-      use workspace
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, maxblocks_alloc, &
+           ndim, k2d, k3d, l2p5d, nfacevar, nvaredge, nvarcorn
+      use physicaldata, ONLY: ngcell_on_cc, ngcell_on_fc, ngcell_on_ec, ngcell_on_nc, &
+                              lguard_in_progress
+      use tree, ONLY: mdim, mchild, mfaces
       use paramesh_comm_data
 
       use paramesh_mpi_interfaces, only : mpiSet_message_limits
@@ -550,8 +554,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0
-      integer :: nguard_work0
 
       integer :: index,ierrorcode,ierr
       integer :: i, j, k
@@ -565,9 +567,6 @@
 #endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
       if(lb.gt.maxblocks_alloc) then
         write(*,*) 'ERROR : mpiGet_buffer pe ',mype, & 
@@ -617,7 +616,7 @@
 
 ! pack the unk array for block lb
 
-      invar = nvar
+      invar = gr_thePdgDimens(ig) % nvar
       if (lcc.and.lguard_in_progress)  & 
      &         invar = ngcell_on_cc
       if (lcc.and.invar.gt.0) then

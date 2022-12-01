@@ -81,6 +81,9 @@
 !!   Modified by Michael L. Rilee, December 2002, *clean_divb*
 !!        Support for projecting field onto divergenceless field
 !!
+!!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_to_perm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -426,7 +429,7 @@ contains
          if (iopt.eq.1)  & 
      &        call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &        il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &        why=gr_callReason_PROLONG)
+     &        why=gr_callReason_PROLONG, ig=ig)
 
 !--------update address of cached parent
          p_cache_addr(1) = parent_blk
@@ -444,11 +447,12 @@ contains
            Call amr_1blk_cc_prol_gen_unk_fun(                          & 
                     unk1(:,:,:,:,1),                                   & 
                     ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,mype,       & 
-                    lb,parent_pe,parent_blk)
+                    lb,parent_pe,parent_blk,pdg,ig)
            if (iopt.eq.1)  & 
      &          call flash_unconvert_cc_hook(unk1(:,:,:,:,2), nvar, & 
      &          il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &          where=gr_cells_INTERIOR, why=gr_callReason_PROLONG)
+     &          where=gr_cells_INTERIOR, why=gr_callReason_PROLONG, &
+     &          ig=ig)
          ElseIf (iopt >= 2) Then
            Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,1),          & 
                     ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,mype,       & 
@@ -653,7 +657,7 @@ contains
 
 !-----copy data back to permanent storage arrays
 
-       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest )
+       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest, pdg,ig)
 
       End If  ! End If (lrefine(lb) == lreflevel)
 

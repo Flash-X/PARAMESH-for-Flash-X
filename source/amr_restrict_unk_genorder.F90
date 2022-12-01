@@ -58,16 +58,19 @@
 !!
 !!   Written :     Kevin Olson          March 2004
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Made PDG-aware, added ig dummy argument
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar) 
+      Subroutine amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
 
 !-----Use statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: pd => gr_thePdgDimens, &
+           ndim, k2d, k3d
       Use physicaldata
 
       Implicit None
@@ -76,6 +79,7 @@
       Real,    Intent(in)    :: datain(:,:,:,:)
       Real,    Intent(inout) :: dataout(:,:,:,:)
       Integer, Intent(in)    :: order, ivar
+      Integer, Intent(in)    :: ig
 
 !-----Local arrays and variables.
       Real       :: xi, xj, www
@@ -83,9 +87,6 @@
       Integer :: i,j,k
       Integer :: i0, j0, k0, is, js, ks, iw, jw, kw
       Integer :: iii, jjj, kkk
-      Integer, Save :: iparmin,iparmax
-      Integer, Save :: jparmin,jparmax
-      Integer, Save :: kparmin,kparmax
       Integer :: istart, jstart, kstart
       Integer :: iend, jend, kend
       Integer :: order2
@@ -153,14 +154,14 @@
 
       End Do
 
-      iparmin = 1+nguard
-      iparmax = nxb+nguard
-      jparmin = 1+nguard*k2d
-      jparmax = nyb+nguard*k2d
-      kparmin = 1+nguard*k3d
-      kparmax = nzb+nguard*k3d
-
       End If  ! End If (first)
+
+      ASSOCIATE(iparmin => 1            + pd(ig) % nguard, &
+                iparmax => pd(ig) % nxb + pd(ig) % nguard, &
+                jparmin => 1            + pd(ig) % nguard * k2d, &
+                jparmax => pd(ig) % nyb + pd(ig) % nguard * k2d, &
+                kparmin => 1            + pd(ig) % nguard * k3d, &
+                kparmax => pd(ig) % nzb + pd(ig) % nguard * k3d  )
 
 !-----Loops over parent cells which are restricted to
       Do k0 = kparmin,kparmax,2
@@ -260,6 +261,6 @@
       End Do  ! End Do i0 = iparmin,iparmax,2
       End Do  ! End Do j0 = jparmin,jparmax,2
       End Do  ! End Do k0 = kparmin,kparmax,2
-
+    end ASSOCIATE
       Return
       End Subroutine amr_restrict_unk_genorder

@@ -63,7 +63,7 @@
       Subroutine amr_migrate_tree_data (new_loc,nprocs,mype)
 
 !-----Use statements.
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: maxblocks
       Use physicaldata
       Use tree
       Use io
