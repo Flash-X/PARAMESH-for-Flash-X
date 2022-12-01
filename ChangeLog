@@ -6,6 +6,9 @@
 	source/mpi_morton_bnd_restrict.F90,source/mpi_pack_blocks.F90,source/mpi_unpack_blocks.F90,source/process_fetch_list.F90:
 	resolve conflicts after merge from 'MultiPhysData' into
 	'MultiPhysData+commpatt' git repository branch.
+	* source/mpi_morton_bnd_restrict.F90: add 'Use
+	paramesh_dimensions, ONLY: k2d, k3d' to fix compilation failure.
+	* source/amr_mpi_find_blk_in_buffer.F90: comment out '#define DEBUG'.
 
 2022-11-29  Klaus Weide  <kweide@uchicago.edu>
 
@@ -83,9 +86,9 @@
 	source/amr_restrict_unk_genorder.F90,
 	source/amr_restrict_unk_fun.F90: add ig dummy argument to amr_restrict_unk_genorder.
 	* source/amr_1blk_cc_prol_work_mg.F90: make PDG-aware using DEFAULT_PDGNO.
-	* flash_avoid_orrery/gr_initParameshArrays.F90,
-	source/amr_close.F90, source/mpi_morton_bnd_restrict.F90: add ONLY
+	* flash_avoid_orrery/gr_initParameshArrays.F90,source/amr_close.F90: add ONLY
 	to USE paramesh_dimensions.
+	* source/mpi_morton_bnd_restrict.F90: add ONLY to USE physicaldata.
 	* source/mpi_morton_bnd.F90,source/mpi_morton_bnd_fluxcon.F90,source/mpi_morton_bnd_prolong.F90:
 	tweaked for PDG, use DEFAULT PDG for the purpose of setting
 	'nguarda', make some USE statements more specific.

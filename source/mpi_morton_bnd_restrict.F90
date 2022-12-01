@@ -67,7 +67,8 @@
 !!    Optional arg subPatNo                 Klaus Weide May 2022
 !!
 !! MODIFICATIONS
-!!  2022-11-08 Klaus Weide  Added ONLY to USE paramesh_dimensions
+!!  2022-11-08 Klaus Weide  Added ONLY to USE physicaldata
+!!  2022-11-30 Klaus Weide  USE paramesh_dimensions with ONLY
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -83,6 +84,7 @@
            GRID_SUBPAT_RESTRICT_DEFAULT, GRID_SUBPAT_RESTRICT_ANC
       use gr_pmCommPatternData, ONLY: gr_pmCommPatternPtr, &
            gr_pmPrintCommPattern
+      Use paramesh_dimensions, ONLY: k2d, k3d
       Use physicaldata, ONLY: advance_all_levels
       Use tree
       Use timings

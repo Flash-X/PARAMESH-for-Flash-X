@@ -1,4 +1,4 @@
-#define DEBUG
+!!!#define DEBUG
 
 !----------------------------------------------------------------------
 ! PARAMESH - an adaptive mesh library.
