@@ -1,3 +1,12 @@
+2022-11-30  Klaus Weide  <kweide@uchicago.edu>
+
+	* flash_avoid_orrery/amr_morton_process.F90,headers/paramesh_mpi_interfaces.F90,source/amr_1blk_guardcell_reset.F90,source/amr_initialize.F90,
+	source/amr_mpi_find_blk_in_buffer.F90,source/mpi_amr_1blk_guardcell.F90,source/mpi_amr_1blk_restrict.F90,source/mpi_amr_comm_setup.F90,
+	source/mpi_amr_guardcell.F90,source/mpi_lib.F90,source/mpi_morton_bnd.F90,source/mpi_morton_bnd_fluxcon.F90,source/mpi_morton_bnd_prolong.F90,
+	source/mpi_morton_bnd_restrict.F90,source/mpi_pack_blocks.F90,source/mpi_unpack_blocks.F90,source/process_fetch_list.F90:
+	resolve conflicts after merge from 'MultiPhysData' into
+	'MultiPhysData+commpatt' git repository branch.
+
 2022-11-29  Klaus Weide  <kweide@uchicago.edu>
 
 	* bittree/amr_initialize.F90: remove allocation of cell_* geometry
