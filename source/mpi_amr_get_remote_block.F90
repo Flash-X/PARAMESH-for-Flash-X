@@ -102,6 +102,7 @@
 !!                       added ONLY to some USE statements;
 !!                       include "Flashx_mpi_implicitNone.fh";
 !!                       tweaked / added some debugging output.
+!!  2022-12-01 K. Weide  Removed TAB characters
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -169,7 +170,7 @@
             nzb          => gr_thePdgDimens(ig) % nzb,    &
             nvar         => gr_thePdgDimens(ig) % nvar,   &
             unk          => pdg % unk,                    &
-            unk1      	 => pdg	% unk1)
+            unk1         => pdg % unk1)
 
       nguard0 = nguard*npgs
       nguard_work0 = nguard_work*npgs

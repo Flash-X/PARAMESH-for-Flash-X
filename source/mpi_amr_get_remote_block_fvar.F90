@@ -85,10 +85,11 @@
 !!
 !! Written by Peter MacNeice (August 2001).
 !!
+!! MODIFICATIONS
+!!  2022-12-01 Klaus Weide  Cleaned up REORDER and Use, use ASSOCIATE for PDG
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(4): recv[xyz]
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpiAmr_get_remote_block_fvar(mype,                   & 
@@ -96,9 +97,10 @@
                            recvx,recvy,recvz,idest,ig)
 
 !-----Use statements.
-      use paramesh_dimensions, ONLY: gr_thePdgDimens
-      Use paramesh_dimensions
-      Use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, npgs, nbndvar
+      Use physicaldata, ONLY: facevarx,    facevary,    facevarz,    &
+                              gt_facevarx, gt_facevary, gt_facevarz, &
+                              no_permanent_guardcells
       Use tree
       Use workspace
       Use mpi_morton
@@ -120,8 +122,6 @@
       integer, Intent(in) :: ig
 
 !-----Local arrays and variables.
-      Integer :: nguard0
-      Integer :: nguard_work0
       Integer :: ierrorcode,ierr
       Integer :: dtype
       Integer :: vtype
@@ -130,10 +130,8 @@
       Logical :: lfound,lerror
 
 !-----Begin executable code.
-      ASSOCIATE(nguard      => gr_thePdgDimens(ig) % nguard    &
+      ASSOCIATE(nvar    => gr_thePdgDimens(ig) % nvar           &
       )
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
       If (remote_block <= lnblocks.And.remote_pe == mype) Then
 

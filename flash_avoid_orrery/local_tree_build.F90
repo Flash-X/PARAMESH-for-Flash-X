@@ -60,6 +60,9 @@
 !!   Kevin Olson
 !!   Chris Daley - modifications
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Cleaned up various Use statements with ONLY
+!!  2022-12-01 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -74,10 +77,9 @@ Subroutine local_tree_build ()
   Use paramesh_comm_data
   Use mpi_morton, Only : lperiodicx, lperiodicy, lperiodicz
   
-  Implicit None
-  
+
   !-----Include Statements.
-  Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
   
   !-----Local Variables
   

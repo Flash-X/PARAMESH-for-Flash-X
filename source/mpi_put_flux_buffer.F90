@@ -22,6 +22,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!
+!! MODIFICATIONS
+!!  2022-12-01 K. Weide  Clean up 'Use paramesh_dimensions', unused nguard_work0
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -32,8 +35,7 @@
 !
 !------------------------------------------------------------------------
       use gr_pmPdgDecl, ONLY : pdg_t
-      Use paramesh_dimensions, only: gr_thePdgDimens
-      use paramesh_dimensions
+      Use paramesh_dimensions, only: gr_thePdgDimens, k2d, k3d, ndim, npgs
       use physicaldata
       use tree
       use workspace
@@ -57,7 +59,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
       integer :: nguard0 
-      integer :: nguard_work0 
       integer :: index
       integer :: ia,ib,ja,jb,ka,kb
       integer :: ia0,ib0,ja0,jb0,ka0,kb0
@@ -70,7 +71,6 @@
                 nfluxes     => pdg % nfluxes)
 
       nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
 ! take over incoming index offset for block lb to be sent to remote pe
 

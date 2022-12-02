@@ -12,6 +12,7 @@
 ! By K. Olson (NASA/GSFC and GMU), 4/97
 !! MODIFICATIONS
 !!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
+!!  2022-12-01 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 
       Use paramesh_dimensions, ONLY: k2d, k3d
       Use physicaldata
@@ -19,11 +20,9 @@
       Use timings
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      implicit none
+#include "Flashx_mpi_implicitNone.fh"
 
       Integer, intent(in) :: mype
-
-      include 'mpif.h'
 
 ! local variables ----------------------------------------------------------
 
