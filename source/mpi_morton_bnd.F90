@@ -69,6 +69,7 @@
 !!    PM_OPTIMIZE_MORTONBND_FETCHLIST mods  Klaus Weide November 2018
 !!    Optional arg subPatNo                 Klaus Weide May 2022
 !!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
+!!  2022-12-01 K. Weide  Fixed OPTIMIZE_MORTONBND code using ASSOCIATE for PDG 1
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -380,18 +381,23 @@
         ! anywhere (otherwise boundary condition can be called with invalid
         ! input data):
         if (ALL(psurr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > -20)) then
-           if (nguarda .LE. nzb/2) then
-              koff = mod((which_child(lb)-1)/4,2)
-              ka = 1+koff; kb = 1+k3d+koff
-           end if
-           if (nguarda .LE. nyb/2) then
-              joff = mod((which_child(lb)-1)/2,2)
-              ja = 1+joff; jb = 1+k2d+joff
-           end if
-           if (nguarda .LE. nxb/2) then
-              ioff = mod(which_child(lb)-1,2)
-              ia = 1+ioff; ib = 2+ioff
-           end if
+           !!DEV: Should communication patterns be dependent on PDG?? - KW
+           ASSOCIATE(nxb         => gr_thePdgDimens(1) % nxb,      &
+                     nyb         => gr_thePdgDimens(1) % nyb,      &
+                     nzb         => gr_thePdgDimens(1) % nzb       )
+             if (nguarda .LE. nzb/2) then
+                koff = mod((which_child(lb)-1)/4,2)
+                ka = 1+koff; kb = 1+k3d+koff
+             end if
+             if (nguarda .LE. nyb/2) then
+                joff = mod((which_child(lb)-1)/2,2)
+                ja = 1+joff; jb = 1+k2d+joff
+             end if
+             if (nguarda .LE. nxb/2) then
+                ioff = mod(which_child(lb)-1,2)
+                ia = 1+ioff; ib = 2+ioff
+             end if
+           end ASSOCIATE
         end if
 #endif
 
