@@ -65,6 +65,8 @@
 !!
 !!  Written by Peter MacNeice (July 1997).
 !!
+!! MODIFICATIONS
+!!  2022-12-01 Klaus Weide  Cleaned up 'Use physicaldata' with 'only' list
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -74,9 +76,11 @@
       Subroutine amr_edge_average_udt(mype)
 
 !-----Use statements.
-      Use physicaldata, only: gr_thePdgs
+      Use physicaldata, only: gr_thePdgs, &
+           bedge_facex_y, bedge_facez_x, bedge_facez_y, bedge_facey_x, bedge_facex_z, bedge_facez_x, &
+           bedge_facey_z, &
+           recvarx1e, recvarx2e, recvary1e, recvary2e, recvarz1e, recvarz2e
       Use paramesh_dimensions
-      Use physicaldata
       Use tree
       Use mpi_morton
       Use paramesh_interfaces, only : amr_restrict_edge_data

@@ -1,5 +1,8 @@
 2022-12-01  Klaus Weide  <kweide@uchicago.edu>
 
+	* flash_avoid_orrery/local_tree_build.F90,flash_avoid_orrery/mpi_amr_refine_blocks.F90,source/mpi_amr_check_derefine.F90,source/mpi_amr_edge_average_udt.F90,
+	source/mpi_amr_get_remote_block.F90,source/mpi_amr_get_remote_block_fvar.F90,source/mpi_put_flux_buffer.F90:
+	tweaks to avoid some errors or warnings from GCC 11.
 	* source/mpi_morton_bnd.F90: fix PM_OPTIMIZE_MORTONBND_FETCHLIST
 	code, wich references nxb,nyb,nzb, by using ASSOCIATE for PDG 1
 	(for now).
