@@ -25,6 +25,7 @@
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_to_perm
 !!  2022-11-08 K. Weide  added ig argument to amr_restrict_unk_genorder
+!!  2022-12-03 K. Weide  amr_1blk_cc_prol_inject interface with pdg,ig args
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -91,11 +92,15 @@
 
       interface
       subroutine amr_1blk_cc_prol_inject(recv,ia,ib,ja,jb,ka,kb,         & 
-     &       idest,ioff,joff,koff,mype,ivar)
+     &       idest,ioff,joff,koff,mype,ivar,pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar
       real,    intent(in) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       end subroutine amr_1blk_cc_prol_inject
       end interface
 
