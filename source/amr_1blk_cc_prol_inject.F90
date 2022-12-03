@@ -93,6 +93,7 @@
 !!
 !! MODIFICATIONS
 !!  2022-11-03 Klaus Weide  Made PDG-aware
+!!  2022-12-03 Klaus Weide  Cleaned up Use statements with ONLY lists
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -106,8 +107,7 @@
 !-----Use Statements
   use gr_pmPdgDecl, ONLY : pdg_t
   Use paramesh_dimensions, ONLY: gr_thePdgDimens, k2d, k3d
-      Use tree
-      Use prolong_arrays
+  Use prolong_arrays, ONLY: prol_init
 
       Implicit None
 

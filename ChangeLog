@@ -1,3 +1,11 @@
+2022-12-03  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_1blk_cc_prol_inject.F90: clean up some USE statements
+	with ONLY.
+	* headers/paramesh_interfaces.F90,source/amr_1blk_cc_prol_gen_unk_fun.F90:
+	add pdg,ig arguments to amr_1blk_cc_prol_inject interface and
+	call.
+
 2022-12-01  Klaus Weide  <kweide@uchicago.edu>
 
 	* flash_avoid_orrery/local_tree_build.F90,flash_avoid_orrery/mpi_amr_refine_blocks.F90,source/mpi_amr_check_derefine.F90,source/mpi_amr_edge_average_udt.F90,

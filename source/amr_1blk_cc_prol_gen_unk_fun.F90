@@ -84,6 +84,7 @@
 !!  Changes to call amr_1blk_cc_prol_dg for Thornado - Austin Harris 2021-12-06
 !!  2022-10-07 Klaus Weide  Made PDG-aware (temporary, intermediate changes)
 !!  2022-11-08 Klaus Weide  Made PDG-aware properly with pdg,ig arguments
+!!  2022-12-03 Klaus Weide  Call amr_1blk_cc_prol_inject with pdg,ig arguments
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -146,7 +147,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 !-----Simple Injection 
               Call amr_1blk_cc_prol_inject               &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, & 
-            mype,ivar)
+            mype,ivar,pdg,ig)
       
            Elseif (interp_mask_unk(ivar) == 1) Then
 !-----Default multi-linear interpolation  
@@ -155,7 +156,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
            mype,ivar,pdg)
 
            Elseif (interp_mask_unk(ivar) > 1) Then
-!-----High order Largrange ploynomial interpolation
+!-----High order Lagrange polynomial interpolation
               Call amr_1blk_cc_prol_genorder             &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, & 
             mype,ivar,interp_mask_unk(ivar),pdg,ig)
