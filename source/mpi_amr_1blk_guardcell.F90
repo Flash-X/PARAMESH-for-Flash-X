@@ -775,6 +775,16 @@
           parent_lb = parent(1,lb)
           parent_pe = parent(2,lb)
 
+!!$        If ( (parent_lb > 0) .And.                                     &
+!!$             parent_lb == pcache_blk .AND. parent_pe == pcache_pe      &
+!!$             .AND. p_gcregions_eff.ne.pcache_gcregions) then
+!!$           if (pcache_gcregions == -1) then
+!!$              p_gcregions_eff = -1
+!!$           else if (p_gcregions_eff.ne.-1) then
+!!$              p_gcregions_eff = ior(p_gcregions_eff,pcache_gcregions)
+!!$           end if
+!!$        end If
+
         If ( (parent_lb > 0) .And.                                     & 
             ((parent_lb.Ne.pcache_blk).Or.(parent_pe.Ne.pcache_pe) .or.&
              (p_gcregions_eff.ne.pcache_gcregions))                    &
