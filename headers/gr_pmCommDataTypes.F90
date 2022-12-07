@@ -1,3 +1,39 @@
+!!****ih* headers/gr_pmCommDataTypes
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   gr_pmCommDataTypes
+!!
+!! SYNOPSIS
+!!
+!!   use gr_pmCommDataTypes
+!!
+!! DESCRIPTION
+!!
+!!   Fortran module which holds data types and some constants
+!!   related to Paramesh data communications.
+!!
+!! HISTORY
+!!
+!!  2020 Dec.  K. Weide  created from information collected elsewhere
+!!  2021       K. Weide  reorg & additions for supporting PM async comm
+!!
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  tweaked components of gr_pmCommPattern_t for use
+!!  2022-05-20 K. Weide  added id omponent, constants like GRID_SUBPAT_GC_OPT(2)
+!!  2022-05-25 K. Weide  added constant GRID_SUBPAT_RESTRICT_FOR_FCORR(3)
+!!***
+
 module gr_pmCommDataTypes
   implicit none
 
@@ -73,6 +109,8 @@ module gr_pmCommDataTypes
   integer,parameter,public:: GRID_PAT_GC=10, GRID_PAT_PROLONG=20, GRID_PAT_FCORR=30, GRID_PAT_RESTRICT=40
 
   integer,parameter,public:: GRID_SUBPAT_GC_DEFAULT=1, GRID_SUBPAT_GC_OPT=2
+
   integer,parameter,public:: GRID_SUBPAT_RESTRICT_DEFAULT=1, GRID_SUBPAT_RESTRICT_ANC=2
+  integer,parameter,public:: GRID_SUBPAT_RESTRICT_FOR_FCORR=3
 
 end module gr_pmCommDataTypes

@@ -1,23 +1,39 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
+!!****ih* headers/paramesh_interfaces
+!! NOTICE
+!!  This file is from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   paramesh_interfaces
+!!
+!! SYNOPSIS
+!!
+!!   use paramesh_interfaces
+!!
+!! INCLUDES
+!!
+!!   paramesh_preprocessor.fh
+!!
 ! Modification history:
 !     Michael L. Rilee, November 2002, *dbz*
 !        Initial support for divergenceless prolongation
 !     Michael L. Rilee, December 2002, *clean_divb*
 !        Support for projecting field onto divergenceless field
 !
+!!  2022-05-20 K. Weide  added optional presentRegions to amr_1blk_guardcell_srl
+!!  2022-05-23 K. Weide  added parentPresentRegions to amr_1blk_guardcell
 !!  2022-05-27 K. Weide  Added pdgNo,pdg,ig args; variant routines; gr_pmPdgDecl
 !!  2022-10-07 K. Weide  Added pdg,ig args to more routines
 !!  2022-10-10 K. Weide  Added interface for send_block_data;
 !!                       adjusted intent for some new_loc arguments to IN.
-!
 !!  2022-10-26 K. Weide  added amr_prolong_gen_unk1_fun interface
 !!                Changed intent for some recv arguments to IN
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface

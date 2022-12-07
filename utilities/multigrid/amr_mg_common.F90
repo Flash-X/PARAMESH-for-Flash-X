@@ -7,6 +7,8 @@
 ! usage agreement which can be found in the file
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
+!! MODIFICATIONS
+!!  2022-05-13 K. Weide  renamed max_no_to_send_* to num_recipient_pes_*
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f

@@ -84,15 +84,12 @@
 !-----Use statements.
 #ifdef DEBUG_LITE
       use Grid_data, ONLY: nprocs => gr_meshNumProcs
-      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
+      use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern, gr_pmPrintCommPattern
       Use physicaldata, ONLY: mpi_pattern_id
 #endif
       Use tree, only : lnblocks, strt_buffer, laddress
       Use mpi_morton
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-#ifdef DEBUG
-      Use physicaldata, ONLY : mpi_pattern_id
-#endif
 
 !-----Implicit and Include statements.
 #include "Flashx_mpi_implicitNone.fh"
@@ -188,6 +185,7 @@
 !-------If rem_pe is not located stop with error message
         If (jpe == 0) Then
           If (idest == 2) return
+          call gr_pmPrintCommPattern(p,"amr_mpi_find_blk_in_buffer",mype)
           Write(*,*) 'Paramesh error : pe ',mype,                      &  
            ' pe address of required data is not in the list of ',      & 
            'communicating pes. ',                                      & 
@@ -195,7 +193,8 @@
            ' remote_pe ',remote_pe,                                    & 
            ' rem_blk ',rem_blk,                                          & 
            ' rem_pe ',rem_pe,                                          & 
-           ' laddress ',laddress
+           ' pe_source ',pe_source,                                    &
+           ' laddress ',laddress(:,1:10),' ...'
           Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
         End If
         no_of_segments = size(p%to_be_received,2)

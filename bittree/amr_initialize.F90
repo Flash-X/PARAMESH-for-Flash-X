@@ -70,6 +70,7 @@
 !!   Peter MacNeice and Kevin Olson
 !!
 !! MODIFICATIONS
+!!  2022-05-13 K. Weide  changes for updated management of comm patterns
 !!  2022-10-10 Klaus Weide  initialization for all PDGs
 !!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
 !!  2022-11-29 Klaus Weide  moved cell_ geometry arrays of physicaldata to pdg_t

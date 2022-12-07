@@ -61,6 +61,7 @@
 !! MODIFICATIONS
 !!
 !!  2022-05-20 K. Weide  Add one variant pattern each for gc and restrict comms
+!!  2022-05-25 K. Weide  Added call with GRID_SUBPAT_RESTRICT_FOR_FCORR
 !!***
 
 #include "constants.h"
@@ -70,7 +71,8 @@ Subroutine amr_morton_process()
 
 !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
-                                GRID_SUBPAT_RESTRICT_ANC
+                                GRID_SUBPAT_RESTRICT_ANC, &
+                                GRID_SUBPAT_RESTRICT_FOR_FCORR
       Use physicaldata
       Use tree
       Use timings
@@ -127,6 +129,8 @@ Subroutine amr_morton_process()
       Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
       call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
            subPatNo=GRID_SUBPAT_RESTRICT_ANC)
+      call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_FOR_FCORR)
 
 
       End If CustomFlashVersion
@@ -145,7 +149,8 @@ Subroutine amr_morton_process_flash()
 
   !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
-                                GRID_SUBPAT_RESTRICT_ANC
+                                GRID_SUBPAT_RESTRICT_ANC, &
+                                GRID_SUBPAT_RESTRICT_FOR_FCORR
 #ifdef DEBUG_SURR_BLKS
   Use paramesh_dimensions, ONLY: ndim, k1d, k2d, k3d, maxblocks_alloc
 #endif
@@ -266,6 +271,8 @@ Subroutine amr_morton_process_flash()
   Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
   call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
            subPatNo=GRID_SUBPAT_RESTRICT_ANC)
+  call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_FOR_FCORR)
 
   Return
 End Subroutine amr_morton_process_flash

@@ -1,21 +1,40 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-! Modification history:
-!     Klaus Weide, January - October 2022
-!        Added pdg and/or ig dummy arguments to many interfaces
+!!****ih* headers/paramesh_mpi_interfaces
+!! NOTICE
+!!  This file is from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
+!! NAME
+!!
+!!   paramesh_mpi_interfaces
+!!
+!! SYNOPSIS
+!!
+!!   use paramesh_mpi_interfaces
+!!
+!! INCLUDES
+!!
+!!   FortranLangFeatures.fh
+!!
+!! MODIFICATIONS
+!!
+!!     Klaus Weide, January - October 2022
+!!        Added pdg and/or ig dummy arguments to many interfaces
 !!  2022-05-13 K. Weide  Added pattern args of type gr_pmCommPattern_t
-!!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces
+!!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces;
+!!                       changed pattern arg to process_fetch_list to a POINTER
+!!  2022-05-23 K. Weide  Added more optional args to mpi_amr_comm_setup
 !!  2022-05-27 K. Weide  Added pdg,ig args; changed routine names; gr_pmPdgDecl
 !!  2022-11-02 K. Weide  added pdg to mpi_amr_get_remote_block interface
 !!  2022-11-08 K. Weide  Added 'ig' argument to mpiSet_message_sizes
 !!  2022-11-08 K. Weide  Added 'nfluxes' argument to mpiGet_Sbuffer_size_fluxes
+!!***
 
       module paramesh_mpi_interfaces
 

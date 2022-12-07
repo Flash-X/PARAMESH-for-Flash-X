@@ -80,6 +80,7 @@
 !!   Peter MacNeice (1997) with modifications by Kevin Olson
 !!
 !! MODIFICATIONS
+!!  2022-05-23 K. Weide  Pass ntypeMax to mpi_amr_comm_setup for LEAF-only fills
 !!  2022-05-27 K. Weide  Additions for pdg, call amr_guardcell_onePdg in loop
 !!  2022-10-28 K. Weide  Tweaked nlayers handling, skip PDGs whose nguard is 0
 !!  2022-10-31 K. Weide  Use gcell_on_cc from gr_thePdgDimens

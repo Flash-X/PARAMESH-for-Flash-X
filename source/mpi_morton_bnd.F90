@@ -1,13 +1,15 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
-!!****f* source/mpi_morton_bnd
+!!****if* source/mpi_morton_bnd
+!! NOTICE
+!!  This file derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_morton_bnd
@@ -68,6 +70,8 @@
 !! MODIFICATIONS
 !!    PM_OPTIMIZE_MORTONBND_FETCHLIST mods  Klaus Weide November 2018
 !!    Optional arg subPatNo                 Klaus Weide May 2022
+!!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
+!!  2022-05-20 K. Weide  Compute variant pattern for subPatNo=GRID_SUBPAT_GC_OPT
 !!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!  2022-12-01 K. Weide  Fixed OPTIMIZE_MORTONBND code using ASSOCIATE for PDG 1
 !!***

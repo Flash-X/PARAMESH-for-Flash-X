@@ -61,6 +61,7 @@
 !! MODIFICATIONS
 !!
 !!  2022-05-20 K. Weide  Add one variant pattern each for gc and restrict comms
+!!  2022-05-25 K. Weide  Added call with GRID_SUBPAT_RESTRICT_FOR_FCORR
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -71,7 +72,8 @@ Subroutine amr_morton_process()
 
 !-----Use Statements
   use gr_pmCommDataTypes, ONLY: GRID_SUBPAT_GC_OPT, &
-                                GRID_SUBPAT_RESTRICT_ANC
+                                GRID_SUBPAT_RESTRICT_ANC, &
+                                GRID_SUBPAT_RESTRICT_FOR_FCORR
       Use paramesh_dimensions
       Use physicaldata
       Use tree
@@ -124,6 +126,8 @@ Subroutine amr_morton_process()
       Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset)
       Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
            subPatNo=GRID_SUBPAT_RESTRICT_ANC)
+      Call mpi_morton_bnd_restrict(mype,nprocs,tag_offset, &
+           subPatNo=GRID_SUBPAT_RESTRICT_FOR_FCORR)
 
       Return
       End Subroutine amr_morton_process

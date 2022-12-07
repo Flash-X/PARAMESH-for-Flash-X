@@ -199,6 +199,12 @@
 !!   Kevin Olson for layered guardcell filling.
 !!
 !! MODIFICATIONS
+!!  2022-05-23 K. Weide  Optional parentPresentRegions arg;
+!!                       changed code that determines "coarse" flag;
+!!                       create bit mask for GC regions than MUST be filled,
+!!                       and pass it to _srl, flash_convert_cc_hook when needed;
+!!                       cache effective gcregion flag mask;
+!!                       disabled some code for edge and node variables
 !!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
 !!  2022-11-02 K. Weide  Made UNNECESSARY nlayers0[xyz] increase (large nguard)
 !!  2022-11-03 K. Weide  Updated mpi_amr_get_remote_block call, debugging tweaks

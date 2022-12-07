@@ -1,13 +1,15 @@
-!----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
-!
-! Use of the PARAMESH software is governed by the terms of the
-! usage agreement which can be found in the file
-! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
-!----------------------------------------------------------------------
-
 !!****f* source/mpi_amr_local_surr_blks_lkup
+!! NOTICE
+!!  This file is from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!
+!!  Use of the PARAMESH software is governed by the terms of the
+!!  usage agreement which can be found in the file
+!!  'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
+!!
 !! NAME
 !!
 !!   mpi_amr_local_surr_blks_lkup
@@ -73,6 +75,7 @@
 !!   Peter MacNeice (2000).
 !!
 !! MODIFICATIONS
+!!  2022-05-20 K. Weide  Minor comment edit
 !!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !!***
 

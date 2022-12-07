@@ -147,6 +147,9 @@
 !!   directional guardcell filling and flux conservation.
 !!
 !! MODIFICATIONS
+!!  2022-05-13 K. Weide  Use and pass local gr_pmCommPattern_t POINTER "pat"
+!!  2022-05-23 K. Weide  Additional optional args for selecting nodetypes&levels
+!!  2022-05-25 K. Weide  Use GRID_SUBPAT_RESTRICT_FOR_FCORR if appropriate
 !!  2022-05-27 K. Weide  additions for pdg stuff, renamed some called routines
 !!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, n[xyz]b, gcell_on_cc
 !!  2022-11-02 K. Weide  Made UNNECESSARY nlayerst[xyz] increase (large nguard)
@@ -171,6 +174,7 @@
                                     GRID_SUBPAT_GC_OPT,                 &
                                     GRID_SUBPAT_RESTRICT_DEFAULT,       &
                                     GRID_SUBPAT_RESTRICT_ANC,           &
+                                    GRID_SUBPAT_RESTRICT_FOR_FCORR,     &
                                     gr_pmCommPattern_t
       use gr_pmCommPatternData, ONLY: gr_pmActivateCommPattern, &
                                       gr_theActiveCommPattern,  &
@@ -488,6 +492,14 @@
          patFam = GRID_PAT_FCORR
          ! The following calls gr_pmActivateCommPattern(GRID_PAT_FCORR)
          Call mpi_amr_read_flux_comm(nprocs)
+
+      ElseIf (lrestrict .AND. lflux) Then
+         ! We get here if we are dealing with an ancillary restriction operation
+         ! for flux correction (but not for edge averaging!).
+
+         patFam = GRID_PAT_RESTRICT
+         call gr_pmActivateCommPattern(GRID_PAT_RESTRICT,GRID_SUBPAT_RESTRICT_FOR_FCORR)
+         mpi_pattern_id = 42
 
       ElseIf (lrestrict .AND. (.NOT.lguard .OR. lfulltree)) Then
 
