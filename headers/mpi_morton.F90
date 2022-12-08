@@ -39,6 +39,7 @@
 !! MODIFICATIONS
 !!  2022-05-13 K. Weide  removed many variables replaced by gr_pmCommPattern_t
 !!  2022-05-25 K. Weide  removed REORDER directives
+!!  2022-06-14 K. Weide  Added 0-th element to message_size_* arrays
 !!***
 
 
@@ -79,13 +80,13 @@
       Public :: message_size_nc
       Public :: message_size_wk
       Public :: mess_segment_loc
-      Integer,Save,dimension(2*27) :: message_size_cc
-      Integer,Save,dimension(2*27) :: message_size_fcx
-      Integer,Save,dimension(2*27) :: message_size_fcy
-      Integer,Save,dimension(2*27) :: message_size_fcz
-      Integer,Save,dimension(2*27) :: message_size_ec
-      Integer,Save,dimension(2*27) :: message_size_nc
-      Integer,Save,dimension(2*27) :: message_size_wk
+      Integer,Save,dimension(0:2*27) :: message_size_cc
+      Integer,Save,dimension(0:2*27) :: message_size_fcx
+      Integer,Save,dimension(0:2*27) :: message_size_fcy
+      Integer,Save,dimension(0:2*27) :: message_size_fcz
+      Integer,Save,dimension(0:2*27) :: message_size_ec
+      Integer,Save,dimension(0:2*27) :: message_size_nc
+      Integer,Save,dimension(0:2*27) :: message_size_wk
       Integer,Save,dimension(:),allocatable :: mess_segment_loc
 
       Public :: temprecv_buf

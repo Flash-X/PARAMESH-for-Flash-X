@@ -482,6 +482,11 @@
       integer, intent(in)  :: mype,iopt
       logical, intent(in)  :: lcc,lfc,lec,lnc
       end subroutine amr_1blk_restrict
+      subroutine gr_amr1blkRestrict(mype,lb,iopt,lcc,lfc,lec,lnc)
+        implicit none
+        Integer, Intent(in)  :: mype,lb,iopt
+        Logical, Intent(in)  :: lcc,lfc,lec,lnc
+      end subroutine gr_amr1blkRestrict
       end interface
 
 
@@ -499,6 +504,14 @@
       type(pdg_t), intent(INOUT) :: pdg
       integer, intent(in) :: ig
       end subroutine amr_1blk_to_perm
+      subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         &
+                                    lcc,lfc,lec,lnc,              &
+                                    nlayersx,nlayersy,nlayersz)
+        implicit none
+        Integer, intent(in) :: mype,iopt,nlayers,lb
+        Logical, VALUE      :: lcc,lfc,lec,lnc
+        Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+      end subroutine gr_amr1blkGcToPerm
       end interface
 
 
@@ -897,6 +910,12 @@
       integer, intent(out) :: dtype,index
       logical, intent(out) :: lfound
       end subroutine amr_mpi_find_blk_in_buffer
+      subroutine gr_amrMpiFindBlkInBufferSimpl( &
+     &       mype,remote_block,remote_pe,idest,segNo,index0,lfound)
+        integer, intent(in)  :: mype,remote_pe,remote_block,idest
+        integer, intent(out) :: segNo,index0
+        logical, intent(out) :: lfound
+      end subroutine gr_amrMpiFindBlkInBufferSimpl
       end interface
 
 

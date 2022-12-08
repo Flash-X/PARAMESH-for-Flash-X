@@ -25,6 +25,7 @@ subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
 !!
 !! MODIFICATIONS
 !!  2022-05-27 K. Weide  Changed for pdg stuff, renamed subroutines
+!!  2022-06-14 K. Weide  Add support for messages w/o data (tree-only, dtype 0)
 !!  2022-11-08 K. Weide  mpiPack_blocks: use gr_thePdgDimens to get 'nvar';
 !!  2022-11-08 K. Weide  Tweaked USE statements for PDG support;
 !!                       include "Flashx_mpi_implicitNone.fh".
@@ -78,7 +79,7 @@ subroutine mpiPack_blocks(pattern,mype,nprocs,iopt, &
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
 
-      integer :: loc_message_size(2*27),dtype
+      integer :: loc_message_size(0:2*27),dtype
       integer :: tot_no_blocks_to_be_received,lindex
       integer :: lb, irpe
       integer :: index 

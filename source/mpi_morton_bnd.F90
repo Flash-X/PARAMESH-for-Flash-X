@@ -72,6 +72,7 @@
 !!    Optional arg subPatNo                 Klaus Weide May 2022
 !!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
 !!  2022-05-20 K. Weide  Compute variant pattern for subPatNo=GRID_SUBPAT_GC_OPT
+!!  2022-06-14 K. Weide  Request parents with dtype 0 for GRID_SUBPAT_GC_OPT
 !!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!  2022-12-01 K. Weide  Fixed OPTIMIZE_MORTONBND code using ASSOCIATE for PDG 1
 !!***
@@ -366,6 +367,16 @@
             fetch_list(1,istack) = parent(1,lb)
             fetch_list(2,istack) = parent(2,lb)
             fetch_list(3,istack) = 14
+        End If
+        end if
+        if (present(subPatNo) .AND. ntMax == LEAF) then !only needed for getter-like dependency processing
+!-------ADD PARENT for metadata TO FETCH LIST (if off processor)
+        If (parent(1,lb) > 0 .and. parent(2,lb) .ne. mype) Then
+            istack = istack + 1
+            If (istack > npts_neigh1) Call expand_fetch_list
+            fetch_list(1,istack) = parent(1,lb)
+            fetch_list(2,istack) = parent(2,lb)
+            fetch_list(3,istack) = 0 ! 0 means ANY dtype will do!
         End If
         end if
 

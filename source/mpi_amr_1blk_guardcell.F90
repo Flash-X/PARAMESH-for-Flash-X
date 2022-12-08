@@ -671,7 +671,7 @@
 
 !-----update surrblks with the local guard block info
       surrblks = tsurrblks
-#define DEBUG_STATEMACHINE
+!#define DEBUG_STATEMACHINE
 #ifdef DEBUG_STATEMACHINE
 40       format(1x,A1,I12,'  Block',I12,' ',A,':',&
               ' p_gcregions_eff = o',o11.9)

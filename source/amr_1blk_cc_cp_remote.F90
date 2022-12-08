@@ -103,6 +103,7 @@
 !!
 !!  2022-05-20 K. Weide  Added DEBUG_LITE code
 !!  2022-05-23 K. Weide  Warnings, possible recovery for wrong dtype
+!!  2022-06-06 K. Weide  Declare temprecv_buf ASYNCHRONOUS
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -138,7 +139,9 @@
 #define DEBUG_LITE
 #endif
 
-!-----Input/Output Arguments
+      ASYNCHRONOUS :: temprecv_buf
+
+      !-----Input/Output Arguments
       Integer, Intent(in) :: mype,remote_pe,remote_block
       Integer, Intent(in) :: idest,iopt,id,jd,kd,is,js,ks
       Integer, Intent(in) :: ilays,jlays,klays,nblk_ind

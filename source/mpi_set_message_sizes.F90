@@ -21,7 +21,9 @@ subroutine mpiSet_message_sizes(iopt, ig, &
 !
 !
 ! Written :     Peter MacNeice          April 2001
+!
 !! MODIFICATIONS
+!!  2022-06-14 K. Weide  Assign size 0 to messages of dtype 0
 !!  2022-11-08 K. Weide  Added 'ig' argument, made the subroutine PDG-aware
 !------------------------------------------------------------------------
 !
@@ -90,6 +92,18 @@ subroutine mpiSet_message_sizes(iopt, ig, &
             nlayers0z = nlayersz
          end if
       endif
+
+! messsage type (dtype) 0
+      if(iopt.gt.1) then
+         message_size_wk(0) = 0
+      else
+         message_size_cc(0) = 0
+         message_size_nc(0) = 0
+         message_size_fcx(0) = 0
+         message_size_fcy(0) = 0
+         message_size_fcz(0) = 0
+         message_size_ec(0) = 0
+      end if
 
 ! loop over possible message types
       do i=1,27

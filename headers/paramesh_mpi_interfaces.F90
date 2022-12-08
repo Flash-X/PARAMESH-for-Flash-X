@@ -31,6 +31,7 @@
 !!                       changed pattern arg to process_fetch_list to a POINTER
 !!  2022-05-23 K. Weide  Added more optional args to mpi_amr_comm_setup
 !!  2022-05-27 K. Weide  Added pdg,ig args; changed routine names; gr_pmPdgDecl
+!!  2022-06-14 K. Weide  Added mype arg to rationalize_fetch_list
 !!  2022-11-02 K. Weide  added pdg to mpi_amr_get_remote_block interface
 !!  2022-11-08 K. Weide  Added 'ig' argument to mpiSet_message_sizes
 !!  2022-11-08 K. Weide  Added 'nfluxes' argument to mpiGet_Sbuffer_size_fluxes
@@ -113,6 +114,28 @@
       integer, intent(in), optional :: flux_dir
       end subroutine mpi_amr_comm_setup
       end interface
+
+#if 0
+      ! The following is now implemented in a Module gr_mpiAmrComm_mod of its own
+!!$      interface
+!!$         subroutine gr_mpiAmrComm(mype,nprocs,lguard,lprolong, &
+!!$     &                              lflux,ledge,lrestrict,lfulltree, &
+!!$     &                              iopt,lcc,lfc,lec,lnc,tag_offset, &
+!!$                                    getter, &
+!!$     &                              nlayersx,nlayersy,nlayersz, &
+!!$     &                              flux_dir)
+!!$           use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t
+!!$           implicit none
+!!$           integer, intent(in)    :: mype,nprocs,iopt
+!!$           integer, intent(inout) :: tag_offset
+!!$           logical, intent(in)    :: lcc,lfc,lec,lnc,lfulltree
+!!$           logical, intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+!!$           type(gr_pmBlockGetter_t), intent(OUT), OPTIONAL, TARGET :: getter
+!!$           integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
+!!$           integer, intent(in), optional :: flux_dir
+!!$         end subroutine gr_mpiAmrComm
+!!$      end interface
+#endif
 
       interface
       subroutine mpi_amr_comm_setup_res(mype,nprocs,lguard,lprolong, & 
@@ -407,7 +430,7 @@
       integer, intent(in)    :: lb,ioptw,buffer_size
       integer, intent(inout) :: offset
       logical, intent(in)    :: lcc,lfc,lec,lnc
-      real,    intent(IN)    :: R_buffer(buffer_size)
+      real,    intent(IN),ASYNCHRONOUS :: R_buffer(buffer_size)
       integer, intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine mpi_put_buffer
@@ -736,8 +759,8 @@
       subroutine rationalize_fetch_list (fetch_list,                   &
                                          istart,                       &
                                          iend,                         &
-                                         nptsneigh)
-      integer, intent(in) :: istart, iend, nptsneigh
+                                         nptsneigh,mype)
+      integer, intent(in) :: istart, iend, nptsneigh,mype
       integer, intent(inout) :: fetch_list(3,nptsneigh)
 
       end subroutine rationalize_fetch_list

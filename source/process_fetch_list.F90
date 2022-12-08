@@ -18,6 +18,7 @@
 !!
 !!  2022-05-13 K. Weide  Added pattern arg, changed comm pattern references
 !!  2022-05-20 K. Weide  changed pattern dummy arg to POINTER_INTENT_IN; debug
+!!  2022-06-13 K. Weide  removed some unncessary code that was for debugging
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -72,6 +73,11 @@ Subroutine process_fetch_list(pattern, fetch_list,                     &
                                 nprocs,                                &
                                 n_to_left)
       End If
+
+#ifdef DEBUG
+99    format('@',I12,'  process_fetch_list (tag',I4,') after compress has',/,('@',I12,20x,I3,': (',3I7,')'))
+      print 99,mype,tag_offset,(mype,i,fetch_list(:,i),i=1,no_of_remote_neighs)
+#endif
 
       Do i = 1, no_of_remote_neighs
         fetch_list(2,i) = fetch_list(2,i) + 1

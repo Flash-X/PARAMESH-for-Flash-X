@@ -27,7 +27,8 @@
 !!   Integer, Intent(in)  :: remote_block   remote block 
 !!   Integer, Intent(in)  :: remote_pe      remote processor
 !!   Integer, Intent(in)  :: idest
-!!   Integer, Intent(out) :: dtype          message type - an integer between 1 and 27
+!!   Integer, Intent(out) :: dtype          message type - an integer from 1 to 27
+!!                                          (dtype = 0 should not occur)
 !!                                          indicating the section of a blck contained in
 !!                                          the message segment from (remote_block,remote_pe).
 !!   Integer, Intent(out) :: index0         the address index0+1 is where you should start
@@ -67,11 +68,13 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          May 2001
+!!   Tweaks  :     Klaus Weide             February 2021
 !!
 !! MODIFICATIONS
 !!
 !!  2021 Dec   K. Weide  minor tweaks
 !!  2022-05-23 K. Weide  error and corner case handling
+!!  2022-06-06 K. Weide  Declare temprecv_buf ASYNCHRONOUS
 !!  2022-11-08 K. Weide  Added more output for debugging, by default disabled
 !!
 !!***
@@ -94,8 +97,9 @@
 !-----Implicit and Include statements.
 #include "Flashx_mpi_implicitNone.fh"
 
+      ASYNCHRONOUS :: temprecv_buf
 
-!-----Input/Output arguments.
+      !-----Input/Output arguments.
       Integer, Intent(in)  :: mype,remote_pe,remote_block,idest
       Integer, Intent(out) :: dtype,index0
       Logical, Intent(out) :: lfound

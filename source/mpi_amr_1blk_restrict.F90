@@ -113,6 +113,11 @@
 !!      Added pdg and/or ig dummy arguments to many interfaces
 !!
 !! MODIFICATIONS
+!!  2020-12-16 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
+!!  2021-01-23 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
+!!  2021-06-10 K. Weide  Pass ntypeMin/Max, levMin/Max to gr_mpiAmrComm
+!!  2021-06-13 K. Weide  Pass received lfulltree flag to gr_mpiAmrComm
+!!  2021-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
 !!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
 !!  2022-05-27 K. Weide  renamed, additions for pdg stuff, disabled ec,nc code
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
@@ -122,6 +127,7 @@
 
 !!REORDER(5): unk, facevar[xyz]
 #include "paramesh_preprocessor.fh"
+#include "constants.h"
 
 Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                        lfulltree,filling_guardcells,&
@@ -129,6 +135,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 
 !-----Use Statements
+  use Timers_interface, ONLY : Timers_start, Timers_stop
   use gr_pmPdgDecl, ONLY : pdg_t
 
   Use paramesh_dimensions, only: gr_thePdgDimens
@@ -162,8 +169,9 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                                       comm_int_max_to_all,             & 
                                       comm_int_min_to_all,             & 
                                       amr_block_geometry
-  Use paramesh_mpi_interfaces, Only :                              &
-                                      mpi_amr_comm_setup
+!!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
+  Use gr_mpiAmrComm_mod,  ONLY : gr_mpiAmrComm
+  use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterDestroy
   use gr_flashHook_interfaces
   Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
@@ -192,6 +200,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: remote_pe0,remote_block0
   integer :: remote_pe,remote_block,icoord,nprocs,ierr
   Integer :: lb,level,ich,jchild,ioff,joff,koff
+  integer :: levMin,levMax
   Integer :: idest,i,j,k,ii,jj,kk,ivar,iopt0,jface,ng0
   Integer :: ia,ja,ka,ib,jb,kb,isa,isb,jsa,jsb,ksa,ksb
   Integer :: tag_offset
@@ -209,7 +218,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Logical :: lfound
 
 
-!-----Begin Executable Code
+  !-----Begin Executable Code
   ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
             nyb         => gr_thePdgDimens(ig) % nyb,      &
             nzb         => gr_thePdgDimens(ig) % nzb,      &
@@ -318,12 +327,32 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
         lflux     = .False.
         ledge     = .False.
         lrestrict = .True.
-        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
-                              lflux,ledge,lrestrict,lfulltree,         &
-                              iopt,lcc,lfc,lec,lnc,                    & 
-                              tag_offset,                              & 
+
+        if (filling_guardcells) then
+!!$           lev = UNSPEC_LEVEL
+           levMin = 1
+           levMax = 1000
+        else
+!!$           lev = level
+           levMin = level
+           levMax = level
+        end if
+        call Timers_start("gr_mpiAmrComm s")
+        Call gr_mpiAmrComm(mype,nprocs,lguard,lprolong,             &
+                            lflux,ledge,lrestrict,lfulltree,         &
+                            iopt,lcc,lfc,lec,lnc,                    &
+                            tag_offset,                              &
                               pdg,ig,                                  &
-                              nlayersx=1,nlayersy=1,nlayersz=1)
+                            ntypeMin=LEAF, ntypeMax=PARENT_BLK,      &
+                            levelMin=levMin, levelMax=levMax,        &
+                            nlayersx=1,nlayersy=1,nlayersz=1)
+        call Timers_stop("gr_mpiAmrComm s")
+!!=======!DEV: consolidate args, esp. lfulltree handling! -KW
+!!        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
+!!                              lflux,ledge,lrestrict,lfulltree,         &
+!!                              iopt,lcc,lfc,lec,lnc,                    &
+!!                              tag_offset,                              &
+!!                              nlayersx=1,nlayersy=1,nlayersz=1)
 
         If (lnblocks > 0) Then
            Do lb = 1,lnblocks
@@ -336,7 +365,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                  ! parent block has no LEAF neighbors - i.e., this
                  ! block is not at a fine-coarse boundary where its
                  ! data may have to serve as a source for interpolation.
-                 if (lguard .AND. filling_guardcells .AND. .NOT.lfulltree &
+                 if (filling_guardcells .AND. .NOT.lfulltree &
                       .AND. &
                       .NOT.&
                       any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.&

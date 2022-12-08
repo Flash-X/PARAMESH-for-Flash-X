@@ -25,6 +25,7 @@ subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
 !
 !! MODIFICATIONS
 !!  2022-05-23 K. Weide  Warnings/fallbacks if remote sent less data
+!!  2022-06-14 K. Weide  Return empty cell ranges for dtype 0
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -136,7 +137,10 @@ subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
            ', nlayers0x..0z:',3(1x,I4))
 #endif
 ! set x index extent
-        if(mod(i,3).eq.1) then
+        if(i == 0) then
+          ia = 1
+          ib = 0
+        else if(mod(i,3).eq.1) then
           ia = 1
           ib = nlayers0x
 #ifdef DEBUG_LITE
@@ -159,7 +163,10 @@ subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
           ia = max(ia,nxb - nguard0 + 1)
         endif
 ! set y index extent
-        if(mod((i-1)/3,3).eq.0) then
+        if(i == 0) then
+          ja = 1
+          jb = 0
+        else if(mod((i-1)/3,3).eq.0) then
           ja = 1
           jb = (nlayers0y-1)*k2d+1
 #ifdef DEBUG_LITE
@@ -182,7 +189,11 @@ subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
           ja = max(ja,nyb - nguard0 + 1)
         endif
 ! set z index extent
-        if(i.le.9) then
+        if(i == 0) then
+          ka = 1
+          kb = 0
+          goto 2
+        else if(i.le.9) then
           ka = 1
           kb = (nlayers0z-1)*k3d+1
 #ifdef DEBUG_LITE
@@ -233,6 +244,7 @@ subroutine mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig, &
           kb = kb+k3d
       end select
 
+2     continue
 
       if (.not.no_permanent_guardcells) then
 ! If permanent guardcell storage is allocated then we need to offset

@@ -7,24 +7,27 @@
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
 
-!!****f* source/amr_guardcell
+!!****f* source/gr_amr1blkGcToPerm
 !! NAME
 !!
-!!   amr_guardcell
+!!   gr_amr1blkGcToPerm
 !!
 !! SYNOPSIS
 !!
-!!   call amr_guarcell(mype, iopt, nlayers)
-!!   call amr_guarcell(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz)
-!!   call amr_guarcell(mype, iopt, nlayers, nlayersx, nlayersy, nlayersz, maxNodetype_gcWanted)
+!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc)
+!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc, nlayersx,nlayersy,nlayersz)
 !!
-!!   call amr_guarcell(integer, integer, integer, 
+!!   call gr_amr1blkGcToPerm(integer, integer, integer, integer,
+!                            logical, logical, logical, logical,
 !!                     optional integer, optional integer, optional integer, optional integer)
 !!
 !! ARGUMENTS
 !!   
 !!   integer, intent(in) :: mype  
 !!     The calling processor.
+!!
+!!   integer, intent(in) :: lb           
+!!        The local ID of the block for which data should be copied..
 !!
 !!   integer, intent(in) :: iopt  
 !!     Selects whether to fill the guardcells for the arrays unk, 
@@ -34,6 +37,13 @@
 !!   integer, intent(in) :: nlayers  
 !!     Dummy variable which does nothing.  Included for consistency with older 
 !!     PARAMESH versions.
+!!
+!!   logical, intent(in) :: lcc, lfc, lec, lnc
+!!        Logical switches which indicate which data is to be copied.
+!!         lcc -> cell centered
+!!         lfc -> face centered
+!!         lec -> edge centered     (FLASH: unused)
+!!         lnc -> node centered     (FLASH: unused)
 !!
 !!   optional, integer, intent(in) :: nlayersx, nlayersy, nlayersz 
 !!     Optional integers which select how many guardcell layers to fill in each
@@ -50,116 +60,51 @@
 !!   physicaldata
 !!   workspace
 !!   tree
-!!   paramesh_interfaces
-!!   paramesh_mpi_interfaces
 !!
 !! CALLS
 !! 
-!!   amr_1blk_guardcell_reset
-!!   amr_restrict
-!!   amr_1blk_guardcell
-!!   mpi_amr_comm_setup
+!!   (amr_abort)
 !!    
 !! RETURNS
 !!
-!!   Does not return anything.  Upon exit, guardcells are filled with data for 
-!!   all blocks.
+!!   Does not return anything.  Upon exit, guardcells data for block lb
+!!   have been copied from 1blk storage to permanent storage.
 !!
 !! DESCRIPTION
 !!
-!!   Routine to perform guardcell filling in the case that permanent guardcells
-!!   are user.  Calling this routine will result in the guardcells being filled
-!!   for all child blocks if 'advance_all_levels' is turned OFF or in ALL the blocks
-!!   having their guardcells filled if 'advance_all_levels' is turned ON.
-!!   The user can choose how many layers of guardcells are filled on each face
-!!   of a block by specifying the optional arguments 'nlayersx', 'nlayersy', and
-!!   'nlayersz'.
+!!   Routine to copy guard cell data for one block from the oneBlk arrays
+!!   (such as unk1, facevarx1, etc.) to permanent storage (such as unk,
+!!   facevarx, etc.).
+!!   This subroutine is meant to be called after amr_1blk_guardcell.
+!!
+!!   Some special handling for face variables is included, this has not
+!!   been tested.
+!!
+!!   The implementation has been extracted from mpi_amr_guardcell.F90.
 !!
 !! AUTHORS
 !!
-!!   Peter MacNeice (1997) with modifications by Kevin Olson
+!!         mpi_amr_guardcell Peter MacNeice (1997) with modifications by Kevin Olson
+!!  Extracted: gr_amr1blkGcToPerm   Klaus Weide                   Jan 2021
 !!
-!! MODIFICATIONS
-!!  2021       K. Weide  Tweaked to prepare for asynchronous domain data comms
-!!  2022-05-23 K. Weide  Pass ntypeMax to mpi_amr_comm_setup for LEAF-only fills
-!!  2022-05-27 K. Weide  Additions for pdg, call amr_guardcell_onePdg in loop
-!!  2022-10-28 K. Weide  Tweaked nlayers handling, skip PDGs whose nguard is 0
-!!  2022-10-31 K. Weide  Use gcell_on_cc from gr_thePdgDimens
-!!  2022-06-06 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
-!!  2022-06-06 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
-!!  2022-06-13 K. Weide  Pass ntypeMin,ntypeMax,levelMin/Max to gr_mpiAmrComm
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
+!!REORDER(5): unk1, facevar[xyz]1
+!!REORDER(5): unk, facevar[xyz]
+!!REORDER(5): unk_e_[xyz]1, unk_n1
+!!REORDER(5): unk_e_[xyz], unk_n
 
 #include "paramesh_preprocessor.fh"
-#include "constants.h"
 
-Subroutine amr_guardcell_pdgNo(mype,iopt,nlayers,    &
-                               nlayersx,nlayersy,nlayersz, &
-                               maxNodetype_gcWanted,pdgNo)
-  Use paramesh_interfaces, Only : amr_guardcell_onePdg
-  use paramesh_dimensions, ONLY: gr_thePdgDimens
-  Use physicaldata, only: gr_thePdgs
-  implicit none
-  Integer, intent(in) :: mype,iopt,nlayers
-  Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-  Integer, intent(in), optional :: maxNodetype_gcWanted
-  integer, intent(in), optional :: pdgNo
-
-  integer :: npdg, ig,sg,eg
-  integer :: nlayersMax
-  npdg = 1
-  if (present(pdgNo)) npdg = pdgNo
-  if (npdg == -1) then
-     sg = 1; eg = NUM_PDGS
-  else
-     sg = npdg; eg = npdg
-  end if
-  do ig = sg,eg
-     if (sg < eg) then
-        nlayersMax = gr_thePdgDimens(ig) % nguard
-        if (nlayersMax .LE. 0) CYCLE !Nothing to do for this PDG!
-     else
-        nlayersMax = nlayers
-     end if
-     call amr_guardcell_onePdg(mype,iopt,nlayersMax, gr_thePdgs(ig),ig, &
-                               nlayersx,nlayersy,nlayersz, &
-                               maxNodetype_gcWanted=maxNodetype_gcWanted)
-  end do
-
-
-end Subroutine amr_guardcell_pdgNo
-
-Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
-                               nlayersx,nlayersy,nlayersz, &
-                               maxNodetype_gcWanted)
+    Subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         & 
+                                    lcc,lfc,lec,lnc,                   & 
+                               nlayersx,nlayersy,nlayersz)
 
 !-----Use Statements
-  use Timers_interface, ONLY : Timers_start, Timers_stop
-  use gr_pmPdgDecl, ONLY : pdg_t
-  use paramesh_dimensions, ONLY: gr_thePdgDimens
-      Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge
-
-      Use physicaldata, only: facevarx,   facevary,   facevarz, &
-                              gt_facevarx,gt_facevary,gt_facevarz, &
-                              facevarx1,  facevary1,  facevarz1
-      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
-                              unk_e_x1,  unk_e_y1,  unk_e_z1
-      Use physicaldata, only: unk_n, unk_n1
-      Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
-      Use physicaldata, only:                     gcell_on_fc,    gcell_on_ec,    gcell_on_nc
-      Use physicaldata, only: diagonals,advance_all_levels,force_consistency,no_permanent_guardcells
-      Use workspace
-      Use tree
-      use paramesh_comm_data
-
-      Use paramesh_interfaces, Only : amr_1blk_guardcell_reset, & 
-                                      amr_restrict,             & 
-                                      amr_1blk_guardcell
-
-!!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
-      Use gr_mpiAmrComm_mod,   only : gr_mpiAmrComm
+      Use paramesh_dimensions
+      Use physicaldata
+      Use workspace, ONLY: work1, work
+      Use tree,      ONLY: lnblocks, neigh
 
       use gr_pmFlashHookData, ONLY : alwaysFcAtBC => gr_pmAlwaysFillFcGcAtDomainBC
 
@@ -169,16 +114,12 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       Include 'mpif.h'
 
 !-----Input/Output Arguments
-      Integer, intent(in) :: mype,iopt,nlayers
-      type(pdg_t), intent(INOUT) :: pdg
-      integer, intent(in) :: ig
+      Integer, intent(in) :: mype,iopt,nlayers,lb
+      Logical, VALUE      :: lcc,lfc,lec,lnc
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
-      Integer, intent(in), optional :: maxNodetype_gcWanted
 
 !-----Local variables
-      Logical :: lguard,lprolong,lflux,ledge,lrestrict,lfulltree
-      Logical :: lcc,lfc,lec,lnc,l_srl_only,ldiag,l_force_consist
-      Integer :: lb,icoord
+      Logical :: l_force_consist
       Integer :: id,jd,kd
       Integer :: ilays,jlays,klays
       Integer :: nlayers0x, nlayers0y, nlayers0z, nguard0
@@ -186,33 +127,11 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       Integer :: i,j,k,ivar                                  
       Integer :: ip1,ip2,jp1,jp2,kp1,kp2
       Integer :: ilp,iup,jlp,jup,klp,kup
-      Integer :: nprocs, ierr, tag_offset, iempty, iu, ju, ku, iopt0
-      Integer :: maxNodetype_gcWanted_loc
-      integer :: ntypeMin,ntypeMax,lev
+      Integer :: iu, ju, ku, iopt0
 
 !------------------------------------
 !-----Begin Executable code section
 !------------------------------------
-
-      If ((.not.diagonals) .and. (iopt .ne. 2)) Then
-         Write(*,*) 'amr_guardcell:  diagonals off'
-      End if
-
-      If (present(maxNodetype_gcWanted)) Then
-         maxNodetype_gcWanted_loc = maxNodetype_gcWanted
-      Else
-         maxNodetype_gcWanted_loc = -1
-      End If
-
-  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
-            nyb         => gr_thePdgDimens(ig) % nyb,      &
-            nzb         => gr_thePdgDimens(ig) % nzb,      &
-            nguard      => gr_thePdgDimens(ig) % nguard,   &
-            nvar        => gr_thePdgDimens(ig) % nvar,     &
-            unk         => pdg % unk,      &
-            unk1        => pdg % unk1,      &
-            gcell_on_cc => pdg % gcell_on_cc      &
-            )
 
       If (iopt == 1) Then
 
@@ -263,27 +182,13 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
 
       nguard_npgs = nguard*npgs
 
-      call MPI_COMM_SIZE(amr_mpi_meshComm,nprocs,ierr)
-
-      If (no_permanent_guardcells) Then
-
-       If (mype == 0) Then
-         Write(*,*) 'amr_guardcell call ignored!'
-         Write(*,*) 'NO_PERMANENT_GUARDCELLS is defined'
-       End if
-       Return
-
-      Else  ! no_permanent_guardcells
-
 !------make sure that nlayers and iopt are set consistently.
-       If (iopt == 1.and.nlayers > nguard) Then
+       If (iopt == 1.and.nlayers.ne.nguard) Then
          If (mype == 0) Then
            Write(*,*) 'PARAMESH ERROR !'
            Write(*,*) 'Error in guardcell - iopt and nlayers'
            Write(*,*) 'are not consistent. For iopt=1 you must'
            Write(*,*) 'set nlayers=nguard.'
-           Write(*,*) 'iopt, nlayers, nguard, ig =',&
-                       iopt, nlayers, nguard, ig
          Endif
          Call amr_abort
         Else If (iopt >= 2.and.nlayers > nguard_work) Then
@@ -296,13 +201,6 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
          Call amr_abort
        Endif   ! end If (iopt == 1.and.nlayers.ne.nguard)
 
-!-----Reinitialize addresses of cached parent blocks
-      Call amr_1blk_guardcell_reset
-
-      lcc = .False.
-      lfc = .False.
-      lec = .False.
-      lnc = .False.
       If (iopt == 1) Then
         If (nvar > 0) lcc = .True.
         If (nfacevar > 0) lfc = .True.
@@ -312,19 +210,10 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
         lcc = .True.
       Endif
 
-!-----Restrict solution to parent blocks
-      If (.not.advance_all_levels) Then
-         iempty = 0
-         call amr_restrict(mype,iopt,iempty,.True.,ig)
-         call amr_1blk_guardcell_reset
-      End if
-
-
       l_force_consist = .False.
       If (force_consistency) Then
        l_force_consist = .True.
        If (lfc) Then
-        Do lb = 1,lnblocks
            gt_facevarx(:,1,:,:,lb) = facevarx(:,1+nguard_npgs,:,:,lb)
            gt_facevarx(:,2,:,:,lb) =                                   & 
                 facevarx(:,nxb+1+nguard_npgs,:,:,lb)
@@ -340,59 +229,11 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
            gt_facevarz(:,:,:,1+k3d,lb) =                               & 
                 facevarz(:,:,:,nzb+(1+nguard_npgs)*k3d,lb)
           End if
-        End do  ! end do lb = 1, lnblocks
        End if   ! end if (lfc)
       End if    ! end if force_consistency)
 
-      tag_offset = 100
-      lguard    = .True.
-      lprolong  = .False.
-      lflux     = .False.
-      ledge     = .False.
-      lrestrict = .False.
-      lfulltree = .False.
-      lev = UNSPEC_LEVEL        ! or as requested??
-      ntypeMin = LEAF
-      if (maxNodetype_gcWanted_loc < 0) then
-         ntypeMax = PARENT_BLK
-      else if (maxNodetype_gcWanted_loc == 1) then
-         ntypeMax = LEAF
-      else if (maxNodetype_gcWanted_loc == 2) then
-         ntypeMax = PARENT_BLK
-      else if (maxNodetype_gcWanted_loc .GE. 3) then
-         ntypeMax = ANCESTOR
-      else if (advance_all_levels) then
-         ntypeMax = ANCESTOR
-      else
-         ntypeMax = PARENT_BLK
-      end if
-      call Timers_start("gr_mpiAmrComm s")
-      Call gr_mpiAmrComm(mype,nprocs,                             &
-                              lguard,lprolong,lflux,ledge,lrestrict,   & 
-                              lfulltree,                               & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset,         &
-                              pdg,ig,                                  &
-                              ntypeMin=ntypeMin, ntypeMax=ntypeMax,    &
-                              levelMin=lev, levelMax=lev,              &
-                              nlayersx=nlayersx,nlayersy=nlayersy,nlayersz=nlayersz)
-      call Timers_stop("gr_mpiAmrComm s")
 
       If (lnblocks > 0) Then
-      Do lb = 1,lnblocks
-
-      If ((maxNodetype_gcWanted_loc > 0 .AND. (nodetype(lb) <= maxNodetype_gcWanted_loc)) .or.   &
-          (maxNodetype_gcWanted_loc <=0 .AND. (nodetype(lb) == 1 .or. nodetype(lb) == 2)) .or.   &
-         advance_all_levels) Then
-
-!-------Copy this blocks data into the working block, and fill its guardcells
-        ldiag = diagonals
-        l_srl_only = .False.                     ! fill srl and coarse
-        icoord = 0                               ! fill in all coord directions
-        Call amr_1blk_guardcell(mype,iopt,nlayers,lb,mype,             & 
-                                lcc,lfc,lec,lnc,                       & 
-                                l_srl_only,icoord,ldiag,               & 
-                                pdg,ig,                                &
-                                nlayersx,nlayersy,nlayersz)
 
         Do k = 1,1+2*k3d
          klp = 0
@@ -408,7 +249,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
            kd = nguard0*k3d+1
            kp1 = 0
            kp2 = k3d
-         Else if (k == 3) Then
+         Else !if (k == 3) Then
            klays = nlayers0z*k3d
            kd = (nguard0+nzb)*k3d + 1
            kp1 = k3d
@@ -430,7 +271,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
            jd = nguard0*k2d+1
            jp1 = 0
            jp2 = k2d
-         Else if (j == 3) Then
+         Else !if (j == 3) Then
            jlays = nlayers0y*k2d
            jd = (nguard0+nyb)*k2d + 1
            jp1 = k2d
@@ -452,7 +293,7 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
            id = nguard0+1
            ip1 = 0
            ip2 = 1
-         Else if (i == 3) Then
+         Else !if (i == 3) Then
            ilays = nlayers0x
            id = nguard0+nxb + 1
            ip1 = 1
@@ -549,25 +390,9 @@ Subroutine amr_guardcell_onePdg(mype,iopt,nlayers, pdg,ig, &
       End Do  ! End Do j = 1,1+2*k2d
       End Do  ! End Do k = 1,1+2*k3d
 
-      End If  ! End If (nodetype(lb) == 1 .or. nodetype(lb) == 2 .or. 
-              !         advance_all_levels) 
-
-      End Do  ! End Do lb = 1, lnblocks
       End if  ! End If (lnblocks >= 1)
 
-!-----reinitialize addresses of cached parent blocks
-      Call amr_1blk_guardcell_reset
-
-!-----reset selections of guardcell variables to default
-      int_gcell_on_cc(:) = .True.
-      int_gcell_on_fc(:,:) = .True.
-      int_gcell_on_ec(:,:) = .True.
-      int_gcell_on_nc(:) = .True.
-
-      Endif ! If (no_permanent_guardcells)
-  end ASSOCIATE
-
       Return
-End Subroutine amr_guardcell_onePdg
+    End Subroutine gr_amr1blkGcToPerm
 
 
