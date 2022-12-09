@@ -28,6 +28,7 @@
 !     Michael L. Rilee, December 2002, *clean_divb*
 !        Support for projecting field onto divergenceless field
 !
+!!  2021    Klaus Weide  interface changes to support the async block getter
 !!  2022-05-20 K. Weide  added optional presentRegions to amr_1blk_guardcell_srl
 !!  2022-05-23 K. Weide  added parentPresentRegions to amr_1blk_guardcell
 !!  2022-05-27 K. Weide  Added pdgNo,pdg,ig args; variant routines; gr_pmPdgDecl

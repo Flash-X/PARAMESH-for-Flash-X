@@ -43,6 +43,7 @@
 !
 !------------------------------------------------------------------------
 !! MODIFICATIONS
+!!  2021    Klaus Weide  some changes to support the asynchronous block getter
 !!  2022-11-08 K. Weide  PDG-related and other adaptations and cleanup
       use paramesh_dimensions, ONLY: gr_thePdgDimens, &
            ndim, k2d, k3d, nfacevar, l2p5d, nvaredge, nvarcorn
