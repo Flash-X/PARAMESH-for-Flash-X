@@ -123,6 +123,7 @@
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -153,7 +154,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Use tree, only: lnblocks, nchild, lrefine, nodetype, child, laddress, empty
   Use tree, ONLY: surr_blks
   Use workspace
-  use mpi_morton
+  use mpi_morton, ONLY: ladd_strt, ladd_end
   Use timings
   Use paramesh_interfaces, Only : amr_1blk_copy_soln,              &
                                       amr_1blk_guardcell_reset,        & 
@@ -194,10 +195,11 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Real,Allocatable :: sendf(:,:,:,:)
   Real,Parameter :: eps = 1.e-30
 
-  Integer nguard0,nguard_work0,nguard1,nguard_work1
+  Integer :: nguard0,nguard_work0,nguard1,nguard_work1
   Integer ::  maxbnd
-  Integer :: iproc
+#ifdef FLASH_PMFEATURE_UNUSED
   Integer :: remote_pe0,remote_block0
+#endif
   integer :: remote_pe,remote_block,icoord,nprocs,ierr
   Integer :: lb,level,ich,jchild,ioff,joff,koff
   integer :: levMin,levMax

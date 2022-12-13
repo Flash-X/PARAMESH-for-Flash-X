@@ -14,11 +14,11 @@
 !!
 !! SYNOPSIS
 !!
-!!   call gr_amr1blkRestrict(mype,lb, iopt,lcc,lfc,lec,lnc,
+!!   call gr_amr1blkRestrict(mype,lb, iopt,lcc,lfc,lec,lnc, pdg,ig
 !!                              )
 !!
 !!   call gr_amr1blkRestrict(integer, integer, integer, logical, logical, logical, logical 
-!!                              )
+!!                              TYPE(pdg_t), integer)
 !!
 !! ARGUMENTS
 !!
@@ -48,23 +48,28 @@
 !!
 !! USES
 !!
+!!   gr_pmPdgDecl
+!!   gr_pmCommPatternData
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
 !!   workspace
 !!   mpi_morton
 !!   paramesh_interfaces
-!!   paramesh_mpi_interfaces
+!!   gr_mpiAmrComm_mod
+!!   gr_flashHook_interfaces
 !!
 !! CALLS
 !!
 !!   amr_perm_to_1blk,
+!!   flash_convert_cc_hook,
 !!   amr_restrict_unk_fun,
 !!   amr_restrict_nc_fun,     (FLASH: unused)
 !!   amr_restrict_fc_fun,
 !!   amr_restrict_ec_fun,     (FLASH: unused)
 !!   amr_restrict_work_fun,
 !!   amr_restrict_work_fun_recip,
+!!   flash_unconvert_cc_hook,
 !!   amr_1blk_nc_cp_remote,     (FLASH: unused)
 !!   amr_block_geometry
 !!
@@ -96,6 +101,7 @@
 !!
 !! MODIFICATIONS
 !!  2021-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -106,14 +112,27 @@
 
 #include "paramesh_preprocessor.fh"
 
-      Subroutine gr_amr1blkRestrict(mype,lb,iopt,lcc,lfc,lec,lnc)
-#define FLASH_PMFEATURE_UNUSED
+Subroutine gr_amr1blkRestrict(mype,lb,iopt,lcc,lfc,lec,lnc,pdg,ig)
 
 !-----Use Statements
+  use gr_pmPdgDecl, ONLY : pdg_t
       use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
+  Use paramesh_dimensions, only: gr_thePdgDimens
+  Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
+                                 nbndvar,nbndvare,nbndvarc
+  Use physicaldata, only: interp_mask_unk_res,     &
+                          interp_mask_facex_res,interp_mask_facey_res,interp_mask_facez_res,&
+                          interp_mask_ec_res,      &
+                          interp_mask_nc_res
+  Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                          facevarx1,  facevary1,  facevarz1
+  Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z,   unk_n, &
+                          unk_e_x1,   unk_e_y1,   unk_e_z1,  unk_n1
+  Use physicaldata, only: curvilinear, curvilinear_conserve
+  Use physicaldata, only: diagonals,mpi_pattern_id
+  Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+  Use tree, only: lnblocks, nchild, nodetype, child, laddress, empty
+  Use tree, ONLY: surr_blks, neigh, nfaces
       Use workspace
       use mpi_morton, ONLY: ladd_strt, ladd_end
       Use paramesh_interfaces, Only : amr_1blk_copy_soln,              & 
@@ -136,15 +155,14 @@
 !-----Input/Output Arguments
       Integer, Intent(in)  :: mype,lb,iopt
       Logical, Intent(in)  :: lcc,lfc,lec,lnc
+  type(pdg_t), intent(INOUT) :: pdg
+  integer, intent(in) :: ig
 
 !-----Local Variables and Arrays
-      Real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
+  Real,allocatable :: temp(:,:,:,:)
 
 #ifdef FLASH_PMFEATURE_UNUSED
-      Real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       & 
-                                            kl_bnd1:ku_bnd1+k3d)
-      Real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       & 
-                                            kl_bnd1:ku_bnd1+k3d)
+  Real,allocatable :: tempn(:,:,:,:),sendn(:,:,:,:)
 #endif
       Real,Allocatable :: tempf(:,:,:,:)
       Real,Allocatable :: sendf(:,:,:,:)
@@ -152,7 +170,9 @@
 
       Integer :: nguard0,nguard_work0,nguard1,nguard_work1
       Integer :: maxbnd
-      Integer :: remote_pe0,remote_block0
+#ifdef FLASH_PMFEATURE_UNUSED
+  Integer :: remote_pe0,remote_block0
+#endif
       integer :: remote_pe,remote_block
       Integer :: ich,jchild,ioff,joff,koff
       Integer :: idest,i,j,k,ii,jj,kk,ivar,iopt0,jface,ng0
@@ -173,10 +193,6 @@
       include 'mpif.h'
 
 !-----Begin Executable Code
-      nguard0 = nguard*npgs
-      nguard1 = nguard - nguard0
-      nguard_work0 = nguard_work*npgs
-      nguard_work1 = nguard_work - nguard_work0
 
       If ((.Not.diagonals) .and. (iopt .ne. 2)) Then
          Write(*,*) 'amr_1blk_restrict:  diagonals off'
@@ -201,7 +217,7 @@
 !!$      level = -1
 !!$      If (iopt == 1) Call amr_1blk_copy_soln(level)
 
-!-----The parent lb of leaf nodes gets data
+!-----If lb is a parent of leaf nodes, it gets data
 !-----from its children and then performs restriction on it.
 
 
@@ -223,6 +239,50 @@
                           RETURN
                  end if
 
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            il_bnd      => gr_thePdgDimens(ig) % il_bnd,  &
+            iu_bnd      => gr_thePdgDimens(ig) % iu_bnd,  &
+            jl_bnd      => gr_thePdgDimens(ig) % jl_bnd,  &
+            ju_bnd      => gr_thePdgDimens(ig) % ju_bnd,  &
+            kl_bnd      => gr_thePdgDimens(ig) % kl_bnd,  &
+            ku_bnd      => gr_thePdgDimens(ig) % ku_bnd,  &
+            il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1,     &
+            cell_vol    => pdg % cell_vol,   &
+            cell_area1  => pdg % cell_area1,   &
+            cell_area2  => pdg % cell_area2,   &
+            cell_area3  => pdg % cell_area3,   &
+            cell_leng1  => pdg % cell_leng1,   &
+            cell_leng2  => pdg % cell_leng2,   &
+            cell_leng3  => pdg % cell_leng3    &
+            )
+      nguard0 = nguard*npgs
+      nguard1 = nguard - nguard0
+      nguard_work0 = nguard_work*npgs
+      nguard_work1 = nguard_work - nguard_work0
+
+  if (iopt == 1 .AND. lcc) then
+     allocate(temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1))
+  end if
+
+#ifdef FLASH_PMFEATURE_UNUSED
+  if (iopt == 1 .AND. lnc) then
+     allocate(tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d))
+     allocate(sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d))
+  end if
+#endif
       if (iopt == 1 .AND. (lfc .OR. lec)) then
          maxbnd = max(1,nbndvare,nbndvar)
          Allocate(                                                     &
@@ -278,14 +338,15 @@
           idest = 1
           Call amr_perm_to_1blk(lcc,lfc,lec,lnc,                       & 
                                    remote_block,remote_pe,             & 
-                                   iopt,idest)
+                                   iopt,idest,                         &
+                                   pdg,ig)
           if (iopt.eq.1) call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, &
                 il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, &
-                why=gr_callReason_RESTRICT)
+                why=gr_callReason_RESTRICT, ig=ig)
 
          If (curvilinear) Then
 !--------compute geometry variables for the child block (remote_block,remote_pe)
-         Call amr_block_geometry(remote_block,remote_pe)
+         Call amr_block_geometry(remote_block,remote_pe,pdg,ig)
 
          If (curvilinear_conserve) Then
 
@@ -369,7 +430,7 @@
 
 !--------Now reset geometry factors to appropriate values for the 
 !--------current block lb
-         Call amr_block_geometry(lb,mype)
+         Call amr_block_geometry(lb,mype,pdg,ig)
 
          End If  ! End If (curvilinear)
 
@@ -378,7 +439,7 @@
 !----------Compute restricted cell-centered data from the data in the buffer
            If (lcc) Then
 
-           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp, ig)
            kc = koff + nguard0*k3d
            jc = joff + nguard0*k2d
            ic = ioff + nguard0
@@ -773,7 +834,7 @@
       if (iopt.eq.1) call flash_unconvert_cc_hook(unk(:,:,:,:,lb), nvar, &
                 il_bnd,iu_bnd, jl_bnd,ju_bnd, kl_bnd,ku_bnd, &
      &          where=gr_cells_INTERIOR, why=gr_callReason_RESTRICT, &
-                nlayers_in_data=nguard0)
+                           ig=ig, nlayers_in_data=nguard0)
 
 #ifdef FLASH_PMFEATURE_UNUSED
 !-----If using odd sized grid blocks then parent copies any face bounding
@@ -921,7 +982,7 @@
                        mype,remote_pe,remote_block,iblock,             & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
-                       ip1,jp1,kp1,ip3,jp3,kp3,0)
+                       ip1,jp1,kp1,ip3,jp3,kp3,0,ig)
 
              ng1 = nguard*(1-npgs)
              unk_n(:,id-ng1:id+ilays-ng1,                              & 
@@ -944,25 +1005,24 @@
       End If  ! End If (lnc)
       End If  ! End (iopt == 1)
 #endif
+      if (allocated(tempf)) then
+         Deallocate(tempf)
+         Deallocate(sendf)
+      end if
+#ifdef FLASH_PMFEATURE_UNUSED
+    if (iopt == 1 .AND. lnc) then
+       deallocate(tempn)
+       deallocate(sendn)
+    end if
+#endif
+    if (allocated(temp)) then
+       deallocate(temp)
+    end if
+  end ASSOCIATE
 
       End If  ! End If (nodetype(lb) == 2)
 
       End If  ! End If (lnblocks > 0)
 
-!-----WE DO NOT CURRENTLY DO THE FOLLOWING - WE HARDLY KNOW WHAT IT MEANS!
-!-----Make sure that the global copy of the newly restricted data is
-!-----up to date.
-!!$      If (.not.filling_guardcells .and. iopt == 1) Then
-!!$         Call amr_1blk_copy_soln(level)
-!!$      End If
-
-
-!!$      lrestrict_in_progress = .False.
-
-      if (allocated(tempf)) then
-         Deallocate(tempf)
-         Deallocate(sendf)
-      end if
-
-      End Subroutine gr_amr1blkRestrict
+End Subroutine gr_amr1blkRestrict
 

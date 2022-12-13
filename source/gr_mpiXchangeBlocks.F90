@@ -16,6 +16,7 @@ subroutine gr_mpiXchangeBlocks(pattern,mype,nprocs, tag_offset, &
 ! Modified:  Klaus Weide                                         December 2020
 !!  2021       K. Weide  Created out of mpi_lib.F90 for async domain data comms
 !!  2021-06-13 K. Weide  Use pattern dummy arg to access the active comm pattern
+!!  2022-12-12 K. Weide  Use physicaldata with ONLY, no paramesh_dimensionsx
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -30,8 +31,7 @@ subroutine gr_mpiXchangeBlocks(pattern,mype,nprocs, tag_offset, &
 !
 !------------------------------------------------------------------------
 
-  use paramesh_dimensions
-  use physicaldata
+  use physicaldata, ONLY: amr_error_checking
   use tree
   use workspace
   use mpi_morton, ONLY: is_buf,         ir_buf

@@ -22,9 +22,11 @@
 !!  2021-01-09 K. Weide  Created for asynchronous domain data communications
 !!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
 !!  2021-06-14 K. Weide  Tweaked error message texts for lkup errors
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 
 #include "constants.h"
 #include "Simulation.h"
+#include "FortranLangFeatures.fh"
 
 module gr_pmBlockGetter
     use Grid_data, ONLY: nprocs => gr_meshNumProcs
@@ -32,6 +34,7 @@ module gr_pmBlockGetter
     use gr_pmCommDataTypes, ONLY: gr_pmCommCtl_t
     use gr_parameshInterface, ONLY: gr_blockMatch
     use gr_flashHook_interfaces, ONLY: i27b ! a kind type parameter
+    use gr_pmPdgDecl, ONLY: pdg_t
     use tree, ONLY : lnblocks, surr_blks, laddress, strt_buffer
     use tree, ONLY : nodetype, child, parent, which_child, newchild, lrefine
     use physicaldata,        ONLY: advance_all_levels
@@ -51,6 +54,7 @@ module gr_pmBlockGetter
                      S_shutdown=9
 
   type, public :: gr_pmBlockGetter_t
+     integer :: ig       = DEFAULT_PDGNO
      integer :: nodetype = LEAF
      integer :: lev      = INVALID_LEVEL
 
@@ -95,6 +99,7 @@ module gr_pmBlockGetter
 !!$     logical :: section_processed(tot_no_blocks_to_be_received)
 !!$     logical :: psections_processed(nprocs)
      integer,pointer :: commatrix_recv(:)
+     type(pdg_t),pointer :: pdg
 
    contains
      procedure :: get     => pmBlockGet
@@ -107,7 +112,8 @@ contains
                                    iopt,            &
                                    lcc,lfc,lec,lnc, & 
                                    buf_dim,         &
-                                   nlayersx,nlayersy,nlayersz)
+                                   nlayersx,nlayersy,nlayersz,&
+                                   pdg,ig)
     use gr_pmCommPatternData, ONLY: gr_theActiveCommPattern
 #include "Flashx_mpi_implicitNone.fh"
 
@@ -119,6 +125,8 @@ contains
         integer,                  intent(IN)  :: iopt
         integer,                  intent(IN)  :: buf_dim
         integer,                  intent(IN)  :: nlayersx,nlayersy,nlayersz
+        type(pdg_t),POINTER_INTENT_IN         :: pdg
+        integer,                  intent(IN)  :: ig
 
         getter%nodetype = nodetype
         getter%lev = level
@@ -138,6 +146,8 @@ contains
         getter%nlayersx = nlayersx
         getter%nlayersy = nlayersy
         getter%nlayersz = nlayersz
+        getter%ig   = ig
+        getter%pdg  => pdg
 
         associate(commCtl => getter % commCtl)
           commCtl          % numReq = 0
@@ -1781,7 +1791,9 @@ contains
               nlayersy         => this % nlayersy,           &
               nlayersz         => this % nlayersz,           &
               locAvail         => this % localAvailFlagMaskGc(blk), &
-              remoteAvail      => this % remoteAvailFlagMaskGc(blk) &
+              remoteAvail      => this % remoteAvailFlagMaskGc(blk), &
+              pdg              => this % pdg,                &
+              ig               => this % ig                  &
               )
       select case (pfam)
       case(GRID_PAT_GC)
@@ -1797,6 +1809,7 @@ contains
          call amr_1blk_guardcell(mype,iopt,nlayers,blk,mype, &
               lcc,lfc,lec,lnc,l_srl_only,                    &
               icoord,ldiag,                                  &
+              pdg,ig,                                        &
               nlayersx,nlayersy,nlayersz,                    &
               parentPresentRegions)
           call gr_amr1blkGcToPerm(mype,iopt,nlayers,blk,        &
@@ -1904,7 +1917,6 @@ contains
     use paramesh_mpi_interfaces, only : mpi_put_buffer
 
 #include "Flashx_mpi_implicitNone.fh"
-#include "FortranLangFeatures.fh"
 
     integer, CONTIGUOUS_INTENT(in) :: commatrixRecv(:)
     integer, intent(in) :: sproc,buf_dim,iopt

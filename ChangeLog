@@ -1,3 +1,13 @@
+2022-12-12  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/gr_amr1blkGcToPerm.F90, source/gr_amr1blkRestrict.F90
+	source/gr_amrGuardcellHead.F90, source/gr_mpiAmrComm.F90
+	source/gr_pmBlockGetter.F90, source/mpi_amr_1blk_restrict.F90:
+	consolidate PDG and PmAsync features after merge.
+
+	* source/mpi_lib.F90,source/gr_mpiXchangeBlocks.F90: tighten some
+	use statements.
+
 2022-12-03  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/amr_1blk_cc_prol_inject.F90: clean up some USE statements

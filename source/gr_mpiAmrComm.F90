@@ -164,6 +164,8 @@
 !!  2021-06-13 K. Weide  Use pat => gr_theActiveCommPattern
 !!  2021-06-13 K. Weide  Special case logic for GC-fill and restrict variants
 !!  2021-06-13 K. Weide  For now, avoid GRID_SUBPAT_RESTRICT_ANC with getter
+!!  2022-12-08 K. Weide  Made UNNECESSARY nlayerst[xyz] increase (large nguard)
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -175,6 +177,7 @@ contains
                                     lguard,lprolong,                   & 
                                     lflux,ledge,lrestrict,lfulltree,   & 
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   &
+                                    pdg,ig,                            &
                                     getter,                            &
 !!$                                    stages,                            &
                                     ntypeMin,ntypeMax,levelMin,levelMax,&
@@ -182,34 +185,7 @@ contains
                                     flux_dir)
 !#define DEBUG
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
-      Use workspace
-      Use tree
-      Use mpi_morton, ONLY: temprecv_buf,                              &
-                            ladd_strt, ladd_end
-#ifdef DEBUG
-      Use mpi_morton, ONLY: max_no_to_send
-#endif
-      Use paramesh_interfaces, ONLY: amr_1blk_guardcell_reset
-      Use paramesh_mpi_interfaces, Only :                              & 
-                                      mpi_pack_blocks,                 & 
-                                      mpi_Sbuffer_size,                & 
-                                      mpi_unpack_blocks,               & 
-                                      mpi_Rbuffer_size,                & 
-                                      mpi_pack_edges,                  & 
-                                      mpi_unpack_edges,                & 
-                                      mpi_pack_fluxes,                 & 
-                                      mpi_unpack_fluxes,               & 
-                                      mpi_amr_read_guard_comm,         & 
-                                      mpi_amr_read_prol_comm,          & 
-                                      mpi_amr_read_flux_comm,          & 
-                                      mpi_amr_read_restrict_comm,      & 
-                                      mpi_set_message_sizes
-      use gr_parameshInterface, ONLY : gr_mpiXchangeBlocks
-#ifdef DEBUG
-      Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-#endif
+      use gr_pmPdgDecl, ONLY : pdg_t
       use gr_pmCommDataTypes, ONLY: GRID_PAT_GC, GRID_PAT_FCORR, &
                                     GRID_PAT_PROLONG, GRID_PAT_RESTRICT,&
                                     GRID_SUBPAT_GC_OPT,                 &
@@ -221,6 +197,36 @@ contains
                                       gr_theActiveCommPattern,  &
                                       gr_pmPrintCommPattern
       use gr_pmBlockGetter,   ONLY: gr_pmBlockGetter_t, gr_pmBlockGetterBuild
+      use gr_parameshInterface, ONLY: gr_mpiXchangeBlocks
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, k2d, k3d, &
+           nfacevar, nvaredge, nvarcorn, nguard_work
+      Use physicaldata
+      Use workspace
+      Use tree, ONLY: laddress, strt_buffer, last_buffer
+      Use mpi_morton, ONLY: temprecv_buf,                              &
+                            ladd_strt, ladd_end
+#ifdef DEBUG
+      Use mpi_morton, ONLY: max_no_to_send
+#endif
+      Use paramesh_interfaces, ONLY: amr_1blk_guardcell_reset
+      Use paramesh_mpi_interfaces, Only :                              & 
+                                      mpiPack_blocks,                 &
+                                      mpi_Sbuffer_size,                & 
+                                      mpi_unpack_blocks,               & 
+                                      mpi_Rbuffer_size,                & 
+                                      mpi_pack_edges,                  & 
+                                      mpi_unpack_edges,                & 
+                                      mpiPack_fluxes,                 &
+                                      mpiUnpack_fluxes,               &
+                                      mpi_amr_read_guard_comm,         & 
+                                      mpi_amr_read_prol_comm,          & 
+                                      mpi_amr_read_flux_comm,          & 
+                                      mpi_amr_read_restrict_comm,      & 
+                                      mpiSet_message_sizes,           &
+                                      mpi_xchange_blocks
+#ifdef DEBUG
+      Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
+#endif
 
 #ifdef DEBUG_DAT
       use Logfile_interface, ONLY: Logfile_stamp
@@ -238,6 +244,8 @@ contains
       Integer, Intent(inout) :: tag_offset
       Logical, Intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      type(pdg_t), intent(IN),TARGET :: pdg
+      Integer, Intent(in)    :: ig
       type(gr_pmBlockGetter_t), intent(OUT), OPTIONAL, TARGET :: getter
 !!$      integer, intent(in), optional :: stages
       integer, intent(IN), optional :: ntypeMin, ntypeMax
@@ -304,6 +312,11 @@ contains
 !     * Destroy GETTER (This should include cleanup/deallocate of commCtl)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ASSOCIATE(nvar   => gr_thePdgDimens(ig) % nvar,   &
+              nguard => gr_thePdgDimens(ig) % nguard, &
+              nxb    => gr_thePdgDimens(ig) % nxb,    &
+              nyb    => gr_thePdgDimens(ig) % nyb,    &
+              nzb    => gr_thePdgDimens(ig) % nzb)
 
 
 
@@ -323,7 +336,7 @@ contains
 
 !-----install user selection for guardcell variables on reset defaults.
       If (lguard) Then
-        int_gcell_on_cc = gcell_on_cc
+        int_gcell_on_cc = pdg % gcell_on_cc
         int_gcell_on_fc = gcell_on_fc
         int_gcell_on_ec = gcell_on_ec
         int_gcell_on_nc = gcell_on_nc
@@ -439,19 +452,22 @@ contains
 
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in amr_1blk_guardcell!
       If (lguard) Then
          If (nxb/nguard < 2) nlayerstx = min(nlayerstx+1,   nguard)
          If (nyb/nguard < 2) nlayersty = min(nlayersty+k2d, nguard)
          If (nzb/nguard < 2) nlayerstz = min(nlayerstz+k3d, nguard)
       End If
-      
+#endif
+
       If (Present(flux_dir)) Then
          flux_dirt = flux_dir
       Else
          flux_dirt = 0
       End If
 
-      Call mpi_set_message_sizes(iopt,nlayerstx,nlayersty,nlayerstz)
+      Call mpiSet_message_sizes(iopt,ig,nlayerstx,nlayersty,nlayerstz)
 
       ! Much of the following is for future use - we later may want to have
       ! comm patterns for specific ranges of node types (or even of levels).
@@ -583,36 +599,36 @@ contains
 
         Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
-                              .True., .False., .False., flux_dir,      &
+                              .True., .False., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
-                              .True.,.False., .False., flux_dir,       &
+                              .True.,.False., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
         Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
-                              .False., .True., .False., flux_dir,      &
+                              .False., .True., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
-                              .False.,.True., .False., flux_dir,       &
+                              .False.,.True., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (ledge) Then
 
         Call mpi_Sbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_send,offset_tree,             & 
-                              .False., .False., .True., flux_dir,      &
+                              .False., .False., .True.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,    &
                               buffer_dim_recv,                         & 
-                              .False.,.False., .True., flux_dir,       &
+                              .False.,.False., .True.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       End If  ! End If (lguard.or.lprolong)
@@ -672,7 +688,8 @@ contains
                                     iopt,            &
      &                              lcc,lfc,lec,lnc, &
      &                              buffer_dim_recv, &
-     &                              nlayerstx,nlayersty,nlayerstz)
+     &                              nlayerstx,nlayersty,nlayerstz,&
+                                    pdg,ig)
          pCommCtl => getter % commCtl
 !!$         print*,'@',mype,' has pCommCtl % numReq =',pCommCtl % numReq,' after call gr_pmBlockGetterBuild',ntypeLoc,lev &
 !!$                 ,' family ',patFam
@@ -694,14 +711,15 @@ contains
 
       If (lguard.or.lprolong) Then
 
-        Call mpi_pack_blocks(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,         &
+        Call mpiPack_blocks(pat,mype,nprocs,iopt,lcc,lfc,lec,lnc,     &
                              buffer_dim_send,pCommCtl % sendBuf,offset_tree,     &
+                             pdg,ig,                                  &
                              nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_pack_fluxes(pat,mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,     &
-                             offset_tree,flux_dir)
+        Call mpiPack_fluxes(pat,mype,nprocs,buffer_dim_send,pCommCtl % sendBuf,     &
+                             offset_tree,pdg,ig,flux_dir)
 
       ElseIf (ledge) Then
 
@@ -716,6 +734,9 @@ contains
                               buffer_dim_recv,temprecv_buf,            &
                               3,                                       &
                               pCommCtl)
+
+    end ASSOCIATE
+
 
 !-----Store laddress pe limits to help optimize searching
       If (last_buffer > strt_buffer.and.nprocs > 1) Then
@@ -771,13 +792,14 @@ contains
 
          Call mpi_unpack_blocks(pat % commatrix_recv,                  &
                                 mype,iopt,lcc,lfc,lec,lnc,             &
-                                buffer_dim_recv,temprecv_buf,          &
+                                buffer_dim_recv,temprecv_buf,ig,       &
                                 nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
          
-         Call mpi_unpack_fluxes(pat % commatrix_recv,                  &
+         Call mpiUnpack_fluxes(pat % commatrix_recv,                  &
                                 mype,buffer_dim_recv,temprecv_buf,     &
+                                pdg,ig,                               &
                                 flux_dir)
 
       ElseIf (ledge) Then

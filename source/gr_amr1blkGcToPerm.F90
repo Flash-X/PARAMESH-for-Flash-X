@@ -14,11 +14,12 @@
 !!
 !! SYNOPSIS
 !!
-!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc)
-!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc, nlayersx,nlayersy,nlayersz)
+!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc, pdg,ig)
+!!   call gr_amr1blkGcToPerm(mype, iopt, nlayers, lb, lcc,lfc,lec,lnc, pdg,ig,nlayersx,nlayersy,nlayersz)
 !!
 !!   call gr_amr1blkGcToPerm(integer, integer, integer, integer,
-!                            logical, logical, logical, logical,
+!!                           logical, logical, logical, logical,
+!!                           TYPE(pdg_t), integer,
 !!                     optional integer, optional integer, optional integer, optional integer)
 !!
 !! ARGUMENTS
@@ -55,11 +56,13 @@
 !!   paramesh_preprocessor.fh
 !!
 !! USES
-!! 
+!!
+!!   gr_pmPdgDecl
 !!   paramesh_dimensions
 !!   physicaldata
 !!   workspace
 !!   tree
+!!   gr_pmFlashHookData
 !!
 !! CALLS
 !! 
@@ -87,6 +90,7 @@
 !!         mpi_amr_guardcell Peter MacNeice (1997) with modifications by Kevin Olson
 !!  Extracted: gr_amr1blkGcToPerm   Klaus Weide                   Jan 2021
 !!
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!***
 
 !!REORDER(5): unk1, facevar[xyz]1
@@ -96,13 +100,22 @@
 
 #include "paramesh_preprocessor.fh"
 
-    Subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         & 
+Subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         &
                                     lcc,lfc,lec,lnc,                   & 
+                               pdg,ig,                      &
                                nlayersx,nlayersy,nlayersz)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
+  use gr_pmPdgDecl, ONLY : pdg_t
+  use paramesh_dimensions, ONLY: gr_thePdgDimens
+  use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge
+
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              gt_facevarx,gt_facevary,gt_facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+      Use physicaldata, only:                     gcell_on_fc,    gcell_on_ec,    gcell_on_nc
+      Use physicaldata, only: force_consistency
       Use workspace, ONLY: work1, work
       Use tree,      ONLY: lnblocks, neigh
 
@@ -116,6 +129,8 @@
 !-----Input/Output Arguments
       Integer, intent(in) :: mype,iopt,nlayers,lb
       Logical, VALUE      :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !-----Local variables
@@ -132,6 +147,16 @@
 !------------------------------------
 !-----Begin Executable code section
 !------------------------------------
+
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1,      &
+            gcell_on_cc => pdg % gcell_on_cc      &
+            )
 
       If (iopt == 1) Then
 
@@ -391,7 +416,7 @@
       End Do  ! End Do k = 1,1+2*k3d
 
       End if  ! End If (lnblocks >= 1)
-
+    end ASSOCIATE
       Return
     End Subroutine gr_amr1blkGcToPerm
 

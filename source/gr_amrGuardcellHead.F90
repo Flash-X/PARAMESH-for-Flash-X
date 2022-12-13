@@ -60,7 +60,7 @@
 !! 
 !!   amr_1blk_guardcell_reset
 !!   amr_restrict
-!!   amr_1blk_guardcell
+!!   amr_abort
 !!   mpi_amr_comm_setup
 !!    
 !! RETURNS
@@ -86,6 +86,7 @@
 !!  2021       K. Weide  Created out of amr_guardcell for async domain data comm
 !!  2022-06-06 K. Weide  Call MPI_BARRIER only when USEBARS is defined
 !!  2022-06-13 K. Weide  Pass ntypeMin,ntypeMax,levelMin/Max to gr_mpiAmrComm
+!!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -97,20 +98,29 @@ Module gr_amrGuardcellHead_mod
 
 contains
     Subroutine gr_amrGuardcellHead(itContext, getter,mype,iopt,nlayers,         & 
-                               nlayersx,nlayersy,nlayersz, &
+                               pdg,ig, nlayersx,nlayersy,nlayersz, &
                                maxNodetype_gcWanted)
 
 !-----Use Statements
       use Timers_interface, ONLY : Timers_start, Timers_stop
+  use gr_pmPdgDecl, ONLY : pdg_t
       Use paramesh_dimensions
-      Use physicaldata
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              gt_facevarx,gt_facevary,gt_facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
+                              unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n, unk_n1
+      Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+      Use physicaldata, only:                     gcell_on_fc,    gcell_on_ec,    gcell_on_nc
+      Use physicaldata, only: diagonals,advance_all_levels,force_consistency,no_permanent_guardcells
       Use workspace
       Use tree
       use paramesh_comm_data
 
       Use paramesh_interfaces, Only : amr_1blk_guardcell_reset, & 
                                       amr_restrict,             & 
-                                      amr_1blk_guardcell
+                                      amr_abort
 
 !!$      Use paramesh_mpi_interfaces, Only : mpi_amr_comm_setup
       Use gr_mpiAmrComm_mod,   only : gr_mpiAmrComm
@@ -126,6 +136,8 @@ contains
       type(gr_itParam_t), intent(INOUT) :: itContext
       type(gr_pmBlockGetter_t),intent(INOUT), TARGET :: getter
       Integer, intent(in) :: mype,iopt,nlayers
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       Integer, intent(in), optional :: maxNodetype_gcWanted
 
@@ -157,6 +169,16 @@ contains
       Else
          maxNodetype_gcWanted_loc = -1
       End If
+
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            nvar        => gr_thePdgDimens(ig) % nvar,     &
+            unk         => pdg % unk,      &
+            unk1        => pdg % unk1,      &
+            gcell_on_cc => pdg % gcell_on_cc      &
+            )
 
       If (iopt == 1) Then
 
@@ -316,6 +338,7 @@ contains
                               lguard,lprolong,lflux,ledge,lrestrict,   & 
                               lfulltree,                               & 
                               iopt,lcc,lfc,lec,lnc,tag_offset,         &
+                                    pdg,ig,                            &
                               getter,                                  &
                               ntypeMin, ntypeMax,                      &
                               levelMin=lev, levelMax=lev,              &
@@ -327,6 +350,7 @@ contains
 
       itContext % mype = mype
       itContext % iopt = iopt
+  end ASSOCIATE
 
       Return
     End Subroutine gr_amrGuardcellHead

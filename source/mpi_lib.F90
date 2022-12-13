@@ -901,6 +901,7 @@
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
 ! Modified to use MPI_Isend:   Klaus Weide              October 2021
 ! Modified for pattern arg::   Klaus Weide              May 2022
+!!  2022-12-12 K. Weide  Use physicaldata with ONLY
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -915,7 +916,7 @@
 !------------------------------------------------------------------------
 
       use gr_pmCommDataTypes, ONLY: gr_pmCommPattern_t
-      use physicaldata
+      use physicaldata, ONLY: amr_error_checking
       use tree
       use workspace
       use mpi_morton, ONLY: is_buf, ir_buf
