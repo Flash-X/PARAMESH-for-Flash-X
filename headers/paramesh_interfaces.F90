@@ -43,6 +43,7 @@
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_to_perm
 !!  2022-11-08 K. Weide  added ig argument to amr_restrict_unk_genorder
 !!  2022-12-03 K. Weide  amr_1blk_cc_prol_inject interface with pdg,ig args
+!!  2022-12-12 K. Weide  Consolidation: more interfaces with pdg,ig args
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -507,10 +508,14 @@
       end subroutine amr_1blk_to_perm
       subroutine gr_amr1blkGcToPerm(mype,iopt,nlayers,lb,         &
                                     lcc,lfc,lec,lnc,              &
+                                    pdg,ig,                       &
                                     nlayersx,nlayersy,nlayersz)
+        use gr_pmPdgDecl, ONLY : pdg_t
         implicit none
         Integer, intent(in) :: mype,iopt,nlayers,lb
         Logical, VALUE      :: lcc,lfc,lec,lnc
+        type(pdg_t), intent(INOUT) :: pdg
+        integer, intent(in) :: ig
         Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
       end subroutine gr_amr1blkGcToPerm
       end interface

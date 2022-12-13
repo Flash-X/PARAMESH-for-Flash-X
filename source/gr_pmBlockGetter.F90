@@ -1814,6 +1814,7 @@ contains
               parentPresentRegions)
           call gr_amr1blkGcToPerm(mype,iopt,nlayers,blk,        &
                                  lcc,lfc,lec,lnc,              &
+                                 pdg,ig,                       &
                                  nlayersx,nlayersy,nlayersz)
 
       case(GRID_PAT_RESTRICT)

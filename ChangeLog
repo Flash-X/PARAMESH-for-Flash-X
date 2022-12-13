@@ -5,6 +5,9 @@
 	source/gr_pmBlockGetter.F90, source/mpi_amr_1blk_restrict.F90:
 	consolidate PDG and PmAsync features after merge.
 
+	* source/gr_pmBlockGetter.F90, headers/paramesh_interfaces.F90:
+	call gr_amr1blkGcToPerm with pdg,ig arguments.
+
 	* source/mpi_lib.F90,source/gr_mpiXchangeBlocks.F90: tighten some
 	use statements.
 
