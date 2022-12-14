@@ -1,3 +1,8 @@
+2022-12-13  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/gr_pmBlockGetter.F90: Call pmMpiUnpackBlksFromProc,
+	mpi_put_buffer with ig argument.
+
 2022-12-12  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/gr_amr1blkGcToPerm.F90, source/gr_amr1blkRestrict.F90

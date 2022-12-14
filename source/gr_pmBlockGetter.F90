@@ -23,6 +23,7 @@
 !!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
 !!  2021-06-14 K. Weide  Tweaked error message texts for lkup errors
 !!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
+!!  2022-12-13 K. Weide  Call pmMpiUnpackBlksFromProc, mpi_put_buffer with ig
 
 #include "constants.h"
 #include "Simulation.h"
@@ -346,6 +347,7 @@ contains
               receivedInd      => commCtl % receivedIndices, &
               allReceivedCount => commCtl % allReceivedCount,&
               pfam             => this % patternFamily,      &
+              ig               => this % ig,                 &
               iopt             => this % iopt,               &
               lcc              => this % lcc,                &
               lfc              => this % lfc,                &
@@ -816,7 +818,7 @@ contains
                   isrc = recvstatus(MPI_SOURCE,i)
                   call pmMpiUnpackBlksFromProc(commatrix_recv, isrc, iopt, &
                           lcc,lfc,lec,lnc, & 
-                          buf_dim,temprecv_buf, & 
+                          buf_dim,temprecv_buf,ig, &
                           nlayersx,nlayersy,nlayersz)
                end do
 
@@ -847,7 +849,7 @@ contains
                      isrc = recvstatus(MPI_SOURCE,i)
                      call pmMpiUnpackBlksFromProc(commatrix_recv, isrc, iopt, &
                           lcc,lfc,lec,lnc, & 
-                          buf_dim,temprecv_buf, & 
+                          buf_dim,temprecv_buf,ig, &
                           nlayersx,nlayersy,nlayersz)
                   end do
 
@@ -1877,7 +1879,7 @@ contains
   ! Variant of, and derived from, mpi_unpack_blocks.
   subroutine pmMpiUnpackBlksFromProc(commatrixRecv,sproc,iopt, & 
      &                             lcc,lfc,lec,lnc, & 
-     &                             buf_dim,R_buffer, & 
+     &                             buf_dim,R_buffer,ig, &
      &                             nlayersx,nlayersy,nlayersz)
     !------------------------------------------------------------------------
     !
@@ -1897,6 +1899,7 @@ contains
     ! Written: mpi_unpack_blocks   Maharaj Bhat & Michael Gehmeyr  March 2000
     ! Adapted: pmMpiUnpackBlksFromProc  Klaus Weide                  Jan 2021
     ! Modified for commatrixRecv arg : Klaus Weide                  June 2022
+    !  2022-12-13 K. Weide  Added ig argument
     !------------------------------------------------------------------------
     !
     ! Arguments:
@@ -1923,6 +1926,7 @@ contains
     integer, intent(in) :: sproc,buf_dim,iopt
     logical, intent(in) :: lcc,lfc,lec,lnc
     real,    intent(IN),ASYNCHRONOUS ::  R_buffer(buf_dim)
+    integer, intent(in) :: ig
     integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 
@@ -1951,7 +1955,7 @@ contains
             &        ' at index ',index,' buf_dim ',buf_dim
 #endif /* DEBUG */
        call mpi_put_buffer( &
-            &         lb,iopt,index,lcc,lfc,lec,lnc,buf_dim,R_buffer, &
+            &         lb,iopt,index,lcc,lfc,lec,lnc,buf_dim,R_buffer,ig, &
             &         nlayersx,nlayersy,nlayersz)
 #ifdef DEBUG
        write(*,*) 'pe ',mype,' lblk ',lblk,' unpacked into ',lb
