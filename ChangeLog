@@ -501,6 +501,11 @@
 
 	* updated copyright and license notices in some source files
 
+2020-12-11 - 2021-11-08  Klaus Weide  <kweide@uchicago.edu>
+
+	* Developed Paramesh asynch communications, including
+	gr_pmBlockGetter, in repository FLASH5.
+
 2004 - 2020-06-30  University of Chicago
 
 	* Customizations of PARAMESH code for FLASH versions 2, 3, and 4

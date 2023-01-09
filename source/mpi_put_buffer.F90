@@ -42,6 +42,8 @@
 !      R_buffer       receive buffer
 !
 !------------------------------------------------------------------------
+!! MODIFICATIONS
+!!  2021    Klaus Weide  some changes to support the asynchronous block getter
       use paramesh_dimensions
       use physicaldata
       use tree

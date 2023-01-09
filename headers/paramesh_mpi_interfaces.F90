@@ -24,6 +24,7 @@
 !!
 !! MODIFICATIONS
 !!
+!!  2021    Klaus Weide  interface changes to support the block getter
 !!  2022-05-13 K. Weide  Added pattern args of type gr_pmCommPattern_t
 !!  2022-05-20 K. Weide  Optional arg subPatNo for some interfaces;
 !!                       changed pattern arg to process_fetch_list to a POINTER
