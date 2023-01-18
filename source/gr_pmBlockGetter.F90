@@ -47,8 +47,8 @@ module gr_pmBlockGetter
 
   integer,parameter,public:: GRID_PAT_GC=10, GRID_PAT_PROLONG=20, GRID_PAT_FCORR=30, GRID_PAT_RESTRICT=40
 
-  integer,parameter::S_initial=1,S_error=2,S_checkQueue=3,S_checkLocal=4,S_checkReady=5,S_checkRemote=6,S_wait=7,S_gotData=8,&
-                     S_shutdown=9
+  integer,parameter::S_initial=0,S_checkQueue=1,S_checkReady=2,S_checkLocal=3,S_checkRemote=4,S_wait=5,S_gotData=6,&
+                     S_error=8,S_shutdown=9
 
   type, public :: gr_pmBlockGetter_t
      integer :: nodetype = LEAF
