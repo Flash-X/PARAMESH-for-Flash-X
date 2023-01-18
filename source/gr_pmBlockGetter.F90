@@ -326,7 +326,7 @@ contains
     logical :: get_data_quickly = .FALSE. !to become runtime paramter
     logical :: get_data_very_quickly = .FALSE. !to become runtime paramter
 !!$    logical :: push_data_out_quickly = .FALSE. !to become runtime paramter
-    logical :: push_data_out_very_quickly = .TRUE. !to become runtime paramter
+    logical :: push_data_out_very_quickly = .FALSE. !to become runtime paramter
     integer,parameter :: QUEUE_PACKET_SIZE = 1 !to become runtime paramter?
 
     associate(receivedAll      => this % receivedAll,        &
