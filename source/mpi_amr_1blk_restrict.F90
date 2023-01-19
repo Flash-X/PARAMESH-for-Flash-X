@@ -114,9 +114,9 @@
 !!  2020-12-16 K. Weide  Call gr_mpiAmrComm instead of mpi_amr_comm_setup
 !!  2021-01-23 K. Weide  Pass ntype=ntype, level=lev to gr_mpiAmrComm
 !!  2022-05-23 K. Weide  Updated comm call, skip blocks if ancillary call
-!!  2021-06-10 K. Weide  Pass ntypeMin/Max, levMin/Max to gr_mpiAmrComm
-!!  2021-06-13 K. Weide  Pass received lfulltree flag to gr_mpiAmrComm
-!!  2021-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
+!!  2022-06-10 K. Weide  Pass ntypeMin/Max, levMin/Max to gr_mpiAmrComm
+!!  2022-06-13 K. Weide  Pass received lfulltree flag to gr_mpiAmrComm
+!!  2022-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
 !!***
 
 !!REORDER(5): unk, facevar[xyz]

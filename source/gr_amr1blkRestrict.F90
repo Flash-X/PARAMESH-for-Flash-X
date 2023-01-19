@@ -95,7 +95,7 @@
 !!   Adapted: gr_amr1blkRestrict      Klaus Weide                Jan 2021
 !!
 !! MODIFICATIONS
-!!  2021-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
+!!  2022-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
 !!***
 
 !!REORDER(5): unk, facevar[xyz]

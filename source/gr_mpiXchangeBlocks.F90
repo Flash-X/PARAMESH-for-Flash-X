@@ -15,7 +15,7 @@ subroutine gr_mpiXchangeBlocks(pattern,mype,nprocs, tag_offset, &
 ! Written: (mpi_xchange_blocks) Maharaj Bhat & Michael Gehmeyr   March 2000
 ! Modified:  Klaus Weide                                         December 2020
 !!  2021       K. Weide  Created out of mpi_lib.F90 for async domain data comms
-!!  2021-06-13 K. Weide  Use pattern dummy arg to access the active comm pattern
+!!  2022-06-13 K. Weide  Use pattern dummy arg to access the active comm pattern
 !------------------------------------------------------------------------
 !
 ! Arguments:

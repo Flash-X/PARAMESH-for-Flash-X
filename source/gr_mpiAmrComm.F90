@@ -160,10 +160,10 @@
 !!
 !! MODIFICATIONS
 !!  2020-12-11 K. Weide  Created from mpi_amr_comm_setup for async dd comms
-!!  2021-06-13 K. Weide  Now has ntypeMin,ntypeMax,levelMin,levelMax dummy args
-!!  2021-06-13 K. Weide  Use pat => gr_theActiveCommPattern
-!!  2021-06-13 K. Weide  Special case logic for GC-fill and restrict variants
-!!  2021-06-13 K. Weide  For now, avoid GRID_SUBPAT_RESTRICT_ANC with getter
+!!  2022-06-13 K. Weide  Now has ntypeMin,ntypeMax,levelMin,levelMax dummy args
+!!  2022-06-13 K. Weide  Use pat => gr_theActiveCommPattern
+!!  2022-06-13 K. Weide  Special case logic for GC-fill and restrict variants
+!!  2022-06-13 K. Weide  For now, avoid GRID_SUBPAT_RESTRICT_ANC with getter
 !!***
 
 #include "paramesh_preprocessor.fh"
