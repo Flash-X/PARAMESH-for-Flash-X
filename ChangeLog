@@ -1,3 +1,8 @@
+2023-01-18  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/gr_pmBlockGetter.F90: renumber S_* states.
+	(pmBlockGet_) set push_data_out_very_quickly to FALSE.
+
 2022-12-13  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/gr_pmBlockGetter.F90: Call pmMpiUnpackBlksFromProc,

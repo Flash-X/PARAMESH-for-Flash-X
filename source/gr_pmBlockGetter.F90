@@ -20,10 +20,12 @@
 !!  need to use data that are in danger of being overwritten).
 
 !!  2021-01-09 K. Weide  Created for asynchronous domain data communications
-!!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
-!!  2021-06-14 K. Weide  Tweaked error message texts for lkup errors
+!!  2022-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
+!!  2022-06-14 K. Weide  Tweaked error message texts for lkup errors
 !!  2022-12-12 K. Weide  Consolidating PDG and PmAsync features
 !!  2022-12-13 K. Weide  Call pmMpiUnpackBlksFromProc, mpi_put_buffer with ig
+!!  2023-01-18 K. Weide  Renumber S_* states
+!!  2023-01-18 K. Weide  Set push_data_out_very_quickly to FALSE
 
 #include "constants.h"
 #include "Simulation.h"
@@ -51,8 +53,8 @@ module gr_pmBlockGetter
 
   integer,parameter,public:: GRID_PAT_GC=10, GRID_PAT_PROLONG=20, GRID_PAT_FCORR=30, GRID_PAT_RESTRICT=40
 
-  integer,parameter::S_initial=1,S_error=2,S_checkQueue=3,S_checkLocal=4,S_checkReady=5,S_checkRemote=6,S_wait=7,S_gotData=8,&
-                     S_shutdown=9
+  integer,parameter::S_initial=0,S_checkQueue=1,S_checkReady=2,S_checkLocal=3,S_checkRemote=4,S_wait=5,S_gotData=6,&
+                     S_error=8,S_shutdown=9
 
   type, public :: gr_pmBlockGetter_t
      integer :: ig       = DEFAULT_PDGNO
@@ -337,7 +339,7 @@ contains
     logical :: get_data_quickly = .FALSE. !to become runtime paramter
     logical :: get_data_very_quickly = .FALSE. !to become runtime paramter
 !!$    logical :: push_data_out_quickly = .FALSE. !to become runtime paramter
-    logical :: push_data_out_very_quickly = .TRUE. !to become runtime paramter
+    logical :: push_data_out_very_quickly = .FALSE. !to become runtime paramter
     integer,parameter :: QUEUE_PACKET_SIZE = 1 !to become runtime paramter?
 
     associate(receivedAll      => this % receivedAll,        &
