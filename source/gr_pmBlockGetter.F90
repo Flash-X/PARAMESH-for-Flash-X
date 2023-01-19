@@ -22,6 +22,8 @@
 !!  2021-01-09 K. Weide  Created for asynchronous domain data communications
 !!  2021-06-13 K. Weide  Store pointer to gr_theActiveCommPattern and use it
 !!  2021-06-14 K. Weide  Tweaked error message texts for lkup errors
+!!  2023-01-18 K. Weide  Renumber S_* states
+!!  2023-01-18 K. Weide  Set push_data_out_very_quickly to FALSE
 
 #include "constants.h"
 #include "Simulation.h"
