@@ -46,7 +46,7 @@
 !!
 !! CALLS
 !!
-!!   mpi_set_message_limits
+!!   mpiSet_message_limits
 !!   amr_mpi_find_blk_in_buffer
 !!
 !! RETURNS
@@ -63,22 +63,27 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          February 1999
+!!   Modified:     Klaus Weide             December 2021  for pdg stuff
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Use PDG-specific constants and variables where needed
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_perm_to_1blk( lcc,lfc,lec,lnc,lb,pe,iopt,idest)
+      Subroutine amr_perm_to_1blk( lcc,lfc,lec,lnc,lb,pe,iopt,idest,pdg,ig)
 
 !-----Use statements.
-      Use paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, nguard_work, &
+           k2d, k3d, nfacevar, ndim, nvaredge, nvarcorn
       Use physicaldata
       Use tree
       Use workspace
       Use mpi_morton
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
@@ -90,6 +95,8 @@
 !-----Input/Output arguemtns
       Integer, intent(in) ::  lb,pe,iopt,idest
       Logical, intent(in) ::  lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 
 !-----Local variables and arrays.
@@ -103,6 +110,13 @@
 
 !-----Begin executable code.
 
+    ASSOCIATE(nvar   => gr_thePdgDimens(ig) % nvar, &
+              nguard => gr_thePdgDimens(ig) % nguard, &
+              nxb    => gr_thePdgDimens(ig) % nxb,    &
+              nyb    => gr_thePdgDimens(ig) % nyb,    &
+              nzb    => gr_thePdgDimens(ig) % nzb,    &
+              unk    => pdg % unk, &
+              unk1   => pdg % unk1)
       nguard0 = nguard*npgs
       nguard_work0 = nguard_work*npgs
 
@@ -149,7 +163,7 @@
           ElseIf (lb > lnblocks) Then
 
              vtype = 1
-             Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+             Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
              index = index0
 
              If (no_permanent_guardcells) Then
@@ -201,7 +215,7 @@
              index = index0 + ngcell_on_cc*message_size_cc(dtype)
 
              vtype = 2
-             Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+             Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
              If (no_permanent_guardcells) Then
                 ia = ia + nguard
@@ -249,7 +263,7 @@
           ElseIf (lb > lnblocks) Then
 
              vtype = 3
-             Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+             Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
              If (no_permanent_guardcells) Then
                 ia = ia + nguard
@@ -299,7 +313,7 @@
           ElseIf (lb > lnblocks) Then
 
              vtype = 4
-             Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+             Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
              If (no_permanent_guardcells) Then
                 ia = ia + nguard
@@ -357,7 +371,7 @@
                            + ngcell_on_fc(2) * message_size_fcy(dtype) &
                            + ngcell_on_fc(3) * message_size_fcz(dtype) 
             vtype = 5
-            Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+            Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
   
             If (no_permanent_guardcells) Then
                ia = ia + nguard
@@ -403,7 +417,7 @@
             ElseIf (lb > lnblocks) Then
 
             vtype = 6
-            Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+            Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
             If (no_permanent_guardcells) Then
                ia = ia + nguard
@@ -451,7 +465,7 @@
             ElseIf (lb > lnblocks) Then
 
             vtype = 7
-            Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+            Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
             If (no_permanent_guardcells) Then
                ia = ia + nguard
@@ -512,7 +526,7 @@
                                      message_size_ec(dtype)
 
             vtype = 8
-            Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+            Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
             If (no_permanent_guardcells) Then
                ia = ia + nguard
@@ -559,7 +573,7 @@
  
             vtype = 0
             index = index0
-            Call mpi_set_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype)
+            Call mpiSet_message_limits(dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
             If (no_permanent_guardcells) Then
                ia = ia + nguard_work
@@ -583,6 +597,6 @@
           End If  ! End If (lb <= lnblocks)
 
       End If  ! End If (iopt == 1)
-
+    end ASSOCIATE
       Return
       End Subroutine amr_perm_to_1blk

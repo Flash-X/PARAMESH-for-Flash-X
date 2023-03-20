@@ -11,16 +11,21 @@
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      subroutine mpi_get_flux_buffer(mype,lb,dtype,offset, & 
-     &                          buffer_size,S_buffer,flux_dir)
+      subroutine mpiGet_flux_buffer(mype,lb,dtype,offset, & 
+     &                          buffer_size,S_buffer,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
-! This subroutine packs the block lb of the local arrays work,unk,facevar
+! This subroutine packs the block lb of the local arrays flux_[xyz]
 ! into the buffer S_buffer which is to be sent from mype.
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Made subroutine mpiGet_flux_buffer PDG-aware;
+!!                       cleaned up some unused variables and some comments;
+!!                       cleaned up USE statements for PDG support;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -33,30 +38,28 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use gr_pmPdgDecl, ONLY : pdg_t
+      use paramesh_dimensions, ONLY: ndim, k2d, k3d, maxblocks_alloc
+      use physicaldata, ONLY: ldtcomplete
       use tree
-      use workspace
       use paramesh_comm_data
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: dtype
 
       integer, intent(in)    :: lb,mype,buffer_size
       integer, intent(inout) :: offset
       real,    intent(inout) :: S_buffer(buffer_size)
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, optional, intent(in) :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0 
 
       integer :: index,ierrorcode,ierr
       integer :: ia,ib,ja,jb,ka,kb
@@ -67,13 +70,10 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
-
       ilimit = shape(S_buffer)
 
       if(lb.gt.maxblocks_alloc) then
-        write(*,*) 'ERROR : mpi_get_buffer pe ',mype, & 
+        write(*,*) 'ERROR : mpiGet_buffer pe ',mype, & 
      &        ' putting blk ',lb,' into Sbuf'
         call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       endif
@@ -100,9 +100,13 @@
 
 ! set vtype as though appropriate for cell-centered data
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
+      ASSOCIATE(nfluxes => pdg % nfluxes, &
+                flux_x  => pdg % flux_x,  &
+                flux_y  => pdg % flux_y,  &
+                flux_z  => pdg % flux_z)
 ! pack the flux_x array for block lb
 
       ia = ia0
@@ -218,6 +222,7 @@
       endif
       endif
       endif
+    end ASSOCIATE
 
 ! Add tree info to buffer
 
@@ -314,20 +319,24 @@
       offset = index 
 
       return
-      end subroutine mpi_get_flux_buffer
+      end subroutine mpiGet_flux_buffer
 
 !------------------------------------------------------------------------
 
-      subroutine mpi_get_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
-     &                                       flux_dir)
+      subroutine mpiGet_Sbuffer_size_fluxes(mype,lb,dtype,offset, & 
+     &                                       ig,nfluxes,flux_dir)
 
 !------------------------------------------------------------------------
 !
-! This subroutine packs the block lb of the local arrays work,unk,facevar
+! This subroutine computes the buffer size needed
+! for packing the block lb of the local arrays flux_[xyz]
 ! into the buffer S_buffer which is to be sent from mype.
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Subroutine mpiGet_Sbuffer_size_fluxes takes nfluxes arg
+!!  2022-11-08 K. Weide  Cleaned up USE statements for PDG support
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -339,24 +348,22 @@
 ! new code
 !      dtype          type of message to be added to buffer
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use paramesh_dimensions, ONLY: ndim, k2d, k3d
       use tree
-      use workspace
       use paramesh_comm_data
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       implicit none
-
-      include 'mpif.h'
 
       integer, intent(in)    :: dtype
 
       integer, intent(in)    :: lb,mype
       integer, intent(inout) :: offset
+      integer, intent(in)    :: ig
+      integer, intent(in)    :: nfluxes
       integer, optional, intent(in) :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -387,8 +394,8 @@
 
 ! set vtype as though appropriate for cell-centered data
       vtype = 1
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
 ! pack the flux_x array for block lb
 
@@ -574,4 +581,4 @@
       offset = index 
 
       return
-      end subroutine mpi_get_Sbuffer_size_fluxes
+      end subroutine mpiGet_Sbuffer_size_fluxes

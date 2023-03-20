@@ -72,6 +72,8 @@
 !!
 !!   Peter MacNeice (2000).
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -83,7 +85,7 @@
                                               psurrblks)
 
 !-----Use statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: k2d, k3d
       Use physicaldata
       Use tree
       Use mpi_morton

@@ -6,7 +6,7 @@
 ! Copyright (C) 2003, 2004 United States Government as represented by the
 ! National Aeronautics and Space Administration, Goddard Space Flight
 ! Center.  All Rights Reserved.
-! Copyright (C) 2021 The University of Chicago
+! Copyright (C) 2022 The University of Chicago
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -108,19 +108,19 @@
 !!
 !! CALLS
 !!
-!!   mpi_pack_blocks
+!!   mpiPack_blocks
 !!   mpi_Sbuffer_size
 !!   mpi_unpack_blocks
 !!   mpi_Rbuffer_size
 !!   mpi_pack_edges
 !!   mpi_unpack_edges
-!!   mpi_pack_fluxes
-!!   mpi_unpack_fluxes
+!!   mpiPack_fluxes
+!!   mpiUnpack_fluxes
 !!   mpi_amr_read_guard_comm
 !!   mpi_amr_read_prol_comm
 !!   mpi_amr_read_flux_comm
 !!   mpi_amr_read_restrict_comm
-!!   mpi_set_message_sizes
+!!   mpiSet_message_sizes
 !!   mpi_xchange_blocks
 !!
 !! RETURNS
@@ -146,6 +146,10 @@
 !!   Peter MacNeice (June 2000) with modifications by Kevin Olson for
 !!   directional guardcell filling and flux conservation.
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Use PDG-specific nguard, nvar, n[xyz]b, gcell_on_cc
+!!  2022-11-02 K. Weide  Made UNNECESSARY nlayerst[xyz] increase (large nguard)
+!!  2022-11-03 K. Weide  Updated mpiSet_message_sizes call
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -154,11 +158,14 @@
                                     lguard,lprolong,                   & 
                                     lflux,ledge,lrestrict,lfulltree,   & 
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   & 
+                                    pdg,ig,                            &
                                     nlayersx,nlayersy,nlayersz,        & 
                                     flux_dir)
 
 !-----Use statements.
-      Use paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, k2d, k3d, &
+           nfacevar, nvaredge, nvarcorn, nguard_work
       Use physicaldata
       Use workspace
       Use tree
@@ -168,19 +175,19 @@
       Use mpi_morton, ONLY: commatrix_send, commatrix_recv, max_no_to_send
 #endif
       Use paramesh_mpi_interfaces, Only :                              & 
-                                      mpi_pack_blocks,                 & 
+                                      mpiPack_blocks,                 &
                                       mpi_Sbuffer_size,                & 
                                       mpi_unpack_blocks,               & 
                                       mpi_Rbuffer_size,                & 
                                       mpi_pack_edges,                  & 
                                       mpi_unpack_edges,                & 
-                                      mpi_pack_fluxes,                 & 
-                                      mpi_unpack_fluxes,               & 
+                                      mpiPack_fluxes,                 &
+                                      mpiUnpack_fluxes,               &
                                       mpi_amr_read_guard_comm,         & 
                                       mpi_amr_read_prol_comm,          & 
                                       mpi_amr_read_flux_comm,          & 
                                       mpi_amr_read_restrict_comm,      & 
-                                      mpi_set_message_sizes,           & 
+                                      mpiSet_message_sizes,           &
                                       mpi_xchange_blocks
 #ifdef DEBUG
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
@@ -202,6 +209,8 @@
       Integer, Intent(inout) :: tag_offset
       Logical, Intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
+      type(pdg_t), intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       Integer, Intent(in), Optional :: nlayersx,nlayersy,nlayersz
       Integer, Intent(in), Optional :: flux_dir
 
@@ -232,7 +241,11 @@
 
 !-----Begin executable code.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+    ASSOCIATE(nvar   => gr_thePdgDimens(ig) % nvar,   &
+              nguard => gr_thePdgDimens(ig) % nguard, &
+              nxb    => gr_thePdgDimens(ig) % nxb,    &
+              nyb    => gr_thePdgDimens(ig) % nyb,    &
+              nzb    => gr_thePdgDimens(ig) % nzb)
 
 #ifdef AIX
       buffer_dim = nvar*iu_bnd1*ju_bnd1*ku_bnd1*maxblocks
@@ -265,7 +278,7 @@
      &           ,' max_no_to_send ', &
      &           max_no_to_send,' tag_offset ',tag_offset, &
      &           ' nprocs ',nprocs, & 
-     &           '  gcell_on_cc ', gcell_on_cc,' iopt ',iopt
+     &           '  gcell_on_cc ', pdg % gcell_on_cc,' iopt ',iopt
 #endif /* DEBUG */
       If (iopt == 1) Then
 
@@ -273,7 +286,7 @@
 
 !-----install user selection for guardcell variables on reset defaults.
       If (lguard) Then
-        int_gcell_on_cc = gcell_on_cc
+        int_gcell_on_cc = pdg % gcell_on_cc
         int_gcell_on_fc = gcell_on_fc
         int_gcell_on_ec = gcell_on_ec
         int_gcell_on_nc = gcell_on_nc
@@ -389,19 +402,22 @@
 
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in amr_1blk_guardcell!
       If (lguard) Then
          If (nxb/nguard < 2) nlayerstx = min(nlayerstx+1,   nguard)
          If (nyb/nguard < 2) nlayersty = min(nlayersty+k2d, nguard)
          If (nzb/nguard < 2) nlayerstz = min(nlayerstz+k3d, nguard)
       End If
-      
+#endif
+
       If (Present(flux_dir)) Then
          flux_dirt = flux_dir
       Else
          flux_dirt = 0
       End If
 
-      Call mpi_set_message_sizes(iopt,nlayerstx,nlayersty,nlayerstz)
+      Call mpiSet_message_sizes(iopt,ig,nlayerstx,nlayersty,nlayerstz)
 
       If (lguard.and.(.not.lrestrict) .or. lfulltree ) Then
 
@@ -442,36 +458,36 @@
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .True., .False., .False., flux_dir,      &
+                              .True., .False., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .True.,.False., .False., flux_dir,       &
+                              .True.,.False., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .False., .True., .False., flux_dir,      &
+                              .False., .True., .False.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .False.,.True., .False., flux_dir,       &
+                              .False.,.True., .False.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (ledge) Then
 
         Call mpi_Sbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_send,offset_tree,             & 
-                              .False., .False., .True., flux_dir,      &
+                              .False., .False., .True.,pdg,ig, flux_dir,   &
                               nlayerstx,nlayersty,nlayerstz)
 
         Call mpi_Rbuffer_size(mype,nprocs,iopt,lcc,lfc,lec,lnc,        & 
                               buffer_dim_recv,                         & 
-                              .False.,.False., .True., flux_dir,       &
+                              .False.,.False., .True.,pdg,ig, flux_dir,    &
                               nlayerstx,nlayersty,nlayerstz)
 
       End If  ! End If (lguard.or.lprolong)
@@ -512,14 +528,15 @@
 
       If (lguard.or.lprolong) Then
 
-        Call mpi_pack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         & 
+        Call mpiPack_blocks(mype,nprocs,iopt,lcc,lfc,lec,lnc,         &
                              buffer_dim_send,send_buf,offset_tree,     & 
+                             pdg,ig,                                  &
                              nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
 
-        Call mpi_pack_fluxes(mype,nprocs,buffer_dim_send,send_buf,     & 
-                             offset_tree,flux_dir)
+        Call mpiPack_fluxes(mype,nprocs,buffer_dim_send,send_buf,     &
+                             offset_tree,pdg,ig,flux_dir)
 
       ElseIf (ledge) Then
 
@@ -536,12 +553,13 @@
       If (lguard.or.lprolong) Then
 
          Call mpi_unpack_blocks(mype,iopt,lcc,lfc,lec,lnc,             & 
-                                buffer_dim_recv,temprecv_buf,          & 
+                                buffer_dim_recv,temprecv_buf,ig,   &
                                 nlayerstx,nlayersty,nlayerstz)
 
       ElseIf (lflux) Then
          
-         Call mpi_unpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     & 
+         Call mpiUnpack_fluxes(mype,buffer_dim_recv,temprecv_buf,     &
+                                pdg,ig,                               &
                                 flux_dir)
 
       ElseIf (ledge) Then
@@ -549,7 +567,7 @@
          Call mpi_unpack_edges(mype,buffer_dim_recv,temprecv_buf)
 
       End If  ! End If (lguard.or.lprolong)
-
+    end ASSOCIATE
 #ifndef AIX
       If (Allocated(send_buf)) Deallocate(send_buf)
 #endif

@@ -100,7 +100,7 @@
 !! CALLS
 !!
 !!     mpi_amr_local_surr_blks_lkup
-!!     mpi_amr_1blk_guardcell_c_to_f
+!!     mpiAmr_1blk_guardcell_c_to_f
 !!     mpi_amr_get_remote_block
 !!     amr_perm_to_1blk
 !!     amr_1blk_guardcell_srl
@@ -198,20 +198,37 @@
 !!   Michael Gehmeyr & Peter MacNeice (November 1999) with modifications by 
 !!   Kevin Olson for layered guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
+!!  2022-11-02 K. Weide  Made UNNECESSARY nlayers0[xyz] increase (large nguard)
+!!  2022-11-03 K. Weide  Updated mpi_amr_get_remote_block call, debugging tweaks
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine amr_1blk_guardcell(                                   & 
                                     mype,iopt,nlayers,lb,pe,           & 
                                     lcc,lfc,lec,lnc,                   & 
                                     l_srl_only,icoord,ldiag,           & 
+                                    pdg,ig,                            & 
                                     nlayersx,nlayersy,nlayersz)
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      Use paramesh_dimensions, only: k2d,k3d,nguard_work,nvar_work, nfacevar,nvarcorn,nvaredge
+!      Use physicaldata
+      Use physicaldata, only: interp_mask_unk,     &
+                          interp_mask_facex,interp_mask_facey,interp_mask_facez,&
+                          interp_mask_ec,      &
+                          interp_mask_nc
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                          facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_n , unk_e_x ,unk_e_y ,unk_e_z, &
+                              unk_n1, unk_e_x1,unk_e_y1,unk_e_z1
+      Use physicaldata, only: amr_error_checking, lnew_parent
+      Use physicaldata, only: lprolong_in_progress, lrestrict_in_progress
+      Use physicaldata, only: lsingular_line, spherical_pm, mpi_pattern_id
+      Use physicaldata, only: pcache_blk_u,pcache_pe_u, pcache_blk_w,pcache_pe_w
       Use tree
       Use timings
       Use workspace
@@ -219,7 +236,7 @@
       Use constants
       Use paramesh_mpi_interfaces, Only :                              & 
                                       mpi_amr_local_surr_blks_lkup,    & 
-                                      mpi_amr_1blk_guardcell_c_to_f,   & 
+                                      mpiAmr_1blk_guardcell_c_to_f,    &
                                       mpi_amr_get_remote_block
       Use paramesh_interfaces, Only : amr_perm_to_1blk,                & 
                                       amr_1blk_guardcell_srl
@@ -235,6 +252,8 @@
 !-----Input/Output arguements.
       Logical, intent(in) :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       Integer, intent(in) :: mype,lb,pe,iopt,nlayers,icoord
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !-----Local arrays and variables
@@ -266,6 +285,25 @@
 
 !------Begin Executable code.
 
+      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard,   &
+                nvar        => gr_thePdgDimens(ig) % nvar,     &
+                il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+                iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+                jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+                ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+                kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+                ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+                il_bndi     => gr_thePdgDimens(ig) % il_bndi,  &
+                iu_bndi     => gr_thePdgDimens(ig) % iu_bndi,  &
+                jl_bndi     => gr_thePdgDimens(ig) % jl_bndi,  &
+                ju_bndi     => gr_thePdgDimens(ig) % ju_bndi,  &
+                kl_bndi     => gr_thePdgDimens(ig) % kl_bndi,  &
+                ku_bndi     => gr_thePdgDimens(ig) % ku_bndi,  &
+                unk1        => pdg % unk1      &
+            )
       pbnd_box(:,:) = 0.
       lcoarse = .FALSE.
       accuracy = 10./10.**precision(accuracy)
@@ -312,10 +350,14 @@
          End If
       End If  ! End If (iopt == 1)
 
+#ifdef MAYBE_UNNECESSARY
+      ! NOTE: If this gets enabled, so must be corresponding code in
+      ! mpi_amr_comm_setup (or similar places)!
       If (nxb/nguard < 2) nlayers0x = min(nlayers0x+1,   nguard)
       If (nyb/nguard < 2) nlayers0y = min(nlayers0y+k2d, nguard)
       If (nzb/nguard < 2) nlayers0z = min(nlayers0z+k3d, nguard)
-      
+#endif
+
       If (iopt == 1 .And.                                              & 
           All(interp_mask_unk(:) < 20)   .And.                         & 
           All(interp_mask_facex(:) < 20) .And.                         & 
@@ -641,8 +683,23 @@
 !-----Put leaf block lb's data into the '1blk' datastructures, 
 !-----with the appropriate guardcell padding.
       idest = 1
-      Call amr_perm_to_1blk(lcc,lfc,lec,lnc,lb,pe,iopt,idest)
+      Call amr_perm_to_1blk(lcc,lfc,lec,lnc,lb,pe,iopt,idest,pdg,ig)
 
+!!$550   format('amr_1blk_guardcell: lb',I3,' parent',I4,' lcoarse ',L1)
+!!$      print 550, lb,parent(1,lb),lcoarse
+!!$        print 552,'J+',maxval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,1)), maxval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,1))
+!!$        print 552,'Jm',maxval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,1)), maxval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,1))
+!!$        print 552,'J-',maxval(unk1(1,        1:nguard,         1:nguard ,1,1)), maxval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,1)),&
+!!$             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,1))
+!!$        print 553,('-',i=1,80)
+!!$        print 552,'j+',minval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,1)), minval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,1))
+!!$        print 552,'jm',minval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,1)), minval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,1))
+!!$        print 552,'j-',minval(unk1(1,        1:nguard,         1:nguard ,1,1)), minval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,1)),&
+!!$             &         minval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,1))
       If (iopt == 1) Then
           pcache_pe  = pcache_pe_u
           pcache_blk = pcache_blk_u
@@ -698,10 +755,31 @@
         End If
 
         idest = 2
+#ifdef DEBUG_ALL
+551     format(1x,'@ ',I0,' fill 1blk slot ',I1,' parent',I4,'@',I0,' nlayers0[xy]:',I3,I3)
+        print 551,mype, idest,parent_lb,parent_pe,nlayers0x,nlayers0y
+#endif
         Call mpi_amr_get_remote_block(mype,parent_pe,parent_lb,        & 
-                                      idest,iopt,lcc,lfc,lec,lnc,      & 
+                                      idest,iopt,lcc,lfc,lec,lnc,pdg,ig, &
                                       nlayers0x,nlayers0y,nlayers0z)
-
+552     format(1x,'@ ',I0,3x,A2,1x,3(9P,G22.15:1x))
+553     format(1x,'@ ',I0,3x,80(A1))
+#ifdef DEBUG_ALL
+        print*,'Shape(unk1):',SHAPE(unk1),',Per-regions maxvals:'
+        print 552,mype,'J+',maxval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,2)), maxval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,2))
+        print 552,mype,'Jm',maxval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,2)), maxval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,2))
+        print 552,mype,'J-',maxval(unk1(1,        1:nguard,         1:nguard ,1,2)), maxval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,2)),&
+             &         maxval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,2))
+        print 553,mype,('-',i=1,80)
+        print 552,mype,'j+',minval(unk1(1,        1:nguard ,ju_bndi+1:ju_bnd1,1,2)), minval(unk1(1,nguard+1:iu_bndi,ju_bndi+1:ju_bnd1,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1,ju_bndi+1:ju_bnd1,1,2))
+        print 552,mype,'jm',minval(unk1(1,        1:nguard , nguard+1:ju_bndi,1,2)), minval(unk1(1,nguard+1:iu_bndi, nguard+1:ju_bndi,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1, nguard+1:ju_bndi,1,2))
+        print 552,mype,'j-',minval(unk1(1,        1:nguard,         1:nguard ,1,2)), minval(unk1(1,nguard+1:iu_bndi,        1:nguard ,1,2)),&
+             &         minval(unk1(1,iu_bndi+1:iu_bnd1,        1:nguard ,1,2))
+#endif
 !-------Do guardcell filling for lb's parent from any surrounding blocks at 
 !-------the same refinement level as this parent.
 !-------Diagonal elements are required to ensure that all cells are filled
@@ -741,27 +819,29 @@
                                     icoord_loc,ldiag_loc,              & 
                                     nlayers0x,                         &
                                     nlayers0y,                         &
-                                    nlayers0z,ippolar,curBlock=lb)
+                                    nlayers0z,ippolar,pdg,ig,          &
+                                    curBlock=lb)
          if (lcc .and. iopt.eq.1)  & 
      &        call flash_convert_cc_hook(unk1(:,:,:,:,2), nvar, & 
      &         il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &         why=gr_callReason_PROLONG)
+     &         why=gr_callReason_PROLONG, ig=ig)
 
 
         End If  ! End If ( (parent_lb > 0) .And. ...)
 
 !-------Do guardcell filling from coarse neigbors into the current block
-        Call mpi_amr_1blk_guardcell_c_to_f( mype,lb,pe,iopt,nlayers,   & 
+        Call mpiAmr_1blk_guardcell_c_to_f( mype,lb,pe,iopt,nlayers,    &
                                             surrblks,                  & 
                                             lcc,lfc,lec,lnc,           & 
                                             icoord,ldiag,              & 
                                             nlayers0x,                 & 
                                             nlayers0y,                 & 
-                                            nlayers0z,ipolar)
+                                            nlayers0z,ipolar,pdg,ig)
         if (lcc .and. iopt.eq.1)  & 
      &       call flash_unconvert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &       il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG)
+     &       where=gr_cells_GUARD, why=gr_callReason_PROLONG, &
+     &       ig=ig)
 !------------------------------------
 
       End If  ! End If (lcoarse)
@@ -781,7 +861,7 @@
                                   lcc,lfc,lec,lnc,                     & 
                                   icoord,ldiag,                        & 
                                   nlayers0x,nlayers0y,nlayers0z,       & 
-                                  ipolar,curBlock=lb)
+                                  ipolar,pdg,ig,curBlock=lb)
 
 
       If (timing_mpi) Then
@@ -801,7 +881,7 @@
       timer_amr_1blk_guardcell(0) = timer_amr_1blk_guardcell(0)        & 
                                  +  mpi_wtime() - time1
       End If
-
+      end ASSOCIATE
       Return
       End Subroutine amr_1blk_guardcell
 

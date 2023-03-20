@@ -61,6 +61,7 @@
 !!   Chris Daley - modifications
 !!
 !! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Cleaned up various Use statements with ONLY
 !!  2022-12-01 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 !!***
 
@@ -70,9 +71,9 @@ Subroutine local_tree_build ()
   
   !-----Use Statements.
   Use local_tree_common
-  Use physicaldata
+  Use physicaldata, ONLY: use_reduced_orrery
   Use tree
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: ndim
   Use paramesh_comm_data
   Use mpi_morton, Only : lperiodicx, lperiodicy, lperiodicz
   

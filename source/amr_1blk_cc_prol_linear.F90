@@ -24,7 +24,7 @@
 !!
 !! ARGUMENTS
 !!
-!!  Real,    intent(inout) :: recv(:,:,:,:)
+!!  Real,    intent(in) :: recv(:,:,:,:)
 !!    Data array holding the data extracted from unk which will be prolonged
 !!    and placed into the unk1 array.
 !!
@@ -91,29 +91,31 @@
 !!
 !!   Written :     Peter MacNeice          January 1997
 !!
+!! MODIFICATIONS
+!!  2022-10-07 Klaus Weide  Made PDG-aware
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(4): unk1
+!!REORDER(4): recv
+#include "Simulation.h"
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_1blk_cc_prol_linear               & 
+Subroutine amr_1blk_cc_prol_linear               &
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,  & 
-         mype,ivar)
+         mype,ivar,pdg)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use prolong_arrays
+  use gr_pmPdgDecl, ONLY : pdg_t
+  Use prolong_arrays, ONLY: prol_init !DEV: a leftover? Make it a PDG-specific flag?
 
       Implicit None
 
 !-----Input/Output Variables
-      Real,    Intent(inout) :: recv(:,:,:,:)
+      Real,    Intent(IN)    :: recv(:,:,:,:)
       Integer, Intent(in)    :: ia,ib,ja,jb,ka,kb
       Integer, Intent(in)    :: idest,ioff,joff,koff,mype
       Integer, Intent(in)    :: ivar
+  type(pdg_t),intent(INOUT) :: pdg
 
 !-----Local variables
       Real    :: dx,dy,dz,cx,cy,cz
@@ -146,8 +148,16 @@
       If (joff.gt.0) j_ind = 2
       If (koff.gt.0) k_ind = 2
 
+  ASSOCIATE(prol_indexx => pdg % prol_indexx,              &
+            prol_indexy => pdg % prol_indexy,              &
+            prol_indexz => pdg % prol_indexz,              &
+            prol_dx     => pdg % prol_dx,                  &
+            prol_dy     => pdg % prol_dy,                  &
+            prol_dz     => pdg % prol_dz,                  &
+            unk1        => pdg % unk1          &
+        )
 !-----Interpolation loop.
-      Do k=kcl,kcu
+    Do k=kcl,kcu
            k1 = prol_indexz(1,k,k_ind)
            k1p= prol_indexz(2,k,k_ind)
            dz = prol_dz(k)
@@ -177,8 +187,9 @@
 
                   End Do  ! End Do i=icl,icu
            End Do  ! End Do j=jcl,jcu
-      End Do  ! End Do k=kcl,kcu
+    End Do  ! End Do k=kcl,kcu
+  end ASSOCIATE
 
 
-      Return
-      End Subroutine amr_1blk_cc_prol_linear
+  Return
+End Subroutine amr_1blk_cc_prol_linear

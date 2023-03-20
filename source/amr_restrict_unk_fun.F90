@@ -16,8 +16,8 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff)
-!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer)
+!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff,   ig))
+!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer,integer)
 !!
 !! ARGUMENTS
 !!
@@ -27,6 +27,7 @@
 !!                      block; each of these numbers should be either 0 or half
 !!                      the number of interior cells in the block for the
 !!                      relevant direction.
+!!   ig :               PDG group
 !!
 !! USES
 !!
@@ -55,12 +56,15 @@
 !!   Written :     Peter MacNeice          January 1997
 !!   Modified by Kevin Olson for high order restriction, 2004.
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
+!! MODIFICATIONS
+!!  2022-11-02 K. Weide  Added 'ig' dummy argument and used it for 'nvar'
+!!  2022-11-08 K. Weide  Pass ig to amr_restrict_unk_genorder
 !!***
 
-Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
+Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, ig)
 
 !-----Use statements.
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: gr_thePdgDimens
   Use physicaldata
   Use paramesh_interfaces, only : amr_restrict_unk_genorder,       &
                                       amr_restrict_unk_user,           &
@@ -72,13 +76,14 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
   Real, Intent(in)    :: datain(:,:,:,:)
   Real, Intent(inout) :: dataout(:,:,:,:)
   Integer, Intent(in) :: ioff,joff,koff
+  integer, intent(in) :: ig
 
 !-----Local variables.
   Integer :: ivar, order
 
 !-----Begin Executable code.
 
-  Do ivar = 1, nvar
+  Do ivar = 1, gr_thePdgDimens(ig) % nvar
 
      If (int_gcell_on_cc(ivar)) Then
 
@@ -87,7 +92,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
 !-----------Call the default interpolation routine for interpolation 
             order = interp_mask_unk_res(ivar)
             If (order <=0 .or. order > 5) order = 1
-            Call amr_restrict_unk_genorder(datain,dataout,order,ivar)
+            Call amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
 
          Elseif (interp_mask_unk_res(ivar) == 40) Then
 !--------User defined interpolation to be used for

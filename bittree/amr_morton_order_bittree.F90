@@ -30,6 +30,8 @@
 !!  integer,intent(in)  :: nprocs
 !!  integer,intent(in)  :: mype
 !!
+!! MODIFICATIONS
+!!  2022-10-11 Klaus Weide  Use explicit interface for amr_redist_blk
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -37,6 +39,7 @@
       subroutine amr_morton_order_bittree(nprocs,mype,ref_count)
 
 !-----Use statements
+      Use paramesh_interfaces, only : amr_redist_blk
       use paramesh_dimensions
       use physicaldata
       use tree

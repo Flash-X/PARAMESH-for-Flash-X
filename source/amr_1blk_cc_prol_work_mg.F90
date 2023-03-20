@@ -75,12 +75,13 @@
 ! HISTORY   2010    modified to do direct injection for first cell in from a face,
 !                   and named amr_1blk_cc_prol_work_mg            - Marcos Vanella
 !           2016    moved into Grid/GridMain                      - Klaus Weide
+!           2022    made PDG-aware using DEFAULT_PDGNO            - Klaus Weide
 !------------------------------------------------------------------------
 
-      use paramesh_dimensions
-      use physicaldata
-      use tree
-      use workspace
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, k2d, k3d, &
+           nguard_work, iuw1, juw1, kuw1
+      use tree, ONLY: neigh
+      use workspace, ONLY: work1
 
       implicit none
 
@@ -121,6 +122,11 @@
 
 !------------------------------------
 
+   ASSOCIATE(nguard     => gr_thePdgDimens(DEFAULT_PDGNO) % nguard,  &
+             nxb         => gr_thePdgDimens(DEFAULT_PDGNO) % nxb,   &
+             nyb         => gr_thePdgDimens(DEFAULT_PDGNO) % nyb,   &
+             nzb         => gr_thePdgDimens(DEFAULT_PDGNO) % nzb    &
+        )
       if (first_call) then
          !$omp critical (CritRegAmr_1blk_cc_prol_work_mg)
          first_call = .false.
@@ -455,7 +461,7 @@
       end do                    ! end loop over j
       end do                    ! end loop over k
 
+  end ASSOCIATE
 
- 2    return
       end subroutine amr_1blk_cc_prol_work_mg
 

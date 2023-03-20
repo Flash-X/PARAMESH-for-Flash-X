@@ -19,6 +19,7 @@
 !!                               icoord,ldiag,nlayers0x, 
 !!                               nlayers0y,nlayers0z, 
 !!                               ipolar,
+!!                               pdg,ig,
 !!                               curBlock)
 !!   Call amr_1blk_guardcell_srl(integer,integer,integer,integer,
 !!                                integer,integer, 
@@ -27,6 +28,7 @@
 !!                               integer,logical,integer, 
 !!                               integer,integer, 
 !!                               integer array,
+!!                               TYPE(pdg_t),integer,
 !!                               OPTIONAL integer)
 !!
 !! ARGUMENTS
@@ -68,6 +70,8 @@
 !!                                    coordinates, ipolar=-1 means the block touches the
 !!                                    north polar axis, ipolar=+1 the south polar axis,
 !!                                    and ipolar=0 that it is not next to the polar axis.
+!!   pdg : TYPE(pdg_t),intent(INOUT)  Current physicaldata group object
+!!   ig : integer,,intent(IN)         Number of current physicaldata group
 !!   Integer, Intent(in),OPTIONAL :: curBlock  block ID for which the call to
 !!                                             amr_1blk_guardcell() call was made
 !!                                       (assuming we are called from amr_1blk_guardcell,
@@ -117,6 +121,8 @@
 !!   Modified:     Kevin Olson for directional guardcell filling.
 !!
 !!   Modified:     Klaus Weide added curBlock argument    July 2012
+!!   Modified:     Klaus Weide added pdg stuff            Dec  2021
+!!   Modified:     Klaus Weide added ig to amr_1blk_bcset Oct  2022
 !!
 !!***
 
@@ -125,13 +131,16 @@
                                         lcc,lfc,lec,lnc,               & 
                                         icoord,ldiag,nlayers0x,        & 
                                         nlayers0y,nlayers0z,           & 
-                                        ipolar,curBlock)
+                                        ipolar,pdg,ig,curBlock)
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use timings
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs
+      Use paramesh_dimensions, only: gc_off_x, gc_off_y, gc_off_z
+      Use physicaldata, ONLY: lrestrict_in_progress
+      Use tree, only: nfaces
+      Use timings!, only: timer_amr_1blk_guardcell_srl, timing_mpi,timing_mpix
       Use workspace
 
       Use paramesh_interfaces, Only : amr_1blk_cc_cp_remote,           & 
@@ -151,6 +160,8 @@
       Logical, Intent(in) :: lcc,lfc,lec,lnc,ldiag
       Integer, Intent(in) :: nlayers0x,nlayers0y,nlayers0z
       Integer, Intent(in) :: ipolar(2)
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer,OPTIONAL, Intent(in) :: curBlock
 
 !-----Local arrays and variables
@@ -169,6 +180,11 @@
       Double Precision :: time2
 
 !-----Begin Exectuable Code
+
+      ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard)
 
       If (timing_mpi) Then
            time1 = mpi_wtime()
@@ -367,7 +383,7 @@
           If (lcc) Call amr_1blk_cc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,iopt,          & 
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
-                       nblk_ind,jpolar)
+                       nblk_ind,jpolar,pdg,ig)
 
           If (timing_mpix) Then
             timer_amr_1blk_cc_cp_remote(0) =                           & 
@@ -381,7 +397,7 @@
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
                        ip1,jp1,kp1,                                    & 
                        ip2,jp2,kp2,jface,                              & 
-                       nblk_ind,jpolar,                                &
+                       nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
@@ -390,19 +406,19 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,                                    & 
                        ip3,jp3,kp3,ip3,jp3,kp3,jface,                  & 
-                       nblk_ind)
+                       nblk_ind,ig)
           If (lnc) Call amr_1blk_nc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,ip3,jp3,kp3,                        & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,            & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
 
         End If  ! End If (remote_blk > 0)
 
@@ -507,7 +523,7 @@
           If (lcc) Call amr_1blk_cc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,iopt,          & 
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
-                       nblk_ind,jpolar)
+                       nblk_ind,jpolar,pdg,ig)
 
           If (timing_mpix) Then
             timer_amr_1blk_cc_cp_remote(0) =                           & 
@@ -521,7 +537,7 @@
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            &
                        ip4,jp4,kp1,                                    & 
                        ip2,jp2,kp2,0,                                  & 
-                       nblk_ind,jpolar,                                &
+                       nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
@@ -530,18 +546,18 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,                                    & 
                        0,0,0,0,0,0,0,                                  & 
-                       nblk_ind)
+                       nblk_ind,ig)
           If (lnc) Call amr_1blk_nc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If
 
       End Do  ! End Do ii = 1,3,2
@@ -629,7 +645,7 @@
           If (lcc) Call amr_1blk_cc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,iopt,          & 
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
-                       nblk_ind,jpolar)
+                       nblk_ind,jpolar,pdg,ig)
 
           If (timing_mpix) Then
             timer_amr_1blk_cc_cp_remote(0) =                           & 
@@ -643,7 +659,7 @@
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            &
                        ip4,jp1,kp4,                                    & 
                        ip2,jp2,kp2,0,                                  & 
-                       nblk_ind,jpolar,                                &
+                       nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
@@ -652,19 +668,19 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,                                    & 
                        0,0,0,0,0,0,0,                                  & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
           If (lnc) Call amr_1blk_nc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End Do ii = 1,3,2
@@ -750,7 +766,7 @@
           If (lcc) Call amr_1blk_cc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,iopt,          & 
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
-                       nblk_ind,jpolar)
+                       nblk_ind,jpolar,pdg,ig)
 
           If (timing_mpix) Then
             timer_amr_1blk_cc_cp_remote(0) =                           & 
@@ -764,7 +780,7 @@
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            &
                        ip1,jp4,kp4,                                    & 
                        ip2,jp2,kp2,0,                                  & 
-                       nblk_ind,jpolar,                                &
+                       nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
@@ -773,19 +789,19 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,                                    & 
                        0,0,0,0,0,0,0,                                  & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
           If (lnc) Call amr_1blk_nc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
         ElseIf (remote_blk <= -20) Then
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End jj = 1,3,2
@@ -884,7 +900,7 @@
           If (lcc) Call amr_1blk_cc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,iopt,          & 
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            & 
-                       nblk_ind,jpolar)
+                       nblk_ind,jpolar,pdg,ig)
           If (timing_mpix) Then
             timer_amr_1blk_cc_cp_remote(0) =                           & 
              timer_amr_1blk_cc_cp_remote(0)+ mpi_wtime() - time2
@@ -897,7 +913,7 @@
                        id,jd,kd,is,js,ks,ilays,jlays,klays,            &
                        ip4,jp4,kp4,                                    & 
                        ip2,jp2,kp2,0,                                  & 
-                       nblk_ind,jpolar,                                &
+                       nblk_ind,jpolar,ig,                             &
                        curBlock,ibnd,jbnd,kbnd,surrblks)
 
           If (lec) Call amr_1blk_ec_cp_remote(                         & 
@@ -906,19 +922,19 @@
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,                                    & 
                        0,0,0,0,0,0,0,                                  & 
-                       nblk_ind)
+                       nblk_ind,ig)
           If (lnc) Call amr_1blk_nc_cp_remote(                         & 
                        mype,remote_pe,remote_blk,iblock,               & 
                        id,jd,kd,is,js,ks,                              & 
                        ilays,jlays,klays,                              & 
                        ip1,jp1,kp1,0,0,0,                              & 
-                       nblk_ind)
+                       nblk_ind,ig)
 
         ElseIf (remote_blk <= -20) Then
 
           ibc = remote_blk
           Call amr_1blk_bcset( mype,ibc,lb,pe,iblock,iopt,             & 
-                               ibnd,jbnd,kbnd,surrblks)
+                               ibnd,jbnd,kbnd,surrblks,ig)
         End If  ! End If (remote_blk > 0)
 
       End Do  ! End Do ii = 1,3,2
@@ -937,7 +953,7 @@
        timer_amr_1blk_guardcell_srl =  timer_amr_1blk_guardcell_srl    & 
                                 + mpi_wtime() - time1
       End If
-
+      end ASSOCIATE
 
       Return
       End Subroutine amr_1blk_guardcell_srl

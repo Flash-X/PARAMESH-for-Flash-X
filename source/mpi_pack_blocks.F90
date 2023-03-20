@@ -10,9 +10,10 @@
 #include "paramesh_preprocessor.fh"
 
 !#define DEBUG
-      subroutine mpi_pack_blocks(mype,nprocs,iopt, & 
+      subroutine mpiPack_blocks(mype,nprocs,iopt, & 
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim,S_buffer,offset, & 
+                                 pdg,ig,                  &
      &                           nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -21,6 +22,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!!  2022-11-08 K. Weide  mpiPack_blocks: use gr_thePdgDimens to get 'nvar';
+!!  2022-11-08 K. Weide  Tweaked USE statements for PDG support;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -39,23 +43,24 @@
 !      S_buffer       send buffer 
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdg_t
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           nbndvar, nvaredge, nvarcorn
       use physicaldata
-      use tree
       use paramesh_comm_data
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_get_buffer
+      use paramesh_mpi_interfaces, only : mpiGet_buffer
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
+      type(pdg_t), intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 
@@ -72,7 +77,7 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if(iopt.gt.1.and.(lfc.or.lec.or.lnc)) then
-         write(*,*) 'Paramesh error : calling mpi_pack_blocks with ', & 
+         write(*,*) 'Paramesh error : calling mpiPack_blocks with ', & 
      &              'inconsistent argument list - iopt is > 1 while ', & 
      &              'one or more of lfc, lec and lnc are set to true.'
          call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
@@ -94,7 +99,7 @@
       endif
 
       invar = 0
-      if (lcc) invar = nvar
+      if (lcc) invar = gr_thePdgDimens(ig) % nvar
       if(lcc.and.lguard_in_progress) invar = ngcell_on_cc
 
       ibndvarX = 0                                                              
@@ -254,9 +259,10 @@
      &     ,' buf_dim ',buf_dim
 #endif /* DEBUG */
                                   ! pack all arrays for lb into buffer
-              call mpi_get_buffer( mype,lb,dtype,iopt,index, & 
+              call mpiGet_buffer( mype,lb,dtype,iopt,index, & 
      &                             lcc,lfc,lec,lnc, & 
      &                             buf_dim,S_buffer, & 
+                                   pdg,ig,           &
      &                             nlayersx,nlayersy,nlayersz)
 
             endif
@@ -276,7 +282,7 @@
 #endif
 
       return
-      end subroutine mpi_pack_blocks
+      end subroutine mpiPack_blocks
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -284,6 +290,7 @@
      &                            lcc,lfc,lec,lnc, & 
      &                            buf_dim,offset, & 
      &                            block_sections, fluxes, edges, &
+                                  pdg,ig,                        &
      &                            flux_dir, &
      &                            nlayersx,nlayersy,nlayersz)
 
@@ -293,6 +300,10 @@
 !
 !
 ! Written :     Kevin Olson          January 2007
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Added 'pdg%nfluxes' to mpiGet_Sbuffer_size_fluxes call;
+!!                       cleaned up some USE statements;
+!!                       include "Flashx_mpi_implicitNone.fh".
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -310,26 +321,24 @@
 !      buf_dim        dimension of buffer
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
-      use tree
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_comm_data
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_get_Sbuffer_size, &
-     &                                    mpi_get_Sbuffer_size_fluxes, &
+      use paramesh_mpi_interfaces, only : mpiGet_Sbuffer_size, &
+     &                                    mpiGet_Sbuffer_size_fluxes, &
      &                                    mpi_get_Sbuffer_size_edges
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)  ::  mype,nprocs,iopt
       logical, intent(in)  ::  lcc,lfc,lec,lnc
       integer, intent(out) ::  buf_dim
       integer, intent(in)  ::  offset
       logical, intent(in)  ::  block_sections, fluxes, edges
+      type(pdg_t), intent(IN) :: pdg
+      Integer, Intent(in)    :: ig
       integer, intent(in), optional :: flux_dir
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
@@ -381,14 +390,14 @@
 
 	      if (block_sections) then
 
-              call mpi_get_Sbuffer_size( mype,lb,dtype,iopt,index, & 
-     &                                   lcc,lfc,lec,lnc, & 
+              call mpiGet_Sbuffer_size( mype,lb,dtype,iopt,index, & 
+     &                                   lcc,lfc,lec,lnc,ig, &
      &                                   nlayersx,nlayersy,nlayersz)
 
               elseif (fluxes) then
 
-              call mpi_get_Sbuffer_size_fluxes( mype,lb,dtype,index, &
-     &                                          flux_dir)
+              call mpiGet_Sbuffer_size_fluxes( mype,lb,dtype,index, &
+     &                                          ig,pdg%nfluxes,flux_dir)
 
               elseif (edges) then
 

@@ -75,28 +75,39 @@
 !!   Written : Peter MacNeice      December 2001
 !!   Cylindrical axisymmetric added by Sergey Pancheshnyi.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_block_geometry(lb,pe)
+      Subroutine amr_block_geometry(lb,pe,pdg,ig)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use workspace
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           ndim, k2d, k3d, l2p5d, nguard_work, &
+           ilw1, iuw1, jlw1, juw1, klw1, kuw1
+      Use physicaldata, ONLY: spherical_pm, cylindrical_pm, polar_pm, &
+           cartesian_pm!, &
+!!$           cell_face_coord1, cell_face_coord2, cell_face_coord3, &
+!!$           cell_leng1,       cell_leng2,       cell_leng3,       &
+!!$           cell_area1,       cell_area2,       cell_area3,       &
+!!$           cell_vol
+      Use tree, ONLY: lnblocks, strt_buffer, last_buffer, laddress, bnd_box, &
+           coord, bsize
+      Use workspace, ONLY: cell_vol_w
       Use paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, Intent(in) :: lb,pe
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 !-----Local arrays and variables
 
@@ -185,6 +196,26 @@
         End If
         cbnd_box(:,:) = bnd_box(:,:,lb0)
 
+       ASSOCIATE(nxb       => gr_thePdgDimens(ig) % nxb,       &
+                 nyb       => gr_thePdgDimens(ig) % nyb,       &
+                 nzb       => gr_thePdgDimens(ig) % nzb,       &
+                 nguard    => gr_thePdgDimens(ig) % nguard,    &
+                 il_bnd1   => gr_thePdgDimens(ig) % il_bnd1,   &
+                 jl_bnd1   => gr_thePdgDimens(ig) % jl_bnd1,   &
+                 kl_bnd1   => gr_thePdgDimens(ig) % kl_bnd1,   &
+                 iu_bnd1   => gr_thePdgDimens(ig) % iu_bnd1,   &
+                 ju_bnd1   => gr_thePdgDimens(ig) % ju_bnd1,   &
+                 ku_bnd1   => gr_thePdgDimens(ig) % ku_bnd1,   &
+                 cell_vol   => pdg % cell_vol,   &
+                 cell_area1 => pdg % cell_area1,   &
+                 cell_area2 => pdg % cell_area2,   &
+                 cell_area3 => pdg % cell_area3,   &
+                 cell_leng1 => pdg % cell_leng1,   &
+                 cell_leng2 => pdg % cell_leng2,   &
+                 cell_leng3 => pdg % cell_leng3,   &
+                 cell_face_coord1 => pdg % cell_face_coord1,   &
+                 cell_face_coord2 => pdg % cell_face_coord2,   &
+                 cell_face_coord3 => pdg % cell_face_coord3)
 !--------compute coords of cell interfaces
 !--------for first coordinate direction
          del = (cbnd_box(2,1)-cbnd_box(1,1))/Real(nxb)
@@ -636,7 +667,7 @@
          End Do  ! End Do i = il_bnd1,iu_bnd1+1
          End Do  ! End Do j = jl_bnd1,ju_bnd1+k2d
          End Do  ! End Do k = kl_bnd1,ku_bnd1
-
+       end ASSOCIATE
       Return
       End Subroutine amr_block_geometry
 

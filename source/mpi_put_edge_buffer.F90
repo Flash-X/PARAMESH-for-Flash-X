@@ -22,6 +22,9 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  PDG-related changes (using ASSOCIATE), more
+!!                          specific USE statements, some cleanup.
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -31,18 +34,16 @@
 !      R_buffer       receive buffer
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, &
+           ndim, k2d, k3d, l2p5d
+      use physicaldata, ONLY: nedges, ldtcomplete
       use tree
-      use workspace
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: lb,buffer_size
       integer, intent(inout) :: offset
@@ -50,8 +51,6 @@
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0
       integer :: index
       integer :: ia,ib,ja,jb,ka,kb
       integer :: ia0,ib0,ja0,jb0,ka0,kb0
@@ -60,9 +59,6 @@
       integer :: mype, ierr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
       Call MPI_COMM_RANK(amr_mpi_meshComm, mype, ierr)
 
@@ -74,10 +70,14 @@
       index = index+3
 
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
+    ASSOCIATE(nguard0 => gr_thePdgDimens(1) % nguard * npgs, &
+              nxb     => gr_thePdgDimens(1) % nxb,           &
+              nyb     => gr_thePdgDimens(1) % nyb,           &
+              nzb     => gr_thePdgDimens(1) % nzb)
 ! unpack the bedge_facex_y and bedge_facex_z arrays for block lb
       if(dtype.eq.13.or.dtype.eq.15.or.dtype.eq.14) then
 
@@ -366,7 +366,7 @@
 
       endif
       endif
-
+    end ASSOCIATE
 ! unpack tree info
 
       do ii = 1,mdim
@@ -481,26 +481,22 @@
 !      offset         offset for buffer index
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
-      use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, npgs, &
+           ndim, k2d, k3d, l2p5d
+      use physicaldata, ONLY: nedges
       use tree
-      use workspace
       use mpi_morton
       use paramesh_comm_data
 
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
-      implicit none
-
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
       integer, intent(in)    :: lb,dtype
       integer, intent(inout) :: offset
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! local variables
-      integer :: nguard0 
-      integer :: nguard_work0
       integer :: index
       integer :: ia,ib,ja,jb,ka,kb
       integer :: ia0,ib0,ja0,jb0,ka0,kb0
@@ -509,9 +505,6 @@
       integer :: mype, ierr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
 
       Call MPI_COMM_RANK(amr_mpi_meshComm, mype, ierr)
 
@@ -522,10 +515,14 @@
       index = index+3
 
       vtype = 8
-      call mpi_set_message_limits(dtype, & 
-     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+      call mpiSet_message_limits(dtype, & 
+     &                            ia0,ib0,ja0,jb0,ka0,kb0,vtype,1)
 
 
+    ASSOCIATE(nguard0 => gr_thePdgDimens(1) % nguard * npgs, &
+              nxb     => gr_thePdgDimens(1) % nxb,           &
+              nyb     => gr_thePdgDimens(1) % nyb,           &
+              nzb     => gr_thePdgDimens(1) % nzb)
 ! unpack the bedge_facex_y and bedge_facex_z arrays for block lb
       if(dtype.eq.13.or.dtype.eq.15.or.dtype.eq.14) then
 
@@ -814,6 +811,7 @@
 
       endif
       endif
+    end ASSOCIATE
 
 ! unpack tree info
 

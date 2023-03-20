@@ -10,6 +10,7 @@
 
       subroutine amr_mg_prolong (nprocs, mype2, level)
 
+      use paramesh_interfaces, only: amr_prolong
       use tree
       use amr_mg_common
 

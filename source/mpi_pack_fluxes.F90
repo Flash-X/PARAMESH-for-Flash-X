@@ -11,8 +11,8 @@
 
 
 !#define DEBUGX
-      subroutine mpi_pack_fluxes(mype,nprocs, & 
-     &                           buf_dim,S_buffer,offset,flux_dir)
+      subroutine mpiPack_fluxes(mype,nprocs, & 
+     &                           buf_dim,S_buffer,offset,pdg,ig,flux_dir)
 
 !------------------------------------------------------------------------
 !
@@ -29,6 +29,7 @@
 !      S_buffer       send buffer 
 !
 !------------------------------------------------------------------------
+      use gr_pmPdgDecl, ONLY : pdg_t
       use paramesh_dimensions
       use physicaldata
       use tree
@@ -36,7 +37,7 @@
 
       use mpi_morton
 
-      use paramesh_mpi_interfaces, only : mpi_get_flux_buffer
+      use paramesh_mpi_interfaces, only : mpiGet_flux_buffer
 
       implicit none
 
@@ -45,6 +46,8 @@
       integer, intent(in)  ::  buf_dim,offset
       real,    intent(out) ::  S_buffer(buf_dim)
       integer, intent(in)  ::  mype,nprocs
+      type(pdg_t),intent(IN) :: pdg
+      integer, intent(in)    :: ig
       integer, intent(in), optional :: flux_dir
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -220,8 +223,8 @@
      &        ' from local lb ',lb,' index ',index
 #endif /* DEBUG */
                                   ! pack all arrays for lb into buffer
-              call mpi_get_flux_buffer( mype,lb,dtype,index, & 
-     &                             buf_dim,S_buffer,flux_dir)
+              call mpiGet_flux_buffer( mype,lb,dtype,index, & 
+     &                             buf_dim,S_buffer,pdg,ig,flux_dir)
 
             endif
           enddo
@@ -241,4 +244,4 @@
 #endif
 
       return
-      end subroutine mpi_pack_fluxes
+      end subroutine mpiPack_fluxes

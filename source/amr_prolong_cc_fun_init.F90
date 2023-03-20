@@ -14,7 +14,7 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_prolong_cc_fun_init()
+!!   Call amr_prolong_cc_fun_init(pdg, ig)
 !!   
 !! ARGUMENTS
 !!
@@ -56,30 +56,55 @@
 !! AUTHORS
 !!
 !!   Written :     Peter MacNeice          June 1997
+!!   Modified for pdg:  Klaus Weide        Sept 2022
 !!
-!!**
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Fixed association for nxb and nzb
+!!
+!!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_prolong_cc_fun_init
+Subroutine amr_prolong_cc_fun_init(pdg,ig)
 
 !-----Use statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use workspace
-      Use prolong_arrays
+  use gr_pmPdgDecl, ONLY : pdg_t
+  Use paramesh_dimensions, only: gr_thePdgDimens
+  Use paramesh_dimensions, only: ilw1, iuw1, jlw1, juw1, klw1, kuw1, nguard_work, ndim
+  Use physicaldata,        only: conserve
+  Use tree,                only: nchild
+  Use prolong_arrays, ONLY: prolw_dx, prolw_dy, prolw_dz, &
+                prolw_indexx, prolw_indexy, prolw_indexz, &
+                prol_init, prolw_init
 
-      Implicit None
+  Implicit None
+
+!-----Input/Output Arguments
+  type(pdg_t), intent(INOUT) :: pdg
+  integer, intent(in) :: ig
 
 !-----Local variables and arrays
-      Real :: xc0,yc0,zc0,xc,yc,zc
-      Integer :: i,j,k,ii,jj,kk,loop,jchild,ioff,joff,koff
-      Integer :: i1,j1,k1,i1p,j1p,k1p
+  Real :: xc0,yc0,zc0,xc,yc,zc
+  Integer :: i,j,k,ii,jj,kk,loop,jchild,ioff,joff,koff
+  Integer :: i1,j1,k1,i1p,j1p,k1p
 
 !-----Begin executable code.
+  ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+            nyb         => gr_thePdgDimens(ig) % nyb,      &
+            nzb         => gr_thePdgDimens(ig) % nzb,      &
+            nguard      => gr_thePdgDimens(ig) % nguard,   &
+            il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+            iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+            jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+            ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+            kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+            ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+            prol_dx     => pdg % prol_dx, &
+            prol_dy     => pdg % prol_dy, &
+            prol_dz     => pdg % prol_dz, &
+            prol_indexx => pdg % prol_indexx, &
+            prol_indexy => pdg % prol_indexy, &
+            prol_indexz => pdg % prol_indexz)
 
 !-----Conditional constants. Vary depending on whether a block has an even or
 !-----odd number of cells along a given axis.
@@ -187,6 +212,7 @@
 
       End Do  ! End Do loop = 1,2
 
+    if (ig == 1) then
 !-----set flag to pass error check at the start of prolong_unk_fun
       prol_init = 100
 
@@ -291,6 +317,8 @@
 
 !-----set flag to pass error check at the start of prolong_work_fun
       prolw_init = 100
+    end if                      !if (ig
+  end ASSOCIATE
 
-      Return
-      End Subroutine amr_prolong_cc_fun_init
+  Return
+End Subroutine amr_prolong_cc_fun_init

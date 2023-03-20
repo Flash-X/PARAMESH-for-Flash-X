@@ -77,7 +77,7 @@
 !! CALLS
 !!
 !!   amr_mpi_find_blk_in_buffer
-!!   mpi_set_message_limits
+!!   mpiSet_message_limits
 !!   
 !! RETURNS
 !!
@@ -102,7 +102,7 @@
 
       subroutine amr_1blk_nc_cp_remote(mype,remote_pe,remote_block,    & 
          idest,id,jd,kd,is,js,ks,ilays,jlays,klays,ip1,jp1,kp1,        & 
-         ip3,jp3,kp3,nblk_ind)
+         ip3,jp3,kp3,nblk_ind,ig)
 
 !-----Use Statements
       Use paramesh_dimensions
@@ -110,7 +110,7 @@
       Use tree
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
       Implicit None
 
@@ -119,7 +119,7 @@
       Integer, Intent(in) :: idest,id,jd,kd,is,js,ks
       Integer, Intent(in) :: ilays,jlays,klays
       Integer, Intent(in) :: ip1,jp1,kp1,ip3,jp3,kp3
-      Integer, Intent(in) :: nblk_ind
+      Integer, Intent(in) :: nblk_ind,ig
 
 !-----Local arays and variables
       Integer :: il,jl,kl,id1,jd1,kd1,is1,js1,ks1
@@ -204,8 +204,8 @@
         kll = klays
 
         vtype = 8
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                &
                      ill,jll,kll)
 
         kk = kd1

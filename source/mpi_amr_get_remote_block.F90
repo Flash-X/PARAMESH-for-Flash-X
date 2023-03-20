@@ -97,6 +97,12 @@
 !!  Written by Peter MacNeice (July 1997).  Modified by Kevin Olson for
 !!  directional guardcell filling.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Subroutine now takes argument 'pdg';
+!!                       added ONLY to some USE statements;
+!!                       include "Flashx_mpi_implicitNone.fh";
+!!                       tweaked / added some debugging output.
+!!  2022-12-01 K. Weide  Removed TAB characters
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -104,28 +110,41 @@
 #include "paramesh_preprocessor.fh"
 
       Subroutine mpi_amr_get_remote_block(mype,remote_pe,remote_block, & 
-          idest,iopt,lcc,lfc,lec,lnc,                                  & 
+          idest,iopt,lcc,lfc,lec,lnc, pdg,ig,                          &
           nlayersx,nlayersy,nlayersz)
 
 !-----Use statements
-      Use paramesh_dimensions
-      Use physicaldata
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens
+      Use paramesh_dimensions, ONLY: ndim, k2d, k3d, nbndvar, nbndvare, nvarcorn, &
+                                     npgs, nguard_work
+      Use physicaldata, only: gt_unk
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              gt_facevarx,gt_facevary,gt_facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
+                              gt_unk_e_x, gt_unk_e_y, gt_unk_e_z, &
+                              unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n, gt_unk_n, unk_n1
+      Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
+      Use physicaldata, only: ngcell_on_cc,       ngcell_on_fc,   ngcell_on_ec,   ngcell_on_nc
+      Use physicaldata, only: gcell_on_cc_pointer,gcell_on_fc_pointer,gcell_on_ec_pointer,gcell_on_nc_pointer
       Use tree
       Use workspace
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include statements.
-      include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, intent(in) :: mype,remote_pe,remote_block
       Integer, intent(in) :: idest,iopt
       Logical, intent(in) :: lcc,lfc,lec,lnc
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
       Integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 !-----Local arrays and variables.
@@ -145,6 +164,14 @@
 #endif
 
 !-----Begin executable code.
+  ASSOCIATE(nguard       => gr_thePdgDimens(ig) % nguard, &
+            nxb          => gr_thePdgDimens(ig) % nxb,    &
+            nyb          => gr_thePdgDimens(ig) % nyb,    &
+            nzb          => gr_thePdgDimens(ig) % nzb,    &
+            nvar         => gr_thePdgDimens(ig) % nvar,   &
+            unk          => pdg % unk,                    &
+            unk1         => pdg % unk1)
+
       nguard0 = nguard*npgs
       nguard_work0 = nguard_work*npgs
 
@@ -382,17 +409,31 @@
 
       End If  ! End If (iopt == 1)
 
+#ifdef DEBUG
+399   format(1x,'@ ',I0,'  LOCAL: ',I3,'@',I0,' idest ',I0,' -- lcc ',&
+                 L1,' copied to unk1 per var: ',I0,' Reals.')
+      print 399,mype,remote_block,remote_pe,idest,lcc,&
+           size(unk1(ivar,nguard+1:nguard+nxb,                               &
+                    nguard*k2d+1:nguard*k2d+nyb,                       &
+                    nguard*k3d+1:nguard*k3d+nzb,idest))
+#endif
+
       Else  
 
       Call amr_mpi_find_blk_in_buffer(mype,remote_block,               & 
                                       remote_pe,idest,dtype,index0,    &
                                       lfound)
 
+#ifdef DEBUG
+      400 format('>@ ',I0,' remote: ',I3,'@',I0,' idest ',I0,' -- found ',&
+                 L1,' dtype ',I0,' index0 ',I0)
+      print 400,mype,remote_block,remote_pe,idest,lfound,dtype,index0
+#endif
       If ((.Not.lfound).Or.(dtype.ne.14.And.dtype.ne.14+27)) Then
           write(*,*) 'Paramesh error : pe ',mype,' needed full blk ',  & 
             remote_block,remote_pe,' but could not find it or only ',  & 
             ' found part of it in the message buffer.',                & 
-            '  Contact PARAMESH developers for help.'
+            '  Found',lfound,', dtype=',dtype,'.'
           Call mpi_abort(amr_mpi_meshComm,ierrorcode,ierr)
       End If
 
@@ -401,8 +442,8 @@
         If (iopt == 1) Then
           vtype = 1
           index = index0
-          Call mpi_set_message_limits(                                 & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,                  & 
+          Call mpiSet_message_limits(                                 & 
+                       dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                  & 
                        nlayersx,nlayersy,nlayersz)
 
           If (no_permanent_guardcells) Then
@@ -430,8 +471,8 @@
 
           vtype = 0
           index = index0
-          Call mpi_set_message_limits(                                 & 
-                       dtype,ia,ib,ja,jb,ka,kb,vtype,                  & 
+          Call mpiSet_message_limits(                                 & 
+                       dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                  & 
                        nlayersx,nlayersy,nlayersz)
 
           If (no_permanent_guardcells) Then
@@ -466,8 +507,8 @@
                              index + ngcell_on_cc*message_size_cc(dtype)
 
         vtype = 2
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -493,8 +534,8 @@
 
         If (ndim >= 2) Then
          vtype = 3
-         Call mpi_set_message_limits(                                  & 
-                    dtype,ia,ib,ja,jb,ka,kb,vtype,                     & 
+         Call mpiSet_message_limits(                                  & 
+                    dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                     & 
                     nlayersx,nlayersy,nlayersz)
  
          If (no_permanent_guardcells) Then
@@ -521,8 +562,8 @@
 
         If (ndim == 3) Then
          vtype = 4
-         Call mpi_set_message_limits(                                  & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+         Call mpiSet_message_limits(                                  & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
          If (no_permanent_guardcells) Then
@@ -568,8 +609,8 @@
                                   + ngcell_on_fc(3) *                  &
                                     message_size_fcz(dtype)   
         vtype = 5
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -595,8 +636,8 @@
 
         If (ndim >= 2) Then
         vtype = 6
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -623,8 +664,8 @@
 
         If (ndim == 3) Then
         vtype =7
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
         If (no_permanent_guardcells) Then
@@ -675,8 +716,8 @@
                                      *message_size_ec(dtype)
 
         vtype = 8
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype,                    & 
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig,                    & 
                      nlayersx,nlayersy,nlayersz)
 
 
@@ -706,6 +747,6 @@
       End If  ! End If (lnc)
 
       End If  ! End If (int_gcell_on_nc(ivar))
-
+  end ASSOCIATE
       Return
       End Subroutine mpi_amr_get_remote_block

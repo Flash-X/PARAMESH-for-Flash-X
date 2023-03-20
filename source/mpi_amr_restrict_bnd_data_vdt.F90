@@ -12,7 +12,7 @@
 #include "paramesh_preprocessor.fh"
 
 
-      subroutine amr_restrict_bnd_data_vdt(mype)
+      subroutine amr_restrict_bnd_data_vdt(mype,ig)
 
 
 
@@ -46,7 +46,7 @@
 
       use paramesh_interfaces, only : amr_restrict_red, & 
      &                                amr_mpi_find_blk_in_buffer
-      use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      use paramesh_mpi_interfaces, only : mpiSet_message_limits
 
 
       implicit none
@@ -54,6 +54,7 @@
       include 'mpif.h'
 
       integer, intent(in)    :: mype
+      integer, intent(in)    :: ig
 
 !------------------------------------
 ! local arrays
@@ -135,8 +136,8 @@
              call amr_mpi_find_blk_in_buffer(mype,remote_block, & 
      &              remote_pe,1,dtype,index0,lfound)
              vtype = 1
-             call mpi_set_message_limits(dtype, & 
-     &            ia0,ib0,ja0,jb0,ka0,kb0,vtype)
+             call mpiSet_message_limits(dtype, & 
+     &            ia0,ib0,ja0,jb0,ka0,kb0,vtype,ig)
 
             end if
 

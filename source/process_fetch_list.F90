@@ -18,7 +18,7 @@
 
 
       Use tree
-      Use paramesh_Dimensions
+      Use paramesh_dimensions, ONLY: maxblocks_alloc
       Use mpi_morton
       Use paramesh_mpi_interfaces, only : compress_fetch_list 
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm

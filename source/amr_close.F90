@@ -54,13 +54,16 @@
 !! HISTORY
 !!
 !!   2017-10-04 modified to not call MPI_Finalize for FLASH   - Klaus Weide
+!!   2022-10-31 moved gcell_on_cc flag array into pdg_t       - Klaus Weide
+!!  2022-11-08 moved cell_ geometry arrays from physicaldata to pdg_t - K. Weide
+!!  2022-11-08 Added ONLY list to USE paramesh_dimensions             - K. Weide
 !!***
 
 # include "paramesh_preprocessor.fh"
       Subroutine amr_close
 
 !-----Use Statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: nvar, nfacevar, nvaredge, nvarcorn, nvar_work
       Use physicaldata
       Use workspace
       Use mpi_morton
@@ -76,15 +79,16 @@
 
 !-----Deallocate cell-centered variables
 
-      Deallocate(unk)
+      call gr_pdgCloseOne(gr_thePdgs(1))
+
+!!$      Deallocate(unk)
       Deallocate(interp_mask_unk)
       Deallocate(interp_mask_unk_res)
       Deallocate(gcell_on_cc_pointer)
-      Deallocate(gcell_on_cc)
       Deallocate(int_gcell_on_cc)
       Deallocate(checkp_on_cc)
       If (nvar > 0) Then
-       Deallocate(unk1)
+!!$       Deallocate(unk1)
        Deallocate(gt_unk)
        If (var_dt .or. pred_corr) Then
           Deallocate(t_unk)
@@ -175,12 +179,12 @@
 
 !-----Deallocate flux fix-up arrays
 
-      Deallocate(flux_x)
-      Deallocate(flux_y)
-      Deallocate(flux_z)
-      Deallocate(tflux_x)
-      Deallocate(tflux_y)
-      Deallocate(tflux_z)
+!!$      Deallocate(flux_x)
+!!$      Deallocate(flux_y)
+!!$      Deallocate(flux_z)
+      if (allocated(tflux_x)) Deallocate(tflux_x)
+      if (allocated(tflux_y)) Deallocate(tflux_y)
+      if (allocated(tflux_z)) Deallocate(tflux_z)
       If (var_dt) Then
          Deallocate(ttflux_x)
          Deallocate(ttflux_y)
@@ -216,22 +220,22 @@
          Deallocate(ttbedge_facez_y)
       End If  ! End of If (var_dt)
 
-      If (curvilinear) Then
-         Deallocate(cell_vol)
-         Deallocate(cell_area1)
-         Deallocate(cell_area2)
-         Deallocate(cell_area3)
-         Deallocate(cell_leng1)
-         Deallocate(cell_leng2)
-         Deallocate(cell_leng3)
-      End If  ! End of If (curvilinear)
+!!$      If (curvilinear) Then
+!!$         Deallocate(cell_vol)
+!!$         Deallocate(cell_area1)
+!!$         Deallocate(cell_area2)
+!!$         Deallocate(cell_area3)
+!!$         Deallocate(cell_leng1)
+!!$         Deallocate(cell_leng2)
+!!$         Deallocate(cell_leng3)
+!!$      End If  ! End of If (curvilinear)
 
-      Deallocate(recvarxf)
-      Deallocate(recvaryf)
-      Deallocate(recvarzf)
-      Deallocate(bndtempx1)
-      Deallocate(bndtempy1)
-      Deallocate(bndtempz1)
+!!$      Deallocate(recvarxf)
+!!$      Deallocate(recvaryf)
+!!$      Deallocate(recvarzf)
+!!$      Deallocate(bndtempx1)
+!!$      Deallocate(bndtempy1)
+!!$      Deallocate(bndtempz1)
 
 !-----Deallocate tree data
 
@@ -285,12 +289,12 @@
 
 ! prolong_arrays data
 
-      Deallocate(prol_dx)
-      Deallocate(prol_dy)
-      Deallocate(prol_dz)
-      Deallocate(prol_indexx)
-      Deallocate(prol_indexy)
-      Deallocate(prol_indexz)
+!!$      Deallocate(prol_dx)
+!!$      Deallocate(prol_dy)
+!!$      Deallocate(prol_dz)
+!!$      Deallocate(prol_indexx)
+!!$      Deallocate(prol_indexy)
+!!$      Deallocate(prol_indexz)
       Deallocate(prol_f_dx)
       Deallocate(prol_f_dy)
       Deallocate(prol_f_dz)

@@ -17,8 +17,6 @@
 
       Module prolong_arrays
 
-      Use paramesh_dimensions
-
       Private
 
 
@@ -29,12 +27,18 @@
       Public :: prol_f_init
       Public :: prolw_dx,prolw_dy,prolw_dz
       Public :: prolw_indexx,prolw_indexy,prolw_indexz,prolw_init
-      Real, Save, Allocatable :: prol_dx(:)
-      Real, Save, Allocatable :: prol_dy(:) 
-      Real, Save, Allocatable :: prol_dz(:)
-      Integer, Save, Allocatable :: prol_indexx(:,:,:)
-      Integer, Save, Allocatable :: prol_indexy(:,:,:)
-      Integer, Save, Allocatable :: prol_indexz(:,:,:)
+!!$      Real, Save, Allocatable :: prol_dx(:)
+!!$      Real, Save, Allocatable :: prol_dy(:)
+!!$      Real, Save, Allocatable :: prol_dz(:)
+!!$      Integer, Save, Allocatable :: prol_indexx(:,:,:)
+!!$      Integer, Save, Allocatable :: prol_indexy(:,:,:)
+!!$      Integer, Save, Allocatable :: prol_indexz(:,:,:)
+      Real, pointer :: prol_dx(:)
+      Real, pointer :: prol_dy(:)
+      Real, pointer :: prol_dz(:)
+      Integer, pointer :: prol_indexx(:,:,:)
+      Integer, pointer :: prol_indexy(:,:,:)
+      Integer, pointer :: prol_indexz(:,:,:)
       Real, Save, Allocatable :: prol_f_dx(:)
       Real, Save, Allocatable :: prol_f_dy(:)
       Real, Save, Allocatable :: prol_f_dz(:)

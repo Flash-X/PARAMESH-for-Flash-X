@@ -67,6 +67,7 @@
 !! HISTORY
 !!
 !!   2021-03-12 More iterations in case we have internal boundary blocks  - Klaus Weide
+!!   2022-11-08 Use paramesh_dimensions with ONLY                 - Klaus Weide
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -74,7 +75,7 @@
       subroutine amr_check_refine(nprocs,mype,icontinue)
 
       use gr_specificData, ONLY: gr_haveInternalBoundaryBlocks
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: ndim, k2d, k3d
       use physicaldata
       use tree
       use constants

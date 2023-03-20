@@ -58,6 +58,8 @@
 !!   Modified by Chris Daley so that there is 1 file read instead of
 !!   NPROC file reads.
 !!
+!!   Mechanism for using FLASH runtime parameters for filling the
+!!   PARAMESH parameters by Klaus Weide.
 !!***
 
 #include "paramesh_preprocessor.fh"

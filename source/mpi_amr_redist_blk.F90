@@ -77,26 +77,33 @@
 !!   Kevin Olson (1998)
 !!   Bug fix contributed by Paul Ricker and Marcus Gross (2003)
 !!
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Made PDG-aware for unk: redist (if doRedist)
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f, unk_test, face[xyz]_test, edge[xyz]_test, unkn_test
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_redist_blk(new_loc,nprocs,mype,lnblocks_old)
+Subroutine amr_redist_blk(new_loc,nprocs,mype,lnblocks_old)
 
 !-----Use statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use paramesh_comm_data
-      Use paramesh_interfaces, only : fill_old_loc
+      Use gr_pmPdgDecl, ONLY: pdg_t
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, npgs, k2d, k3d, &
+           maxblocks, nfacevar, nvaredge, nvarcorn
+      Use paramesh_dimensions, ONLY: nguard, nxb, nyb, nzb
+      Use physicaldata, ONLY: gr_thePdgs, &
+           facevarx, facevary, facevarz, unk_e_x, unk_e_y, unk_e_z, unk_n
+      Use tree, ONLY: maxblocks_tr, new_lnblocks, newchild
+      Use paramesh_comm_data, ONLY: amr_mpi_meshComm, amr_mpi_real
+      Use paramesh_interfaces, only : fill_old_loc, send_block_data
 
 !-----Include statements
 #include "Flashx_mpi_implicitNone.fh"
+#include "FortranLangFeatures.fh"
 
 !-----Input/Output arguments.
-      Integer, Intent(inout) :: new_loc(:,:)
+      Integer, CONTIGUOUS_INTENT(in) :: new_loc(:,:)
       Integer, Intent(in)    :: nprocs,mype,lnblocks_old
 
 !-----Local variables. and arrays.
@@ -111,9 +118,8 @@
       Integer :: test(maxblocks), point_to(maxblocks)
       Integer :: nm, nm2, nm2_old
       Integer :: ireduce_datain(1),ireduce_dataout(1)
-      Integer, Save :: unk_int_type
+      Integer, Save :: unk_int_types(NUM_PDGS)
       Integer, Allocatable :: unk_test(:,:,:,:)
-      Integer, Save ::  is_unk,js_unk,ks_unk,ie_unk,je_unk,ke_unk
       Integer, Save :: facex_int_type, facey_int_type, facez_int_type
       Integer, Allocatable :: facex_test(:,:,:,:), facey_test(:,:,:,:),&
                               facez_test(:,:,:,:)
@@ -138,12 +144,14 @@
       Integer :: type1, type2, type3
       Integer :: udim(4), udim_tot(4), i
       Integer :: nbytes
+      integer :: ig
       Logical :: lreduce_datain(1),lreduce_dataout(1)
       Logical, Save :: first = .True.
       Logical :: free(maxblocks), moved(maxblocks), sent(maxblocks)
       Logical :: repeat, repeatt
+      type(pdg_t),pointer :: pdg
 
-      If (first) Then
+  If (first) Then
       first = .False.
 
 #ifdef REAL8
@@ -152,48 +160,57 @@
          nbytes = 4
 #endif
 
-      If (nvar > 0) Then
-
-      is_unk = nguard*npgs+1
-      js_unk = nguard*k2d*npgs+1
-      ks_unk = nguard*k3d*npgs+1
-      ie_unk = nguard*npgs+nxb
-      je_unk = nguard*k2d*npgs+nyb
-      ke_unk = nguard*k3d*npgs+nzb
+     do ig = 1, NUM_PDGS
+        pdg => gr_thePdgs(ig)
+        ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+                is_unk => gr_thePdgDimens(ig) % il_bndi, &
+                js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+                ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+                ie_unk => gr_thePdgDimens(ig) % iu_bndi, &
+                je_unk => gr_thePdgDimens(ig) % ju_bndi, &
+                ke_unk => gr_thePdgDimens(ig) % ku_bndi, &
+                nxb    => gr_thePdgDimens(ig) % nxb,     &
+                nyb    => gr_thePdgDimens(ig) % nyb,     &
+                nzb    => gr_thePdgDimens(ig) % nzb,     &
+                unk => pdg % unk &
+          )
+          If (pdg % doRedist .AND. nvar > 0) Then
 
 !-----This code added for reordering script
-      Allocate(unk_test(nvar,nxb,nyb,nzb))
-      Do i = 1,4
-         udim_tot(i) = size(unk,dim=i) 
-         udim(i) = size(unk_test,dim=i)
-      End Do
-      Deallocate(unk_test)
+             Allocate(unk_test(nvar,nxb,nyb,nzb))
+             Do i = 1,4
+                udim_tot(i) = size(unk,dim=i)
+                udim(i) = size(unk_test,dim=i)
+             End Do
+             Deallocate(unk_test)
 
 !-----DEFINE BLOCK INTERIOR
-      Call MPI_TYPE_VECTOR (udim(2),                                   & 
+             Call MPI_TYPE_VECTOR (udim(2),                                   &
                             udim(1),                                   & 
                             udim_tot(1),                               & 
                             amr_mpi_real,                              & 
                             type1,                                     & 
                             ierr)
-      Call MPI_TYPE_HVECTOR (udim(3),                                  & 
+             Call MPI_TYPE_HVECTOR (udim(3),                                  &
                              1,                                        &
                              udim_tot(1)*udim_tot(2)*nbytes,           & 
                              type1,                                    & 
                              type2,                                    & 
                              ierr)
-      Call MPI_TYPE_HVECTOR (udim(4),                                  &
+             Call MPI_TYPE_HVECTOR (udim(4),                                  &
                              1,                                        &
                              udim_tot(1)*udim_tot(2)*udim_tot(3)*nbytes,&
                              type2,                                    &
                              type3,                                    &
                              ierr)
 
-      unk_int_type = type3
+             unk_int_types(ig) = type3
 
-      Call MPI_TYPE_COMMIT(unk_int_type,ierr)
+             Call MPI_TYPE_COMMIT(unk_int_types(ig),ierr)
 
-      End If  ! End If (nvar > 0)
+          End If  ! End If (doRedist .AND. nvar > 0)
+        end ASSOCIATE
+     end do
 
       If (nfacevar > 0) Then
 
@@ -480,18 +497,29 @@
 
       End If  ! End If (nvarcorn > 0)
 
-      End If  ! End If (first)
+  End If  ! End If (first)
 
 
 !-----compute old_loc
-      Call fill_old_loc (new_loc,old_loc,nprocs,mype)
+  Call fill_old_loc (new_loc,old_loc,nprocs,mype)
 
-      nrecv = 0
-      nsend = 0
+  nrecv = 0
+  nsend = 0
 
 
 !-----treat unk
-      If (nvar > 0) Then
+  do ig = 1, NUM_PDGS
+     pdg => gr_thePdgs(ig)
+     ASSOCIATE(nvar => gr_thePdgDimens(ig) % nvar, &
+             is_unk => gr_thePdgDimens(ig) % il_bndi, &
+             js_unk => gr_thePdgDimens(ig) % jl_bndi, &
+             ks_unk => gr_thePdgDimens(ig) % kl_bndi, &
+             ie_unk => gr_thePdgDimens(ig) % iu_bndi, &
+             je_unk => gr_thePdgDimens(ig) % ju_bndi, &
+             ke_unk => gr_thePdgDimens(ig) % ku_bndi, &
+             unk => pdg % unk &
+       )
+       If (pdg % doRedist .AND. nvar > 0) Then
 !--------Post all receives for unk
          Do lb = 1,new_lnblocks
             If (.Not.newchild(lb)) Then
@@ -499,7 +527,7 @@
                   nrecv = nrecv + 1
                   Call MPI_IRECV (unk(1,is_unk,js_unk,ks_unk,lb),      & 
                                   1,                                   & 
-                                  unk_int_type,                        & 
+                                  unk_int_types(ig),                    &
                                   old_loc(2,lb),                       & 
                                   lb,                                  & 
                                   amr_mpi_meshComm,                      & 
@@ -510,7 +538,9 @@
             End If
          End Do
 
-      End If
+       End If
+     end ASSOCIATE
+  end do
 
 !-----Treat Facevariables
       If (nfacevar > 0) Then
@@ -673,7 +703,7 @@
                                   moved, sent,                         & 
                                   lnblocks_old, mype, nmoved,          & 
                                   test, point_to,                      & 
-                                  reqs, nsend, unk_int_type,           &
+                                  reqs, nsend, unk_int_types,           &
                                   facex_int_type, facey_int_type,      &
                                   facez_int_type, edgex_int_type,      &
                                   edgey_int_type, edgez_int_type,      &

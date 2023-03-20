@@ -67,8 +67,8 @@
       Subroutine amr_migrate_tree_data (new_loc,nprocs,mype)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
+      Use paramesh_dimensions, ONLY: maxblocks
+      Use physicaldata, ONLY: use_flash_surr_blks_fill, surr_blks_valid
       Use tree
       Use io
       Use paramesh_comm_data
@@ -421,7 +421,7 @@
 Subroutine amr_migrate_tree_data_flash (new_loc,nprocs,mype)
 
   !-----Use statements.
-  Use paramesh_dimensions
+  Use paramesh_dimensions, ONLY: ndim, k1d, k2d, k3d, maxblocks, maxblocks_alloc
   Use physicaldata
   Use tree
   Use io

@@ -12,6 +12,7 @@
 
 
       Module paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdgConst_t
 
 #include "paramesh_preprocessor.fh"
 
@@ -83,6 +84,7 @@
 #else
       Integer, Save :: nguard
 #endif
+
 #ifndef LIBRARY
 #ifdef FL_NON_PERMANENT_GUARDCELLS
       integer, parameter :: npgs = 0
@@ -289,6 +291,15 @@
 
 !---------------------------------
 
+      public :: gr_thePdgDimens
+#ifndef LIBRARY
+
+#     include "gr_pmPdgDimenInit.fh"
+
+#else
+      type(pdgConst_t),save, dimension(NUM_PDGS) :: gr_thePdgDimens
+      target :: gr_thePdgDimens
+#endif
 
       End Module paramesh_dimensions
 !-----------------------------------------------------------------

@@ -58,6 +58,9 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
+!!  2022-12-01 K. Weide  Fixed OPTIMIZE_MORTONBND code using ASSOCIATE for PDG 1
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -65,7 +68,8 @@
       Subroutine mpi_morton_bnd(mype,nprocs,tag_offset)
 
 !-----Use Statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: ndim, k2d, k3d, maxblocks, &
+           gr_thePdgDimens, nguard_work, nmax_lays
       Use physicaldata
       Use tree
       Use timings
@@ -76,10 +80,8 @@
                                           process_fetch_list
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
-      Implicit None
-
 !-----Include Statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output Arguments
       Integer, intent(in)    ::  mype,nprocs
@@ -93,7 +95,7 @@
       integer :: ia,ib,ja,jb,ka,kb
       Integer :: ierror
       Integer :: max_no_of_blocks
-      Integer :: istack, ioff, joff, koff, itemp
+      Integer :: istack, ioff, joff, koff
       Integer :: isize, isrc, idest, itag, kk
       Integer :: nguarda, iproc
       Integer :: npts_neigh1,npts_neigh2
@@ -108,7 +110,7 @@
 
       accuracy = 100./10.**precision(accuracy)
       eps = accuracy                                                                                                     
-      nguarda = max(nguard,nguard_work)
+      nguarda = max(gr_thePdgDimens(1)%nguard,nguard_work)
 
       npts_neigh1 = npts_neigh
       npts_neigh2 = npts_neigh+100
@@ -334,18 +336,23 @@
         ! anywhere (otherwise boundary condition can be called with invalid
         ! input data):
         if (ALL(psurr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > -20)) then
-           if (nguarda .LE. nzb/2) then
-              koff = mod((which_child(lb)-1)/4,2)
-              ka = 1+koff; kb = 1+k3d+koff
-           end if
-           if (nguarda .LE. nyb/2) then
-              joff = mod((which_child(lb)-1)/2,2)
-              ja = 1+joff; jb = 1+k2d+joff
-           end if
-           if (nguarda .LE. nxb/2) then
-              ioff = mod(which_child(lb)-1,2)
-              ia = 1+ioff; ib = 2+ioff
-           end if
+           !!DEV: Should communication patterns be dependent on PDG?? - KW
+           ASSOCIATE(nxb         => gr_thePdgDimens(1) % nxb,      &
+                     nyb         => gr_thePdgDimens(1) % nyb,      &
+                     nzb         => gr_thePdgDimens(1) % nzb       )
+             if (nguarda .LE. nzb/2) then
+                koff = mod((which_child(lb)-1)/4,2)
+                ka = 1+koff; kb = 1+k3d+koff
+             end if
+             if (nguarda .LE. nyb/2) then
+                joff = mod((which_child(lb)-1)/2,2)
+                ja = 1+joff; jb = 1+k2d+joff
+             end if
+             if (nguarda .LE. nxb/2) then
+                ioff = mod(which_child(lb)-1,2)
+                ia = 1+ioff; ib = 2+ioff
+             end if
+           end ASSOCIATE
         end if
 #endif
 

@@ -65,6 +65,8 @@
 !!
 !!  Written by Peter MacNeice (July 1997).
 !!
+!! MODIFICATIONS
+!!  2022-12-01 Klaus Weide  Cleaned up 'Use physicaldata' with 'only' list
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -74,8 +76,11 @@
       Subroutine amr_edge_average_udt(mype)
 
 !-----Use statements.
+      Use physicaldata, only: gr_thePdgs, &
+           bedge_facex_y, bedge_facez_x, bedge_facez_y, bedge_facey_x, bedge_facex_z, bedge_facez_x, &
+           bedge_facey_z, &
+           recvarx1e, recvarx2e, recvary1e, recvary2e, recvarz1e, recvarz2e
       Use paramesh_dimensions
-      Use physicaldata
       Use tree
       Use mpi_morton
       Use paramesh_interfaces, only : amr_restrict_edge_data
@@ -137,7 +142,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
 !-----all leaf blocks provide reduced boundary edge data to their parents
       Call amr_restrict_edge_data(mype)
@@ -152,7 +157,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
 !-----cycle through the grid blocks on this processor
       If (lnblocks > 0) Then

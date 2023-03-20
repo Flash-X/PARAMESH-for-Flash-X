@@ -323,7 +323,7 @@
 !      nprocs         number of processors
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: ndim
       use physicaldata
       use tree
       use mpi_morton
@@ -583,7 +583,6 @@
 !      nprocs         number of processors
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
@@ -623,7 +622,6 @@
 ! Arguments:
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
       use physicaldata
       use tree
       use mpi_morton
@@ -852,7 +850,7 @@
 !
 !------------------------------------
 
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: ndim
       use physicaldata
       use tree
 
@@ -917,7 +915,6 @@
 !
 !------------------------------------------------------------------------
 
-      use paramesh_dimensions
       use physicaldata
       use tree
       use workspace
@@ -1095,7 +1092,6 @@
 !
 !------------------------------------------------------------------------
 
-      use paramesh_dimensions
       use physicaldata
       use tree
       use workspace

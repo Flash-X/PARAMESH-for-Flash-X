@@ -11,9 +11,10 @@
 
 ! By K. Olson (NASA/GSFC and GMU), 4/97
 !! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !!  2022-12-01 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: k2d, k3d
       Use physicaldata
       Use tree
       Use timings

@@ -10,14 +10,14 @@
 !!****f* source/mpi_amr_get_remote_block_fvar
 !! NAME
 !!
-!!   mpi_amr_get_remote_block_fvar
+!!   mpiAmr_get_remote_block_fvar
 !!
 !! SYNOPSIS
 !!
-!!   call mpi_amr_get_remote_block_fvar (mype, remote_pe, remote_block, icoord,
+!!   call mpiAmr_get_remote_block_fvar (mype, remote_pe, remote_block, icoord,
 !!                                       recvx, recvy, recvz, idest)
 !!
-!!   call mpi_amr_get_remote_block_fvar (integer, integer, integer, integer,
+!!   call mpiAmr_get_remote_block_fvar (integer, integer, integer, integer,
 !!                                       real, real, real, integer)
 !!
 !! ARGUMENTS
@@ -68,7 +68,7 @@
 !! CALLS
 !!
 !!   amr_mpi_find_blk_in_buffer
-!!   mpi_set_message_limits
+!!   mpiSet_message_limits
 !!
 !! RETURNS
 !!
@@ -85,24 +85,27 @@
 !!
 !! Written by Peter MacNeice (August 2001).
 !!
+!! MODIFICATIONS
+!!  2022-12-01 Klaus Weide  Cleaned up REORDER and Use, use ASSOCIATE for PDG
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
+!!REORDER(4): recv[xyz]
 #include "paramesh_preprocessor.fh"
 
-      Subroutine mpi_amr_get_remote_block_fvar(mype,                   & 
+      Subroutine mpiAmr_get_remote_block_fvar(mype,                   & 
                            remote_pe,remote_block,icoord,              & 
-                           recvx,recvy,recvz,idest)
+                           recvx,recvy,recvz,idest,ig)
 
 !-----Use statements.
-      Use paramesh_dimensions
-      Use physicaldata
+      use paramesh_dimensions, ONLY: gr_thePdgDimens, ndim, npgs, nbndvar
+      Use physicaldata, ONLY: facevarx,    facevary,    facevarz,    &
+                              gt_facevarx, gt_facevary, gt_facevarz, &
+                              no_permanent_guardcells
       Use tree
       Use workspace
       Use mpi_morton
       Use paramesh_interfaces, only : amr_mpi_find_blk_in_buffer
-      Use paramesh_mpi_interfaces, only : mpi_set_message_limits
+      Use paramesh_mpi_interfaces, only : mpiSet_message_limits
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None
@@ -116,10 +119,9 @@
       Real, Intent(out)   :: recvx(:,:,:,:)
       Real, Intent(out)   :: recvy(:,:,:,:)
       Real, Intent(out)   :: recvz(:,:,:,:)
+      integer, Intent(in) :: ig
 
 !-----Local arrays and variables.
-      Integer :: nguard0
-      Integer :: nguard_work0
       Integer :: ierrorcode,ierr
       Integer :: dtype
       Integer :: vtype
@@ -128,8 +130,8 @@
       Logical :: lfound,lerror
 
 !-----Begin executable code.
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
+      ASSOCIATE(nvar    => gr_thePdgDimens(ig) % nvar           &
+      )
 
       If (remote_block <= lnblocks.And.remote_pe == mype) Then
 
@@ -198,8 +200,8 @@
                              index + nvar*message_size_cc(dtype)
 
         vtype = 2
-        Call mpi_set_message_limits(                                   & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype)
+        Call mpiSet_message_limits(                                   & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
         If (icoord == 1) Then
           Do k = ka,kb
@@ -217,8 +219,8 @@
 
         If (ndim >= 2) Then
           vtype = 3
-          Call mpi_set_message_limits(                                 & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype)
+          Call mpiSet_message_limits(                                 & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
           If (icoord == 2) Then
             Do k = ka,kb
@@ -238,8 +240,8 @@
 
         If (ndim == 3) Then
          vtype = 4
-         Call mpi_set_message_limits(                                  & 
-                     dtype,ia,ib,ja,jb,ka,kb,vtype)
+         Call mpiSet_message_limits(                                  & 
+                     dtype,ia,ib,ja,jb,ka,kb,vtype,ig)
 
          If (icoord == 3) Then
            Do k = ka,kb
@@ -257,6 +259,6 @@
         End If
 
       End If  ! End If (remote_block <= lnblocks.And.remote_pe == mype)
-
+      end ASSOCIATE
       Return
-      End Subroutine mpi_amr_get_remote_block_fvar
+      End Subroutine mpiAmr_get_remote_block_fvar

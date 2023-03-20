@@ -14,11 +14,11 @@
 !!
 !! SYNOPSIS
 !!
-!!   call mpi_amr_1blk_guarcell_c_to_f(mype, lb, pe, iopt, nlayers, surrblks,
+!!   call mpiAmr_1blk_guardcell_c_to_f(mype, lb, pe, iopt, nlayers, surrblks,
 !!                                     lcc,lfc,lec,lnc,icoord,ldiag,
 !!                                     nlayersx,nlayersy,nlayersz) 
 !!
-!!   call mpi_amr_1blk_guarcell_c_to_f(integer, integer, integer, integer, integer, 
+!!   call mpiAmr_1blk_guardcell_c_to_f(integer, integer, integer, integer, integer,
 !!                                     integer,
 !!                                     logical, logical, logical, logical, integer, 
 !!                                     logical,
@@ -87,7 +87,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   timings
 !!   workspace
 !!   prolong_arrays
 !!   paramesh_interfaces
@@ -123,25 +122,35 @@
 !!
 !!   Peter MacNeice (July 1998) with modifications by 
 !!   Kevin Olson (2003) for layered guardcell filling.
+!!   Klaus Weide (2021) for pdg stuff
 !!
+!! MODIFICATIONS
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine mpi_amr_1blk_guardcell_c_to_f(                        & 
+Subroutine mpiAmr_1blk_guardcell_c_to_f(                               &
                           mype,lb,pe,iopt,nlayers,                     & 
                           surrblks,lcc,lfc,lec,lnc,icoord,ldiag,       & 
-                          nlayersx,nlayersy,nlayersz,ipolar)
+                          nlayersx,nlayersy,nlayersz,ipolar,           &
+                          pdg,ig)
 
 
 !-----Use Statements
-      Use paramesh_dimensions
-      Use physicaldata
-      Use tree
-      Use timings
-      Use workspace
+      use gr_pmPdgDecl, ONLY : pdg_t
+      Use paramesh_dimensions, only: gr_thePdgDimens
+      Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work
+      Use paramesh_dimensions, only: nfacevar,nvaredge,nvarcorn
+      Use paramesh_dimensions, only: gc_off_x, gc_off_y, gc_off_z
+      Use physicaldata, only: facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n1
+      Use physicaldata, ONLY: lnew_parent
+      use tree,         only: nfaces,parent,which_child
+      Use workspace,    only: work1, interp_mask_work
       Use prolong_arrays, Only : prol_fc_dbz,                          & 
                                  prol_fc_dbz_ivar,                     & 
                                  prol_fc_dbz_n,                        & 
@@ -165,6 +174,8 @@
       Logical, intent(in) :: lcc,lfc,lec,lnc,ldiag
       Integer, intent(in) :: nlayersx,nlayersy,nlayersz
       Integer, intent(in) :: ipolar(2)
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
 !-----Local arrays and variables
       Integer,Save :: cparent(2)
@@ -188,6 +199,18 @@
 
 !-----Begin executable code
 
+    ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+                nyb         => gr_thePdgDimens(ig) % nyb,      &
+                nzb         => gr_thePdgDimens(ig) % nzb,      &
+                nguard      => gr_thePdgDimens(ig) % nguard,   &
+                il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+                iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+                jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+                ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+                kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+                ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+                unk1        => pdg % unk1      &
+      )
       igc_off_x = gc_off_x
       igc_off_y = gc_off_y
       igc_off_z = gc_off_z
@@ -297,7 +320,7 @@
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                         1,ioff,joff,koff,mype,         & 
-                                        lb,parent_pe,parent_blk)
+                                        lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                         ia,ib,ja,jb,ka,kb,             & 
@@ -492,7 +515,7 @@
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                           ia,ib,ja,jb,ka,kb,           & 
@@ -669,7 +692,7 @@
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                          1,ioff,joff,koff,mype,        & 
-                                         lb,parent_pe,parent_blk)
+                                         lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                          ia,ib,ja,jb,ka,kb,            & 
@@ -839,7 +862,7 @@
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
           Elseif (iopt >= 2) Then
              Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
                                            ia,ib,ja,jb,ka,kb,          & 
@@ -1006,7 +1029,7 @@
              Call amr_1blk_cc_prol_gen_unk_fun(                        & 
                             unk1(:,:,:,:,2),ia,ib,ja,jb,ka,kb,         & 
                                           1,ioff,joff,koff,mype,       & 
-                                          lb,parent_pe,parent_blk)
+                                          lb,parent_pe,parent_blk,pdg,ig)
 
           Elseif (iopt >= 2) Then
              call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,2),        & 
@@ -1133,8 +1156,8 @@
       End If  ! End If (ndim == 3)
 
       End If  ! End If (ldiag)
+    end ASSOCIATE
 
-      Return
-      End Subroutine mpi_amr_1blk_guardcell_c_to_f
+End Subroutine mpiAmr_1blk_guardcell_c_to_f
 
 

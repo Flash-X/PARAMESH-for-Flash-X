@@ -12,7 +12,7 @@
 !#define DEBUG
       subroutine mpi_unpack_blocks(mype,iopt, & 
      &                             lcc,lfc,lec,lnc, & 
-     &                             buf_dim,R_buffer, & 
+     &                             buf_dim,R_buffer,ig, &
      &                             nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -24,6 +24,8 @@
 !
 !
 ! Written :     Maharaj Bhat & Michael Gehmeyr          March 2000
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Use paramesh_dimensions with ONLY
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -37,7 +39,7 @@
 !      R_buffer       receive buffer 
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use paramesh_dimensions, ONLY: maxblocks_alloc
       use physicaldata
       use tree
       use mpi_morton
@@ -52,6 +54,7 @@
       integer, intent(in) :: mype,buf_dim,iopt
       logical, intent(in) :: lcc,lfc,lec,lnc
       real,    intent(IN) ::  R_buffer(buf_dim)
+      integer, intent(in) :: ig
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
 
@@ -80,7 +83,7 @@
      &        ' at index ',index,' buf_dim ',buf_dim
 #endif /* DEBUG */
         call mpi_put_buffer( & 
-     &         lb,iopt,index,lcc,lfc,lec,lnc,buf_dim,R_buffer, & 
+     &         lb,iopt,index,lcc,lfc,lec,lnc,buf_dim,R_buffer,ig, &
      &         nlayersx,nlayersy,nlayersz)
 #ifdef DEBUG
         write(*,*) 'pe ',mype,' lblk ',lblk,' unpacked into ',lb
@@ -107,7 +110,7 @@
       subroutine mpi_Rbuffer_size(mype,nprocs,iopt, & 
      &                           lcc,lfc,lec,lnc, & 
      &                           buf_dim, & 
-     &                           block_sections, fluxes, edges, flux_dir, &
+     &                           block_sections, fluxes, edges, pdg,ig, flux_dir, &
      &                           nlayersx,nlayersy,nlayersz)
 
 !------------------------------------------------------------------------
@@ -116,6 +119,9 @@
 !
 !
 ! Written :     Kevin Olson January 2007
+!! MODIFICATIONS
+!!  2021-12-15 Klaus Weide  Made PDG-aware
+!!  2022-11-08 Klaus Weide  Removed unnecessary Use paramesh_dimensions
 !------------------------------------------------------------------------
 !
 ! Arguments:
@@ -129,7 +135,7 @@
 !      buf_dim        dimension of buffer
 !
 !------------------------------------------------------------------------
-      use paramesh_dimensions
+      use gr_pmPdgDecl, ONLY : pdg_t
       use physicaldata
       use tree
       use mpi_morton
@@ -147,6 +153,8 @@
       integer, intent(out) :: buf_dim
       logical, intent(in)  :: lcc,lfc,lec,lnc
       logical, intent(in)  :: block_sections, fluxes, edges
+      type(pdg_t), intent(IN) :: pdg
+      integer, intent(in)  :: ig
       integer, intent(in), optional :: flux_dir
       integer, intent(in), optional :: nlayersx,nlayersy,nlayersz
 
@@ -182,13 +190,13 @@
 
                   call mpi_get_Rbuffer_size(  & 
      &                   lb,dtype,iopt,index, &
-     &                   lcc,lfc,lec,lnc, & 
+     &                   lcc,lfc,lec,lnc,ig,  &
      &                   nlayersx,nlayersy,nlayersz)
 
                   elseif (fluxes) then
 
                   call mpi_get_Rbuffer_size_fluxes(  & 
-     &                   lb,dtype,index, flux_dir)
+     &                   lb,dtype,index, pdg,ig, flux_dir)
 
                   elseif (edges) then
 

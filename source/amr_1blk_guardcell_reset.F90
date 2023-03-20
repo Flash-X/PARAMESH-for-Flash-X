@@ -46,12 +46,15 @@
 !!
 !!   Peter MacNeice, February 1999.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Cleaned up some USE statements.
 !!***
 
       Subroutine amr_1blk_guardcell_reset
 
-      Use paramesh_dimensions
-      Use physicaldata
+      Use physicaldata, ONLY: lnew_parent, &
+           pcache_blk_u, pcache_pe_u, &
+           pcache_blk_w, pcache_pe_w
 
       Implicit None
 

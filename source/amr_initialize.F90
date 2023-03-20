@@ -59,13 +59,20 @@
 !!   according to the settings in the 'amr_runtime_parameters' file.  MPI is also
 !!   started.
 !!
-!!   NOTE : This routine MUST BE the first executed code in your application!!!!
+!! NOTES
+!!
+!!   This routine MUST BE called before any other calls of PARAMESH
+!!   subroutines in your application!!!!
 !!
 !! AUTHORS
 !!
 !!   Peter MacNeice and Kevin Olson
 !!
-!!***     
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  initialization for all PDGs
+!!  2022-10-31 Klaus Weide  moved gcell_on_cc flag array into pdg_t
+!!  2022-11-08 Klaus Weide  moved cell_ geometry arrays of physicaldata to pdg_t
+!!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -233,7 +240,6 @@
       nbndvarc = Max(1,nvarcorn)
 
       nfluxes  = Max(1,nfluxvar)
-      nbndmax  = Max(nbndvar,nfluxes)
 
       nedgevar = Max(nedgevar1,nvaredge)
       nedges   = Max(1,nedgevar)
@@ -276,6 +282,7 @@
       iu_bnd1      = nxb+2*nguard
       ju_bnd1      = nyb+2*nguard*k2d
       ku_bnd1      = nzb+2*nguard*k3d
+#  include "gr_pmPdgDimenInit.fh"
 #endif
       len_block1   = iu_bnd1*ju_bnd1*ku_bnd1*nvar
       len_blockfx1 = (iu_bnd1+1)*ju_bnd1*ku_bnd1 
@@ -342,23 +349,24 @@
        Allocate(interp_mask_unk(1))
        Allocate(interp_mask_unk_res(1))
        Allocate(gcell_on_cc_pointer(1))
-       Allocate(gcell_on_cc(1))
        Allocate(int_gcell_on_cc(1))
        Allocate(checkp_on_cc(1))
 
       Else
 
-       Allocate(           & 
-        unk(nvar,          & 
-            il_bnd:iu_bnd, & 
-            jl_bnd:ju_bnd, & 
-            kl_bnd:ku_bnd, & 
-            maxblocks))
-       Allocate(unk1(nvar,            &
-                     il_bnd1:iu_bnd1, &
-                     jl_bnd1:ju_bnd1, & 
-                     kl_bnd1:ku_bnd1, &
-                     npblks))
+!!$       Allocate(           & 
+!!$        unk(nvar,          & 
+!!$            il_bnd:iu_bnd, & 
+!!$            jl_bnd:ju_bnd, & 
+!!$            kl_bnd:ku_bnd, & 
+!!$            maxblocks))
+!!$       ALLOCATE_MULTIPDG(unk)
+!!$       Allocate(unk1(nvar,            &
+!!$                     il_bnd1:iu_bnd1, &
+!!$                     jl_bnd1:ju_bnd1, & 
+!!$                     kl_bnd1:ku_bnd1, &
+!!$                     npblks))
+!!$       ALLOCATE_MULTIPDG(unk1)
        Allocate(               & 
          gt_unk(nvar,          & 
                 il_bnd:iu_bnd, &
@@ -378,7 +386,6 @@
        Allocate(interp_mask_unk(nvar))
        Allocate(interp_mask_unk_res(nvar))
        Allocate(gcell_on_cc_pointer(nvar))
-       Allocate(gcell_on_cc(nvar))
        Allocate(int_gcell_on_cc(nvar))
        Allocate(checkp_on_cc(nvar))
 
@@ -656,42 +663,45 @@
 
 !-----Allocate arrays for flux fix-up at refinement jumps
 
-      Allocate(                & 
-       flux_x(nfluxes,         &
-              1:2,             & 
-              jl_bndi:ju_bndi, &
-              kl_bndi:ku_bndi, &
-              maxblocksfl))
-      Allocate(                & 
-       flux_y(nfluxes,         &
-              il_bndi:iu_bndi, & 
-              1:2,             &
-              kl_bndi:ku_bndi, &
-              maxblocksfl))
-      Allocate(                & 
-       flux_z(nfluxes,         &
-              il_bndi:iu_bndi, & 
-              jl_bndi:ju_bndi, &
-              1:2,             &
-              maxblocksfl))
-      Allocate(                & 
-       tflux_x(nfluxes,        &
-              1:2,             & 
-              jl_bndi:ju_bndi, &
-              kl_bndi:ku_bndi, &
-              maxblocksfl))
-      Allocate(                 & 
-       tflux_y(nfluxes,         &
-               il_bndi:iu_bndi, & 
-               1:2,             &
-               kl_bndi:ku_bndi, &
-               maxblocksfl))
-      Allocate(                 & 
-       tflux_z(nfluxes,         &
-               il_bndi:iu_bndi, & 
-               jl_bndi:ju_bndi, &
-               1:2,             &
-               maxblocksfl))
+!!$      Allocate(                & 
+!!$       flux_x(nfluxes,         &
+!!$              1:2,             & 
+!!$              jl_bndi:ju_bndi, &
+!!$              kl_bndi:ku_bndi, &
+!!$              maxblocksfl))
+!!$      Allocate(                & 
+!!$       flux_y(nfluxes,         &
+!!$              il_bndi:iu_bndi, & 
+!!$              1:2,             &
+!!$              kl_bndi:ku_bndi, &
+!!$              maxblocksfl))
+!!$      Allocate(                & 
+!!$       flux_z(nfluxes,         &
+!!$              il_bndi:iu_bndi, & 
+!!$              jl_bndi:ju_bndi, &
+!!$              1:2,             &
+!!$              maxblocksfl))
+!!$       ALLOCATE_MULTIPDG(flux_x,flux_y,flux_z)
+
+!!$      Allocate(                & 
+!!$       tflux_x(nfluxes,        &
+!!$              1:2,             & 
+!!$              jl_bndi:ju_bndi, &
+!!$              kl_bndi:ku_bndi, &
+!!$              maxblocksfl))
+!!$      Allocate(                 & 
+!!$       tflux_y(nfluxes,         &
+!!$               il_bndi:iu_bndi, & 
+!!$               1:2,             &
+!!$               kl_bndi:ku_bndi, &
+!!$               maxblocksfl))
+!!$      Allocate(                 & 
+!!$       tflux_z(nfluxes,         &
+!!$               il_bndi:iu_bndi, & 
+!!$               jl_bndi:ju_bndi, &
+!!$               1:2,             &
+!!$               maxblocksfl))
+!!$       ALLOCATE_firstPDG(tflux_x,tflux_y,tflux_z)
 
 !-----Allocate arrrays for edge data fix-up at refinement jumps
 
@@ -798,12 +808,13 @@
                       1:2,             &
                       maxblockse))
 
-      Allocate(recvarxf(nfluxes,1:2,jl_bndi:ju_bndi,kl_bndi:ku_bndi))
-      Allocate(recvaryf(nfluxes,il_bndi:iu_bndi,1:2,kl_bndi:ku_bndi))
-      Allocate(recvarzf(nfluxes,il_bndi:iu_bndi,jl_bndi:ju_bndi,1:2))
-      Allocate(bndtempx1(nfluxes,1:2,jl_bndi:ju_bndi,kl_bndi:ku_bndi))
-      Allocate(bndtempy1(nfluxes,il_bndi:iu_bndi,1:2,kl_bndi:ku_bndi))
-      Allocate(bndtempz1(nfluxes,il_bndi:iu_bndi,jl_bndi:ju_bndi,1:2))
+!!$      Allocate(recvarxf(nfluxes,1:2,jl_bndi:ju_bndi,kl_bndi:ku_bndi))
+!!$      Allocate(recvaryf(nfluxes,il_bndi:iu_bndi,1:2,kl_bndi:ku_bndi))
+!!$      Allocate(recvarzf(nfluxes,il_bndi:iu_bndi,jl_bndi:ju_bndi,1:2))
+!!$      Allocate(bndtempx1(nfluxes,1:2,jl_bndi:ju_bndi,kl_bndi:ku_bndi))
+!!$      Allocate(bndtempy1(nfluxes,il_bndi:iu_bndi,1:2,kl_bndi:ku_bndi))
+!!$      Allocate(bndtempz1(nfluxes,il_bndi:iu_bndi,jl_bndi:ju_bndi,1:2))
+!!$      ALLOCATE_MULTIPDG(...)
 
       len_block_bndx = 2*(ju_bndi-jl_bndi+1)*(ku_bndi-kl_bndi+1)
       len_block_bndy = 2*(iu_bndi-il_bndi+1)*(ku_bndi-kl_bndi+1)
@@ -876,12 +887,13 @@
 
 !-----Allocate prolong_arrays data
 
-      Allocate(prol_dx(il_bnd1:iu_bnd1))
-      Allocate(prol_dy(jl_bnd1:ju_bnd1))
-      Allocate(prol_dz(kl_bnd1:ku_bnd1))
-      Allocate(prol_indexx(2,il_bnd1:iu_bnd1,2))
-      Allocate(prol_indexy(2,jl_bnd1:ju_bnd1,2))
-      Allocate(prol_indexz(2,kl_bnd1:ku_bnd1,2))
+!!$      Allocate(prol_dx(il_bnd1:iu_bnd1))
+!!$      Allocate(prol_dy(jl_bnd1:ju_bnd1))
+!!$      Allocate(prol_dz(kl_bnd1:ku_bnd1))
+!!$      Allocate(prol_indexx(2,il_bnd1:iu_bnd1,2))
+!!$      Allocate(prol_indexy(2,jl_bnd1:ju_bnd1,2))
+!!$      Allocate(prol_indexz(2,kl_bnd1:ku_bnd1,2))
+!!$      ALLOCATE_MULTIPDG(...)
       Allocate(prol_f_dx(il_bnd1:iu_bnd1+1))
       Allocate(prol_f_dy(jl_bnd1:ju_bnd1+k2d))
       Allocate(prol_f_dz(kl_bnd1:ku_bnd1+k3d))
@@ -958,35 +970,58 @@
 
 
       If (curvilinear) Then
-       Allocate(cell_vol(il_bnd1:iu_bnd1, &
-                         jl_bnd1:ju_bnd1, &
-                         kl_bnd1:ku_bnd1))
-       Allocate(cell_area1(il_bnd1:iu_bnd1+1, &
-                           jl_bnd1:ju_bnd1,   & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_area2(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_area3(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1,     & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng1(il_bnd1:iu_bnd1,     &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng2(il_bnd1:iu_bnd1+1,   &
-                           jl_bnd1:ju_bnd1,     & 
-                           kl_bnd1:ku_bnd1+k3d))
-       Allocate(cell_leng3(il_bnd1:iu_bnd1+1,   &
-                           jl_bnd1:ju_bnd1+k2d, & 
-                           kl_bnd1:ku_bnd1))
-       Allocate(cell_face_coord1(il_bnd1:iu_bnd1+1))
-       Allocate(cell_face_coord2(jl_bnd1:ju_bnd1+k2d))
-       Allocate(cell_face_coord3(kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_vol(il_bnd1:iu_bnd1, &
+!!$                         jl_bnd1:ju_bnd1, &
+!!$                         kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area1(il_bnd1:iu_bnd1+1, &
+!!$                           jl_bnd1:ju_bnd1,   & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area2(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_area3(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1,     & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng1(il_bnd1:iu_bnd1,     &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng2(il_bnd1:iu_bnd1+1,   &
+!!$                           jl_bnd1:ju_bnd1,     & 
+!!$                           kl_bnd1:ku_bnd1+k3d))
+!!$       Allocate(cell_leng3(il_bnd1:iu_bnd1+1,   &
+!!$                           jl_bnd1:ju_bnd1+k2d, & 
+!!$                           kl_bnd1:ku_bnd1))
+!!$       Allocate(cell_face_coord1(il_bnd1:iu_bnd1+1))
+!!$       Allocate(cell_face_coord2(jl_bnd1:ju_bnd1+k2d))
+!!$       Allocate(cell_face_coord3(kl_bnd1:ku_bnd1+k3d))
        Allocate(cell_vol_w(ilw1:iuw1,jlw1:juw1,klw1:kuw1))
       end if  ! End If (curvilinear)
 
       Allocate(ladd_strt(0:nprocs-1))
       Allocate(ladd_end(0:nprocs-1))
+
+      do i = 1, NUM_PDGS
+         call gr_pdgInitOne(gr_thePdgs(i),gr_thePdgDimens(i), nfluxvar,nfluxes,maxblocksfl, &
+                            curvilinear)
+      end do
+      unk    => gr_thePdgs(1) % unk
+      unk1   => gr_thePdgs(1) % unk1
+      flux_x => gr_thePdgs(1) % flux_x
+      flux_y => gr_thePdgs(1) % flux_y
+      flux_z => gr_thePdgs(1) % flux_z
+      recvarxf  => gr_thePdgs(1) % recvarxf
+      recvaryf  => gr_thePdgs(1) % recvaryf
+      recvarzf  => gr_thePdgs(1) % recvarzf
+      bndtempx1 => gr_thePdgs(1) % bndtempx1
+      bndtempy1 => gr_thePdgs(1) % bndtempy1
+      bndtempz1 => gr_thePdgs(1) % bndtempz1
+
+      prol_dx => gr_thePdgs(1) % prol_dx
+      prol_dy => gr_thePdgs(1) % prol_dy
+      prol_dz => gr_thePdgs(1) % prol_dz
+      prol_indexx => gr_thePdgs(1) % prol_indexx
+      prol_indexy => gr_thePdgs(1) % prol_indexy
+      prol_indexz => gr_thePdgs(1) % prol_indexz
 
 ! initialize tree data structure
         bsize(:,:)            = -1.
@@ -1023,7 +1058,6 @@
       Do i = 1, nvar
         gcell_on_cc_pointer(i) = i
       End Do  ! End Do i = 1,nvar
-      gcell_on_cc(:)     = .true.
       int_gcell_on_cc(:) = .true.
 
       Do i = 1, nfacevar

@@ -58,6 +58,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson August 2007.
 !!
+!! MODIFICATIONS
+!!  2022-11-08 Klaus Weide  Tweaked for PDG, DEFAULT PDG for setting nguarda
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -67,7 +69,8 @@
       Subroutine mpi_morton_bnd_prolong (mype,nprocs,tag_offset)
 
 !-----Use Statements
-      Use paramesh_dimensions
+      Use paramesh_dimensions, ONLY: gr_thePdgDimens, &
+           ndim, k2d, k3d, nguard_work, maxblocks, nmax_lays
       Use physicaldata
       Use tree
       Use timings
@@ -110,7 +113,7 @@
 
       accuracy = 100./10.**precision(accuracy)
       eps = accuracy 
-      nguarda = max(nguard,nguard_work)
+      nguarda = max(gr_thePdgDimens(1)%nguard,nguard_work)
 
       npts_neigh1 = npts_neigh
       npts_neigh2 = npts_neigh+100

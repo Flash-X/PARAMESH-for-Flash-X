@@ -81,17 +81,121 @@
 !!   Modified by Michael L. Rilee, December 2002, *clean_divb*
 !!        Support for projecting field onto divergenceless field
 !!
+!!  2022-11-02 K. Weide  Supply ig argument to flash_(un)?convert_cc_hook calls
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_cc_prol_gen_unk_fun
+!!  2022-11-08 K. Weide  Supply pdg,ig arguments to amr_1blk_to_perm
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
-      Subroutine amr_prolong(mype,iopt,nlayers)
+Subroutine amr_prolong_pdgNo(mype,iopt,nlayers,pdgNo)
+  use paramesh_dimensions, only: maxblocks
+  Use physicaldata, only: gr_thePdgs
+  Use physicaldata, only: lprolong_in_progress
+  Use tree, only: parent, lnblocks, nchild, newchild, lrefine
+  Use paramesh_interfaces, Only : & 
+                        amr_q_sort
+  Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
+#include "Flashx_mpi_implicitNone.fh"
+!-----Input/Output arguments.
+  Integer, Intent(in) ::  mype,iopt,nlayers
+  integer, intent(in), optional :: pdgNo
+
+      Integer :: parent_list(2,maxblocks)
+      Integer :: indx(maxblocks),index(maxblocks)
+      Integer :: parent_id(maxblocks),icoord
+      Integer,Save :: lref_min,lref_max
+      Integer,Save :: lref_mint,lref_maxt
+      Integer,Save :: nnewchildg,nnewchild
+      Integer :: ia,ib,ja,jb,ka,kb,iblock,lb,lreflevel,lbi
+
+      Integer :: nprocs, ierr
+
+      Logical :: lnewchild
+
+  integer :: npdg, ig,sg,eg
+  npdg = 1
+  if (present(pdgNo)) npdg = pdgNo
+  if (npdg == -1) then
+     sg = 1; eg = NUM_PDGS
+  else
+     sg = npdg; eg = npdg
+  end if
+
+!-----Begin executable code.
+
+!------set state flag
+  lprolong_in_progress = .True.
+
+!------Are there any new children?
+  nnewchild = 0
+  lnewchild = any(newchild)
+  If (lnewchild) nnewchild = 1
+  Call comm_int_max_to_all (nnewchildg,nnewchild)
+  If (nnewchildg == 0) Return
+
+  Call MPI_COMM_SIZE(amr_mpi_meshComm,nprocs,ierr)
+
+!------construct a list of parent blocks for new children
+  parent_list(:,:) = -1
+  iblock=0
+  lref_min = 100
+  lref_max = 1
+  If (lnblocks > 0) Then
+     Do lb = 1,lnblocks
+        If (newchild(lb)) Then
+           iblock = iblock+1
+           index(iblock) = lb
+           indx(iblock) = iblock
+           parent_list(:,iblock) = parent(:,lb)
+           parent_id(iblock) = parent(1,lb)+maxblocks*parent(2,lb)
+           lref_min = min(lrefine(lb),lref_min)
+           lref_max = max(lrefine(lb),lref_max)
+        End If
+     End Do
+  End If
+
+  lref_maxt = lref_max
+  lref_mint = lref_min
+  Call comm_int_max_to_all (lref_max,lref_maxt)
+  Call comm_int_min_to_all (lref_min,lref_mint)
+
+  If (lref_min > lref_max) lref_min = lref_max
+
+  If (iblock > nchild) Then
+!------sort the list of newchildren according to their parents ids
+!------This will enable us to avoid costly extra guardcell filling operations
+!------on parent blocks
+     Call amr_q_sort (parent_id,iblock,ia = indx)
+  End If
+
+
+  do ig = sg,eg
+     call amr_prolong(mype,iopt,nlayers, gr_thePdgs(ig),ig)
+  end do
+
+  newchild(:) = .False.
+
+  !-----unset state flag
+  lprolong_in_progress = .False.
+
+contains
+  Subroutine amr_prolong(mype,iopt,nlayers,pdg,ig)
 
 !-----Use statements
-      Use paramesh_dimensions
-      Use physicaldata
+    use gr_pmPdgDecl, ONLY : pdg_t
+    use paramesh_dimensions, ONLY: gr_thePdgDimens
+    Use paramesh_dimensions, only: ndim,k2d,k3d,nguard_work,npgs, nfacevar,nvarcorn,nvaredge, &
+                                 nbndvar,nbndvare,nbndvarc, nfield_divf
+      Use physicaldata, only: facevarx,   facevary,   facevarz, &
+                              gt_facevarx,gt_facevary,gt_facevarz, &
+                              facevarx1,  facevary1,  facevarz1
+      Use physicaldata, only: unk_e_x,    unk_e_y,    unk_e_z, &
+                              unk_e_x1,  unk_e_y1,  unk_e_z1
+      Use physicaldata, only: unk_n, unk_n1
+      Use physicaldata, only: diagonals, divergence_free, force_consistency, no_permanent_guardcells
       Use tree
       Use workspace
       Use mpi_morton
@@ -119,65 +223,63 @@
       Use paramesh_mpi_interfaces, Only :                              & 
                         mpi_amr_comm_setup
       use gr_flashHook_interfaces
-      Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None
 
-!-----Include statements
-      Include 'mpif.h'
-
 !-----Input/Output arguments.
       Integer, Intent(in) ::  mype,iopt,nlayers
+      type(pdg_t), intent(INOUT) :: pdg
+      integer, intent(in) :: ig
 
-!-----Local arrays and variables.
-      Real :: recvf(nbndvar,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,     & 
-                                            kl_bnd1:ku_bnd1+k3d)
-      Real :: recve(nbndvare,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,    & 
-                                            kl_bnd1:ku_bnd1+k3d)
-      Real :: recvn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,    & 
-                                            kl_bnd1:ku_bnd1+k3d)
-      Real :: recvfx(nbndvar,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1,        & 
-                                            kl_bnd1:ku_bnd1)
-      Real :: recvfy(nbndvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1+k2d,      & 
-                                            kl_bnd1:ku_bnd1)
-      Real :: recvfz(nbndvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,          & 
-                                            kl_bnd1:ku_bnd1+k3d)
+!-----Local arrays
       Integer :: p_cache_addr(2),idest,nguard0,nguard_npgs
       Integer :: parent_blk,parent_pe
-      Integer :: parent_list(2,maxblocks)
-      Integer :: indx(maxblocks),index(maxblocks)
-      Integer :: parent_id(maxblocks),icoord
-      Integer,Save :: lref_min,lref_max
-      Integer,Save :: lref_mint,lref_maxt
-      Integer,Save :: nnewchildg,nnewchild
-      Integer :: ia,ib,ja,jb,ka,kb,iblock,lb,lreflevel,lbi
+
       Integer :: ioff,joff,koff ,k,i
       Integer :: tag_offset
       Integer :: p_blk,p_pe,iblk
-      Integer :: nprocs, ierr
+
       Integer :: level,j
       Integer :: nfield
       Integer :: imlr, jmlr, kmlr,idim_mlr
       Integer :: iprol, iv1, iv2, iv3
-      Logical :: lnewchild, lfound
+
+      Logical :: lfound
       Logical :: lcc,lfc,lec,lnc,l_srl_only,ldiag
       Logical :: lguard,lprolong,lflux,ledge,lrestrict,lfulltree
 
 !-----Begin executable code.
 
-!------set state flag
-       lprolong_in_progress = .True.
-
-!------Are there any new children?
-       nnewchild = 0
-       lnewchild = any(newchild)
-       If (lnewchild) nnewchild = 1
-       Call comm_int_max_to_all (nnewchildg,nnewchild)
-       If (nnewchildg == 0) Return
-
-       Call MPI_COMM_SIZE(amr_mpi_meshComm,nprocs,ierr)
 !------reset cache addresses
        Call amr_1blk_guardcell_reset
+
+     ASSOCIATE(nxb         => gr_thePdgDimens(ig) % nxb,      &
+               nyb         => gr_thePdgDimens(ig) % nyb,      &
+               nzb         => gr_thePdgDimens(ig) % nzb,      &
+               nguard      => gr_thePdgDimens(ig) % nguard,   &
+               nvar        => gr_thePdgDimens(ig) % nvar,     &
+               il_bnd1     => gr_thePdgDimens(ig) % il_bnd1,  &
+               iu_bnd1     => gr_thePdgDimens(ig) % iu_bnd1,  &
+               jl_bnd1     => gr_thePdgDimens(ig) % jl_bnd1,  &
+               ju_bnd1     => gr_thePdgDimens(ig) % ju_bnd1,  &
+               kl_bnd1     => gr_thePdgDimens(ig) % kl_bnd1,  &
+               ku_bnd1     => gr_thePdgDimens(ig) % ku_bnd1,  &
+               unk1        => pdg % unk1      &
+               )
+       BLOCK
+!-----Local arrays
+         Real :: recvf(nbndvar,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,     & 
+                                            kl_bnd1:ku_bnd1+k3d)
+         Real :: recve(nbndvare,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,    & 
+                                            kl_bnd1:ku_bnd1+k3d)
+         Real :: recvn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,    & 
+                                            kl_bnd1:ku_bnd1+k3d)
+         Real :: recvfx(nbndvar,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1,        & 
+                                            kl_bnd1:ku_bnd1)
+         Real :: recvfy(nbndvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1+k2d,      & 
+                                            kl_bnd1:ku_bnd1)
+         Real :: recvfz(nbndvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,          & 
+                                            kl_bnd1:ku_bnd1+k3d)
 
 !------Identify variables to be prolonged
        lcc = .False.
@@ -204,38 +306,7 @@
        ka = 1+nguard0*k3d      
        kb = nzb+nguard0*k3d
 
-!------construct a list of parent blocks for new children
-       parent_list(:,:) = -1
-       iblock=0
-       lref_min = 100
-       lref_max = 1
-       If (lnblocks > 0) Then
-          Do lb = 1,lnblocks
-          If (newchild(lb)) Then
-            iblock = iblock+1
-            index(iblock) = lb
-            indx(iblock) = iblock
-            parent_list(:,iblock) = parent(:,lb)
-            parent_id(iblock) = parent(1,lb)+maxblocks*parent(2,lb)
-            lref_min = min(lrefine(lb),lref_min)
-            lref_max = max(lrefine(lb),lref_max)
-          End If
-          End Do
-       End If
 
-       lref_maxt = lref_max
-       lref_mint = lref_min
-       Call comm_int_max_to_all (lref_max,lref_maxt)
-       Call comm_int_min_to_all (lref_min,lref_mint)
-
-       If (lref_min > lref_max) lref_min = lref_max
-
-       If (iblock > nchild) Then
-!------sort the list of newchildren according to their parents ids
-!------This will enable us to avoid costly extra guardcell filling operations
-!------on parent blocks
-          Call amr_q_sort (parent_id,iblock,ia = indx)
-       End If
 
        p_cache_addr(:) = -1
 
@@ -294,7 +365,7 @@
        lfulltree = .False.
        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,            & 
                                lflux,ledge,lrestrict,lfulltree,        & 
-                               iopt,lcc,lfc,lec,lnc,tag_offset)
+                               iopt,lcc,lfc,lec,lnc,tag_offset, pdg,ig)
 
        If (iblock > 0) Then
        Do lbi = 1,iblock
@@ -346,7 +417,7 @@
 
          Call amr_1blk_guardcell(mype,iopt,nlayers,p_blk,              & 
                                  p_pe,lcc,lfc,lec,lnc,l_srl_only,      & 
-                                 icoord,ldiag)
+                                 icoord,ldiag,pdg,ig)
 
 #ifdef DEBUG
        do j = jl_bnd1,ju_bnd1
@@ -358,7 +429,7 @@
          if (iopt.eq.1)  & 
      &        call flash_convert_cc_hook(unk1(:,:,:,:,1), nvar, & 
      &        il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &        why=gr_callReason_PROLONG)
+     &        why=gr_callReason_PROLONG, ig=ig)
 
 !--------update address of cached parent
          p_cache_addr(1) = parent_blk
@@ -376,11 +447,12 @@
            Call amr_1blk_cc_prol_gen_unk_fun(                          & 
                     unk1(:,:,:,:,1),                                   & 
                     ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,mype,       & 
-                    lb,parent_pe,parent_blk)
+                    lb,parent_pe,parent_blk,pdg,ig)
            if (iopt.eq.1)  & 
      &          call flash_unconvert_cc_hook(unk1(:,:,:,:,2), nvar, & 
      &          il_bnd1,iu_bnd1, jl_bnd1,ju_bnd1, kl_bnd1,ku_bnd1, & 
-     &          where=gr_cells_INTERIOR, why=gr_callReason_PROLONG)
+     &          where=gr_cells_INTERIOR, why=gr_callReason_PROLONG, &
+     &          ig=ig)
          ElseIf (iopt >= 2) Then
            Call amr_1blk_cc_prol_gen_work_fun(work1(:,:,:,1),          & 
                     ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,mype,       & 
@@ -585,7 +657,7 @@
 
 !-----copy data back to permanent storage arrays
 
-       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest )
+       Call amr_1blk_to_perm( lcc,lfc,lec,lnc,lb,iopt,idest, pdg,ig)
 
       End If  ! End If (lrefine(lb) == lreflevel)
 
@@ -598,20 +670,17 @@
         If (lfc) Then
         Do nfield = 1,nfield_divf
           Call amr_prolong_fc_divbconsist(mype,lreflevel,              & 
-                                          nfield)
+                                          nfield,ig)
         End Do
         End If
       End If
 
       End Do  ! End Do lreflevel = lref_min,lref_max
-
+    END BLOCK
+    end ASSOCIATE
 !-----reset cache addresses
       Call amr_1blk_guardcell_reset
 
-      newchild(:) = .False.
-
-!-----unset state flag
-      lprolong_in_progress = .False.
-
       Return
       End Subroutine amr_prolong
+end Subroutine amr_prolong_pdgNo

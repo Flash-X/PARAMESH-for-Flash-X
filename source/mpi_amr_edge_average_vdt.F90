@@ -141,7 +141,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
       If (lnblocks > 0) Then
       Do lb = 1,lnblocks
@@ -188,7 +188,7 @@
       lfulltree = .False.
       Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,             & 
                               lflux,ledge,lrestrict,lfulltree,         & 
-                              iopt,lcc,lfc,lec,lnc,tag_offset)
+                              iopt,lcc,lfc,lec,lnc,tag_offset, gr_thePdgs(1),1)
 
 !-----Parents who have completed their timestep and border a leaf block
 !-----update their edges.

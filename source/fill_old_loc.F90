@@ -57,6 +57,8 @@
 !!
 !!   Kevin Olson (1996-2001).
 !!
+!! MODIFICATIONS
+!!  2022-10-10 Klaus Weide  Changed intent of new_loc dummy to 'in'
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -64,7 +66,6 @@
       Subroutine fill_old_loc(new_loc,old_loc,nprocs,mype)
 
 !-----Use statements
-      Use paramesh_dimensions
       Use physicaldata
       Use tree
       Use io
@@ -76,7 +77,7 @@
       Include 'mpif.h'
 
 !-----Input/Output arguments.
-      integer, intent(inout) :: new_loc(:,:)
+      integer, intent(in)    :: new_loc(:,:)
       integer, intent(out)   :: old_loc(:,:)
       integer, intent(in)    :: nprocs,mype
 
