@@ -16,8 +16,8 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_restrict_unk_dg (datain, dataout, ivar, ioff, joff, koff)
-!!   Call amr_restrict_unk_dg (real array, real array, integer, integer, integer, integer)
+!!   Call amr_restrict_unk_dg (datain, dataout, ivar, ioff, joff, koff,                   pdg,ig)
+!!   Call amr_restrict_unk_dg (real array, real array, integer, integer, integer, integer,TYPE(pdg_t),integer)
 !!
 !! ARGUMENTS
 !!
@@ -47,13 +47,15 @@
 !!
 !!  Stub version created  -  Klaus Weide 2022-04-28
 !!  Stub version updated  -  Klaus Weide 2023-03-16
+!!  2023-03-20 Added pdg,ig arguments               - Klaus Weide
 !!
 !!***
 
-Subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
+Subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff,pdg,ig)
 
   !-----Use Statements
   Use Driver_interface, ONLY: Driver_abort
+  use gr_pmPdgDecl, ONLY : pdg_t
 
   Implicit None
 
@@ -62,6 +64,8 @@ Subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
   Real,    Intent(inout) :: dataout(:,:,:,:)
   Integer, Intent(in)    :: ivar
   Integer, Intent(in)    :: ioff,joff,koff
+  type(pdg_t), intent(INOUT) :: pdg
+  Integer, Intent(in)    :: ig
 
   call Driver_abort(&
        'An implementation of amr_restrict_unk_dg needs to be provided!')

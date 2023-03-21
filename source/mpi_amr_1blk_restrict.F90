@@ -18,10 +18,10 @@
 !! SYNOPSIS
 !!
 !!   call mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,
-!!                              lfulltree,filling_guardcells)
+!!                              lfulltree,filling_guardcells,pdg,ig)
 !!
 !!   call mpi_amr_1blk_restrict(integer, integer, logical, logical, logical, logical 
-!!                              logical, logical)
+!!                              logical, logical, TYPE(pdg_t), integer)
 !!
 !! ARGUMENTS
 !!
@@ -118,6 +118,7 @@
 !!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
 !!  2023-03-16 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
 !!  2023-03-17 K. Weide  Special handling for interp_mask_unk_res 40
+!!  2023-03-20 K. Weide  Pass pdg and ig to amr_restrict_unk_fun
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -488,7 +489,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 !----------Compute restricted cell-centered data from the data in the buffer
                           If (lcc) Then
 
-                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff, ig)
+                             Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff, pdg,ig)
                              kc = koff + nguard0*k3d
                              jc = joff + nguard0*k2d
                              ic = ioff + nguard0

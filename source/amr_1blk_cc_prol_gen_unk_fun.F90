@@ -61,7 +61,6 @@
 !!   physicaldata
 !!   tree
 !!   timings
-!!   prolong_arrays
 !!   paramesh_interfaces
 !!
 !! CALLS
@@ -85,6 +84,7 @@
 !!  2022-10-07 Klaus Weide  Made PDG-aware (temporary, intermediate changes)
 !!  2022-11-08 Klaus Weide  Made PDG-aware properly with pdg,ig arguments
 !!  2022-12-03 Klaus Weide  Call amr_1blk_cc_prol_inject with pdg,ig arguments
+!!  2023-03-20 Klaus Weide  More use of pdg,ig arguments
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -176,7 +176,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 
            Call amr_1blk_cc_prol_dg                      &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
-           mype,ivar)
+           mype,ivar,pdg,ig)
 
         End If  ! End If (interp_mask_unk(ivar) < 20
 

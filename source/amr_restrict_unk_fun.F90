@@ -16,8 +16,8 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff,   ig))
-!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer,integer)
+!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff,   pdg,        ig)
+!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer,TYPE(pdg_t),integer)
 !!
 !! ARGUMENTS
 !!
@@ -59,13 +59,15 @@
 !! MODIFICATIONS
 !!  2022-11-02 K. Weide  Added 'ig' dummy argument and used it for 'nvar'
 !!  2022-11-08 K. Weide  Pass ig to amr_restrict_unk_genorder
+!!  2023-03-20 K. Weide  Use pdg and ig arguments
 !!***
 
-Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, ig)
+Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, pdg,ig)
 
 !-----Use statements.
+  use gr_pmPdgDecl, ONLY : pdg_t
   Use paramesh_dimensions, ONLY: gr_thePdgDimens
-  Use physicaldata
+  Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk_res
   Use paramesh_interfaces, only : amr_restrict_unk_genorder,       &
                                       amr_restrict_unk_user,           &
                                       amr_restrict_unk_dg
@@ -76,6 +78,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, ig)
   Real, Intent(in)    :: datain(:,:,:,:)
   Real, Intent(inout) :: dataout(:,:,:,:)
   Integer, Intent(in) :: ioff,joff,koff
+  type(pdg_t),intent(INOUT) :: pdg
   integer, intent(in) :: ig
 
 !-----Local variables.
@@ -83,6 +86,9 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, ig)
 
 !-----Begin Executable code.
 
+#ifdef DEBUG
+  print*,'Top of amr_restrict_unk_fun, ig=',ig
+#endif
   Do ivar = 1, gr_thePdgDimens(ig) % nvar
 
      If (int_gcell_on_cc(ivar)) Then
@@ -98,7 +104,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, ig)
 !--------User defined interpolation to be used for
 !prolongation/restriction from Thornado
 
-            Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
+            Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff,pdg,ig)
 
          ElseIf (interp_mask_unk_res(ivar) >= 20) Then
 

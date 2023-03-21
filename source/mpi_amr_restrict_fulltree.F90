@@ -16,6 +16,7 @@
 
 !!  2023-03-16 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
 !!  2023-03-17 K. Weide  Special handling for interp_mask_unk_res 40
+!!  2023-03-20 K. Weide  Pass pdg and ig to amr_restrict_unk_fun
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -499,7 +500,7 @@ contains
 
 ! Compute restricted cell-centered data from the data in the buffer
            if(lcc) then
-             call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff, ig)
+             call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff, pdg,ig)
 
 
            do k=1+nguard*k3d,nzb+nguard*k3d,2
