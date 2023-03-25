@@ -270,6 +270,9 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !-----Is this a parent block of at least one leaf node?
               If ((nodetype(lb) == 2 .and. lrefine(lb) == level) .or. &
+                  (nodetype(lb) == 3 .and. &
+                     (lrefine(lb) .GE. lrefine_min) .AND. &
+                     ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2)) .OR. &
                   (nodetype(lb) == 2 .and. filling_guardcells)) Then
 
 
