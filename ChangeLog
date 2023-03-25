@@ -1,3 +1,9 @@
+2023-03-25  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/gr_amr1blkRestrict.F90: special handling for
+	interp_mask_unk_res 40, and pass ioff,joff,koff to
+	amr_restrict_unk_fun, as in mpi_amr_1blk_restrict.F90.
+
 2023-03-17  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: special handling for interp_mask_unk_res 40.

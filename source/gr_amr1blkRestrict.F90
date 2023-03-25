@@ -96,6 +96,8 @@
 !!
 !! MODIFICATIONS
 !!  2022-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
+!!  2023-03-25 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
+!!  2023-03-25 K. Weide  Special handling for interp_mask_unk_res 40
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -168,15 +170,22 @@
 #endif
 
       Logical :: lfound
-
-!-----Include Statements
-      include 'mpif.h'
+  logical,allocatable :: curvilinear_cons_mask_unk(:)
 
 !-----Begin Executable Code
       nguard0 = nguard*npgs
       nguard1 = nguard - nguard0
       nguard_work0 = nguard_work*npgs
       nguard_work1 = nguard_work - nguard_work0
+
+  if (iopt == 1) then
+     allocate(curvilinear_cons_mask_unk(size(interp_mask_unk_res,1)))
+     if (lcc .AND. curvilinear_conserve) then
+        curvilinear_cons_mask_unk(:) = (interp_mask_unk_res(:) .NE. 40)
+     else
+        curvilinear_cons_mask_unk(:) = .FALSE.
+     end if
+  end if
 
       If ((.Not.diagonals) .and. (iopt .ne. 2)) Then
          Write(*,*) 'amr_1blk_restrict:  diagonals off'
@@ -289,7 +298,8 @@
 
          If (curvilinear_conserve) Then
 
-            interp_mask_unk_res(:) = 1
+                             where(interp_mask_unk_res(:) .NE. 40) &
+                                   interp_mask_unk_res(:) = 1
             interp_mask_work_res(:) = 1
             interp_mask_facex_res(:) = 1
             interp_mask_facey_res(:) = 1
@@ -309,7 +319,8 @@
 
 !----------Compute volume weighted cell center data for conservative restriction
            Do ivar = 1,nvar
-             If (int_gcell_on_cc(ivar))                                & 
+                                   If (int_gcell_on_cc(ivar) &
+                                        .AND.curvilinear_cons_mask_unk(ivar))          &
                      unk1(ivar,i1:i2,j1:j2,k1:k2,1) =                  & 
                         unk1(ivar,i1:i2,j1:j2,k1:k2,1)                 & 
                         *cell_vol(i1:i2,j1:j2,k1:k2)
@@ -378,7 +389,7 @@
 !----------Compute restricted cell-centered data from the data in the buffer
            If (lcc) Then
 
-           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff)
            kc = koff + nguard0*k3d
            jc = joff + nguard0*k2d
            ic = ioff + nguard0
@@ -393,7 +404,7 @@
                  ii = ii + ic
                  Do ivar=1,nvar
                    If (int_gcell_on_cc(ivar)) Then
-                     If (curvilinear_conserve) Then
+                                            If (curvilinear_cons_mask_unk(ivar)) Then
                        unk(ivar,ii,jj,kk,lb) =                         & 
                        temp(ivar,i,j,k)                                & 
                        / cell_vol(ii+nguard1,jj+nguard1*k2d,           & 
@@ -471,7 +482,7 @@
            End Do
          End Do
 
-!--------update the parent block
+                          !--------update the parent block
          Do k=1,nzb+(-nzb/2)*k3d
            Do j=1,nyb+(-nyb/2)*k2d
              Do i=1,nxb-nxb/2+1
@@ -958,6 +969,10 @@
 
 
 !!$      lrestrict_in_progress = .False.
+
+  if (allocated(curvilinear_cons_mask_unk)) then
+     deallocate(curvilinear_cons_mask_unk)
+  end if
 
       if (allocated(tempf)) then
          Deallocate(tempf)
