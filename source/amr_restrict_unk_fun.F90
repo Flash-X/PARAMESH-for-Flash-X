@@ -4,7 +4,7 @@
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
 !!  National Aeronautics and Space Administration, Goddard Space Flight
 !!  Center.  All Rights Reserved.
-!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!  Copyright 2023 UChicago Argonne, LLC and contributors
 !!
 !!  Use of the PARAMESH software is governed by the terms of the
 !!  usage agreement which can be found in the file
@@ -16,14 +16,18 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_restrict_unk_fun(datain, dataout)
-!!   Call amr_restrict_unk_fun(real array, real array)
+!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff)
+!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer)
 !!
 !! ARGUMENTS
 !!
 !!   Real, Intent(in)    :: datain(:,:,:,:)  data to restrict
 !!   Real, Intent(inout) :: dataout(:,:,:,:) restricted data to return
-!!   
+!!   ioff, joff, koff : offsets of the restricted data that is returned within the coarse
+!!                      block; each of these numbers should be either 0 or half
+!!                      the number of interior cells in the block for the
+!!                      relevant direction.
+!!
 !! USES
 !!
 !!   paramesh_dimensions
@@ -53,7 +57,7 @@
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
 !!***
 
-Subroutine amr_restrict_unk_fun(datain,dataout)
+Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
 
 !-----Use statements.
   Use paramesh_dimensions
@@ -67,6 +71,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
 !-----Input/Output arguments.
   Real, Intent(in)    :: datain(:,:,:,:)
   Real, Intent(inout) :: dataout(:,:,:,:)
+  Integer, Intent(in) :: ioff,joff,koff
 
 !-----Local variables.
   Integer :: ivar, order
@@ -88,7 +93,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
 !--------User defined interpolation to be used for
 !prolongation/restriction from Thornado
 
-            Call amr_restrict_unk_dg(datain,dataout,ivar)
+            Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
 
          ElseIf (interp_mask_unk_res(ivar) >= 20) Then
 

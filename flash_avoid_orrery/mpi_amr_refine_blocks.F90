@@ -70,6 +70,8 @@
 !!   Kevin Olson (original version 1996, MPI version 1997,1998)
 !!   Modifications by Mike Zingale and Jonathan Dursi (U. of Chicago), 1999
 !!
+!! MODIFICATIONS
+!!  2022-12-01 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -86,10 +88,9 @@
       Use constants
       Use paramesh_mpi_interfaces, only :  morton_neighbors
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-      Implicit None
 
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output statements.
       Integer, Intent(in)    :: nprocs,mype
@@ -981,10 +982,9 @@ Subroutine amr_refine_blocks_flash (nprocs,mype)
   Use constants
   Use paramesh_mpi_interfaces, only :  morton_neighbors
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
-  Implicit None
 
   !-----Include statements.
-  Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
   !-----Input/Output statements.
   Integer, Intent(in)    :: nprocs,mype
