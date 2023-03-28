@@ -113,6 +113,8 @@
 !!  2022-11-02 K. Weide  added ig to amr_restrict_unk_fun interface
 !!  2022-11-08 K. Weide  moved cell_ geometry arrays from physicaldata to pdg_t
 !!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
+!!  2023-03-27 K. Weide  Also restrict into ANCESTOR blocks "where needed"
+!!  2023-03-27 K. Weide  Ancestors accept data from children who are ancestors
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -325,6 +327,9 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !-----Is this a parent block of at least one leaf node?
               If ((nodetype(lb) == 2 .and. lrefine(lb) == level) .or. &
+                  (nodetype(lb) == 3 .and. lrefine(lb) == level .AND. &
+                     (lrefine(lb) .GE. lrefine_min) .AND. &
+                     ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2)) .OR. &
                   (nodetype(lb) == 2 .and. filling_guardcells)) Then
 
 
@@ -358,7 +363,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                     cnodetype = nodetype(remote_block)
                     cempty = empty(remote_block)
 
-                    If (cnodetype <= 2 .and. cempty == 0 ) Then
+                    If ( cempty == 0 ) Then
 
 !--------compute the offset in the parent block appropriate for this child
                        ioff = mod(jchild-1,2)*nxb/2
