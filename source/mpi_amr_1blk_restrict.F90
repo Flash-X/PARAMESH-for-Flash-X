@@ -109,6 +109,7 @@
 !! MODIFICATIONS
 !!
 !!  2023-03-27 K. Weide  Also restrict into ANCESTOR blocks "where needed"
+!!  2023-03-27 K. Weide  Ancestors accept data from children who are ancestors
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -309,7 +310,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                     cnodetype = nodetype(remote_block)
                     cempty = empty(remote_block)
 
-                    If (cnodetype <= 2 .and. cempty == 0 ) Then
+                    If ( cempty == 0 ) Then
 
 !--------compute the offset in the parent block appropriate for this child
                        ioff = mod(jchild-1,2)*nxb/2
