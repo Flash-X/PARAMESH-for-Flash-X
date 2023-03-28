@@ -184,6 +184,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
+
   Logical :: l_srl_only,ldiag
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
@@ -192,6 +193,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   include 'mpif.h'
 
 !-----Begin Executable Code
+
   nguard0 = nguard*npgs
   nguard1 = nguard - nguard0
   nguard_work0 = nguard_work*npgs

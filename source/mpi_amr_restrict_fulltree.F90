@@ -63,36 +63,33 @@
       integer, intent(in)  :: mype,iopt
       logical, intent(in)  :: lcc,lfc,lec,lnc
 
-      integer nguard0,nguard_work0
-
 #ifdef REAL8
       real,parameter :: tiny = 1.d-40
 #else
       real,parameter :: tiny = 1.e-25
 #endif
 
+!-----Local Variables and Arrays
+      integer nguard0,nguard_work0
+
 !------------------------------------
 ! local arrays
-
 
       real temp(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
       real send(nvar,il_bnd1:iu_bnd1,jl_bnd1:ju_bnd1,kl_bnd1:ku_bnd1)
 
       real recvn0(nbndvarc,il_bnd:iu_bnd+1,jl_bnd:ju_bnd+k2d, & 
      &                                      kl_bnd:ku_bnd+k3d)
-      real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
-     &                                      kl_bnd1:ku_bnd1+k3d)
-      real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
-     &                                      kl_bnd1:ku_bnd1+k3d)
+    Real tempn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d)
+    Real sendn(nbndvarc,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d,       &
+                                          kl_bnd1:ku_bnd1+k3d)
 
       integer ::  maxbnd
-      real,allocatable :: tempf(:,:,:,:)
-      real,allocatable :: sendf(:,:,:,:)
-
+  Real,Allocatable :: tempf(:,:,:,:)
+  Real,Allocatable :: sendf(:,:,:,:)
 
       logical l_srl_only,ldiag
-
-
       logical :: lguard,lprolong,lflux,ledge,lrestrict,lfulltree
       logical :: lfound
 
@@ -114,14 +111,16 @@
       integer :: i1,i2,j1,j2,k1,k2
 
 !------------------------------------
+
+!-----Begin Executable Code
 #ifdef DEBUG_FLOW_TRACE
       write(*,*) 'entered mpi_amr_restrict_fulltree: pe ',mype, & 
      &           ' iopt ',iopt
 #endif /* DEBUG_FLOW_TRACE */
 
 
-      nguard0 = nguard*npgs
-      nguard_work0 = nguard_work*npgs
+  nguard0 = nguard*npgs
+  nguard_work0 = nguard_work*npgs
 
       maxbnd = max(nbndvare,nbndvarc,nbndvar)
       allocate(  & 
@@ -169,8 +168,7 @@
 
 
       if(llrefine_max.gt.llrefine_min) then
-      do level = llrefine_max-1,llrefine_min,-1
-
+     Do level = llrefine_max-1,llrefine_min,-1
 
 
 ! Now parents of leaf nodes get data
@@ -198,8 +196,8 @@
      &                        lflux,ledge,lrestrict,lfulltree, & 
      &                        iopt,lcc,lfc,lec,lnc,tag_offset)
 
-      if(lnblocks.gt.0) then
-      do lb = 1,lnblocks
+        If (lnblocks > 0) Then
+           Do lb = 1,lnblocks
 
 
 
@@ -207,15 +205,15 @@
       if(nodetype(lb).ge.2.and.lrefine(lb).eq.level) then
 
 
-! If yes then cycle through its children.
-      do ich=1,nchild
+!-----If yes then cycle through its children.
+                 Do ich=1,nchild
 
         jchild = ich
 
 
-! Is this child a leaf block? If it is then fetch its data.
-        remote_pe     = child(2,ich,lb)
-        remote_block  = child(1,ich,lb)
+!-------Is this child a leaf block? If it is then fetch its data.
+                    remote_pe     = child(2,ich,lb)
+                    remote_block  = child(1,ich,lb)
 
 #ifdef DEBUG
          write(*,*) 'pe ',mype,' blk ',lb,' searching for child ', & 
