@@ -1,3 +1,8 @@
+2023-03-28  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90,source/mpi_morton_bnd_restrict.F90:
+	fix errors from merge by adding some use associations.
+
 2023-03-27  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_amr_1blk_restrict.F90: request data for restriction

@@ -115,6 +115,7 @@
 !!  2022-11-08 K. Weide  removed unused logical variables l_srl_only, ldiag
 !!  2023-03-27 K. Weide  Also restrict into ANCESTOR blocks "where needed"
 !!  2023-03-27 K. Weide  Ancestors accept data from children who are ancestors
+!!  2023-03-28 K. Weide  Added USE associations for lrefine_min, surr_blks
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -141,6 +142,7 @@ Subroutine mpiAmr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Use physicaldata, only: diagonals,lrestrict_in_progress
   Use physicaldata, only: int_gcell_on_cc,int_gcell_on_fc,int_gcell_on_ec,int_gcell_on_nc
   Use tree, only: lnblocks, nchild, lrefine, nodetype, child, laddress, empty
+  Use tree, only: lrefine_min, surr_blks
   Use workspace
   use mpi_morton
   Use timings

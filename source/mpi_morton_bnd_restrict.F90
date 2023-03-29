@@ -61,6 +61,7 @@
 !! MODIFICATIONS
 !!  2022-11-08 Klaus Weide  Added ONLY to USE paramesh_dimensions
 !!  2023-03-26 K. Weide  Request data for restriction into ANCESTORs as needed
+!!  2023-03-28 K. Weide  Added USE associations for k2d,k3d
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -72,6 +73,7 @@
                                           tag_offset)
 
 !-----Use Statements
+      Use paramesh_dimensions, ONLY: k2d, k3d
       Use physicaldata, ONLY: advance_all_levels
       Use tree
       Use timings
