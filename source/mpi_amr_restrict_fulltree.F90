@@ -1,11 +1,17 @@
 !----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
+!!  This file is from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2023 UChicago Argonne, LLC and contributors
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
 ! 'PARAMESH_USERS_AGREEMENT' in the main paramesh directory.
 !----------------------------------------------------------------------
+
+!!  2023-03-16 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
+!!  2023-03-17 K. Weide  Special handling for interp_mask_unk_res 40
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
 !!REORDER(4): recvar[xyz]f
@@ -42,7 +48,7 @@
 
       use paramesh_mpi_interfaces, only :  & 
      &                                mpi_amr_comm_setup
-      use gr_flashHook_interfaces
+  use gr_flashHook_interfaces
 
 !------------------------------------------------------------------------
 !
@@ -59,7 +65,7 @@
 !
 ! Written :     Peter MacNeice          February 1999
 !------------------------------------------------------------------------
-#include "Flashx_mpi_implicitNone.fh"      
+#include "Flashx_mpi_implicitNone.fh"
       integer, intent(in)  :: mype,iopt
       logical, intent(in)  :: lcc,lfc,lec,lnc
 
@@ -112,8 +118,10 @@
       integer :: ip1, jp1, kp1, ip3, jp3, kp3
       integer :: ng1, ndel
       integer :: i1,i2,j1,j2,k1,k2
+  logical,allocatable :: curvilinear_cons_mask_unk(:)
 
 !------------------------------------
+!-----Begin Executable Code
 #ifdef DEBUG_FLOW_TRACE
       write(*,*) 'entered mpi_amr_restrict_fulltree: pe ',mype, & 
      &           ' iopt ',iopt
@@ -131,6 +139,15 @@
      & sendf(maxbnd,il_bnd1:iu_bnd1+1,jl_bnd1:ju_bnd1+k2d, & 
      &       kl_bnd1:ku_bnd1+k3d))
 
+  if (iopt == 1) then
+     allocate(curvilinear_cons_mask_unk(size(interp_mask_unk_res,1)))
+     if (lcc .AND. curvilinear_conserve) then
+        curvilinear_cons_mask_unk(:) = (interp_mask_unk_res(:) .NE. 40)
+     else
+        curvilinear_cons_mask_unk(:) = .FALSE.
+     end if
+  end if
+
       if (.not.diagonals) then
          write(*,*) 'amr_1blk_restrict:  diagonals off'
       end if
@@ -144,19 +161,21 @@
 ! get this data.
       lrestrict_in_progress = .true.
 
-      call amr_1blk_guardcell_reset()
+  call amr_1blk_guardcell_reset()
 
-      call MPI_COMM_SIZE(amr_mpi_meshComm, nprocs, ierror)
+  call MPI_COMM_SIZE(amr_mpi_meshComm, nprocs, ierror)
 
 !
 ! Make sure the gt_unk, gt_facevarx, etc copy of the solution exists
 ! if NO_PERMANENT_GUARDCELL is defined. This may be needed to fill
 ! guardcells if the restriction operator needs guardcell data.
-      level = -1
+  level = -1
       call amr_1blk_copy_soln(level)
 
 
-! Cycle through parents in decreasing order of refinement
+
+
+!-----Cycle through parents in decreasing order of refinement
       llrefine_max = maxval(lrefine)
       llrefine_min = llrefine_max
       if(lnblocks.gt.0) then
@@ -169,8 +188,7 @@
 
 
       if(llrefine_max.gt.llrefine_min) then
-      do level = llrefine_max-1,llrefine_min,-1
-
+     Do level = llrefine_max-1,llrefine_min,-1
 
 
 ! Now parents of leaf nodes get data
@@ -185,7 +203,7 @@
 ! a specified level, which would eliminate some unnecessary
 ! communications.
 ! 
-      tag_offset = 100
+        tag_offset = 100
 
       lguard    = .true.
       lprolong  = .false.
@@ -194,7 +212,7 @@
       lrestrict = .true.
       lfulltree = .false.  ! Must be set to .false. in order to use
                            ! the correct communication pattern!
-      call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong, & 
+        Call mpi_amr_comm_setup(mype,nprocs,lguard,lprolong,           &
      &                        lflux,ledge,lrestrict,lfulltree, & 
      &                        iopt,lcc,lfc,lec,lnc,tag_offset)
 
@@ -202,8 +220,7 @@
       do lb = 1,lnblocks
 
 
-
-! Is this a parent block of at least one leaf node?
+!-----Is this a parent block of at least one leaf node?
       if(nodetype(lb).ge.2.and.lrefine(lb).eq.level) then
 
 
@@ -224,9 +241,9 @@
 #endif /* DEBUG */
 
 
-! if (remote_block,remote_pe) is not a local block then it must have a 
-! local copy available in the buffer space at the end of the local
-! block list.
+!-------if (remote_block,remote_pe) is not a local block then it must have a 
+!-------local copy available in the buffer space at the end of the local
+!-------block list.
         if(remote_pe.ne.mype) then
         lfound = .false.
         iblk = strt_buffer
@@ -256,10 +273,11 @@
           enddo 
         endif
 
-        cnodetype = nodetype(remote_block)
-        cempty = empty(remote_block)
+                    cnodetype = nodetype(remote_block)
+                    cempty = empty(remote_block)
 
-! compute the offset in the parent block appropriate for this child
+
+!--------compute the offset in the parent block appropriate for this child
          ioff = mod(jchild-1,2)*nxb/2
          joff = mod((jchild-1)/2,2)*nyb/2
          koff = mod((jchild-1)/4,2)*nzb/2
@@ -319,7 +337,8 @@
 
          if (curvilinear_conserve) then
 
-            interp_mask_unk_res(:) = 1
+                             where(interp_mask_unk_res(:) .NE. 40) &
+                                   interp_mask_unk_res(:) = 1
             interp_mask_work_res(:) = 1
             interp_mask_facex_res(:) = 1
             interp_mask_facey_res(:) = 1
@@ -338,12 +357,12 @@
 
 ! Compute volume weighted cell center data for conservative restriction
            do ivar = 1,nvar
-             if(int_gcell_on_cc(ivar)) then
+                                   If (int_gcell_on_cc(ivar) &
+                                        .AND.curvilinear_cons_mask_unk(ivar))          &
                     unk1(ivar,i1:i2,j1:j2,k1:k2,1) = & 
      &                  unk1(ivar,i1:i2,j1:j2,k1:k2,1) & 
      &                  *cell_vol(i1:i2,j1:j2,k1:k2)
 
-             endif
            enddo
 ! Compute area weighted cell face-center data for conservative restriction
            do ivar = 1,nfacevar
@@ -406,7 +425,7 @@
 
 ! Compute restricted cell-centered data from the data in the buffer
            if(lcc) then
-             call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+             call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff)
 
            do k=1+nguard*k3d,nzb+nguard*k3d,2
              kk = (k-nguard*k3d)/2+1+nguard*k3d
@@ -428,31 +447,25 @@
              do j=1,nyb+(-nyb/2)*k2d
                do i=1,nxb-nxb/2
                  do ivar=1,nvar
-                   if(int_gcell_on_cc(ivar)) then
-                   if (curvilinear) then
-                   if (curvilinear_conserve) then
+                                         If (int_gcell_on_cc(ivar)) Then
+                   if (curvilinear .AND. curvilinear_cons_mask_unk(ivar)) Then
                    unk(ivar,i+nguard0+ioff,j+nguard0*k2d+joff, & 
      &                      k+nguard0*k3d+koff,lb) = & 
      &                send(ivar,i+nguard,j+nguard*k2d,k+nguard*k3d) & 
      &           / cell_vol(i+nguard+ioff,j+nguard*k2d+joff, & 
      &                      k+nguard*k3d+koff)
-                   else
+                                            Else
                    unk(ivar,i+nguard0+ioff,j+nguard0*k2d+joff, & 
      &                      k+nguard0*k3d+koff,lb) = & 
      &                send(ivar,i+nguard,j+nguard*k2d,k+nguard*k3d)
-                   endif
-                   else
-                   unk(ivar,i+nguard0+ioff,j+nguard0*k2d+joff, & 
-     &                      k+nguard0*k3d+koff,lb) = & 
-     &                send(ivar,i+nguard,j+nguard*k2d,k+nguard*k3d)
-                   endif
-                   endif
+                                            End If
+                                         End If
                  enddo
                enddo
              enddo
            enddo
 
-           endif                ! end of lcc iftest
+                          End If  ! End If (lcc)
 
 
 
@@ -1077,8 +1090,11 @@
       enddo                      ! end of loop over refinement levels
       endif
 
+  lrestrict_in_progress = .false.
 
-      lrestrict_in_progress = .false.
+  if (allocated(curvilinear_cons_mask_unk)) then
+     deallocate(curvilinear_cons_mask_unk)
+  end if
 
       deallocate(tempf)
       deallocate(sendf)
@@ -1090,7 +1106,4 @@
 
       return
       end subroutine mpi_amr_restrict_fulltree
-
-
-
 
