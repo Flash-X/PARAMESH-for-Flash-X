@@ -21,6 +21,24 @@
 	same-level neighbor of type 2 (PARENT) and the ANCESTOR's
 	refinement level is not below lrefine_min.
 
+2023-03-20  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/paramesh_interfaces.F90,source/amr_restrict_unk_fun.F90,source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90:
+	fixes related to use og pdg,ig aurguments.
+
+2023-03-17  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: special handling for interp_mask_unk_res 40.
+
+2023-03-16  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: pass ioff,joff,koff to amr_restrict_unk_fun.
+	* headers/paramesh_interfaces.F90(amr_restrict_unk_fun,amr_restrict_unk_dg):
+	add ioff,joff,koff arguements to interfaces.
+	* source/amr_restrict_unk_fun.F90,source/amr_restrict_unk_dg.F90:
+	add ioff,joff,koff arguments to argument lists; do not do
+	anything with them here except passing on.
+
 2022-12-03  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/amr_1blk_cc_prol_inject.F90: clean up some USE statements
@@ -279,3 +297,55 @@
 	of the Flash-X configuration mechanism (setup.py) for generating
 	the file to included (and other files included by THAT file).
 
+2022-02-21  Klaus Weide  <kweide>
+
+	* Reorganize source under Paramesh4 so that PARAMESH and derived
+	software that should be subject to the PARAMESH_USERS_AGREEMENT is
+	located in and under the PM4_package subdirectory.
+
+2022-02-16  Klaus Weide  <kweide>
+
+	* updated copyright and license notices in some source files
+
+2004 - 2020-06-30  University of Chicago
+
+	* Customizations of PARAMESH code for FLASH versions 2, 3, and 4
+
+2016-09     Marcos Vanella
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Adapted for INS
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/amr_restrict_fc_ins.F90:
+	Named _ins
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: 
+	Named _ins
+
+2016-09     Klaus Weide  <kweide>
+
+	*
+	Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90:
+	handle interp=30..32
+
+2010        Chris Daley
+
+	* Paramesh4/flash_avoid_orrery/mpi_amr_exchange_nodetype.F90: created
+
+3/27/07 K. Olson removed ALL reference to 'LIBRARY'.
+
+
+2/1/07  K. Olson removed ALL references to 'shmem'.
+
+
+1/24/07 K. Olson removed all references to MPI_USED in the PARAMESH source tree
+
+
+2006-09     Klaus Weide  <kweide>
+
+	* Paramesh4/interpolation/prolong/amr_1blk_cc_prol_gen_work_fun.F90: Modified
+
+2004-02     Kevin Olson
+
+	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Written

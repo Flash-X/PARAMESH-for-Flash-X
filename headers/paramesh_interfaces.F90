@@ -26,6 +26,7 @@
 !!  2022-11-08 K. Weide  added pdg,ig arguments to amr_1blk_to_perm
 !!  2022-11-08 K. Weide  added ig argument to amr_restrict_unk_genorder
 !!  2022-12-03 K. Weide  amr_1blk_cc_prol_inject interface with pdg,ig args
+!!  2023-03-20 K. Weide  some more interfaces with pdg,ig args
 !!***
 
 !#ifdef HAVE_CONFIG_H
@@ -138,11 +139,15 @@
 
       interface
       subroutine amr_1blk_cc_prol_dg(recv,ia,ib,ja,jb,ka,kb,          &
-     &       idest,ioff,joff,koff,mype,ivar)
+     &       idest,ioff,joff,koff,mype,ivar,pdg,ig)
+        use gr_pmPdgDecl, ONLY : pdg_t
+        implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
       integer, intent(in) :: ivar
       real,    intent(inout) :: recv(:,:,:,:)
+      type(pdg_t),intent(INOUT) :: pdg
+      Integer, Intent(in) :: ig
       end subroutine amr_1blk_cc_prol_dg
       end interface
 
@@ -1073,11 +1078,15 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_fun(datain,dataout, ig)
-      real, intent(in)    :: datain(:,:,:,:)
-      real, intent(inout) :: dataout(:,:,:,:)
-      integer, intent(in) :: ig
-      end subroutine amr_restrict_unk_fun
+         subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
+           real, intent(in)    :: datain(:,:,:,:)
+           real, intent(inout) :: dataout(:,:,:,:)
+           integer, intent(in) :: ioff,joff,koff
+           type(pdg_t),intent(INOUT) :: pdg
+           integer, intent(in) :: ig
+         end subroutine amr_restrict_unk_fun
       end interface
 
       interface
@@ -1095,11 +1104,16 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_dg(datain,dataout,ivar)
-      real, intent(in)    :: datain(:,:,:,:)
-      real, intent(inout) :: dataout(:,:,:,:)
-      integer, intent(in) :: ivar
-      end subroutine amr_restrict_unk_dg
+         subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff,pdg,ig)
+           use gr_pmPdgDecl, ONLY : pdg_t
+           implicit none
+           real, intent(in)    :: datain(:,:,:,:)
+           real, intent(inout) :: dataout(:,:,:,:)
+           integer, intent(in) :: ivar
+           integer, intent(in) :: ioff,joff,koff
+           type(pdg_t),intent(INOUT) :: pdg
+           integer, intent(in) :: ig
+         end subroutine amr_restrict_unk_dg
       end interface
 
       interface

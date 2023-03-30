@@ -17,11 +17,13 @@
 !! SYNOPSIS
 !!
 !!   Call amr_1blk_cc_prol_dg (recv,ia,ib,ja,jb,ka,kb,idest,
-!!                                 ioff,joff,koff,mype,ivar)
+!!                                 ioff,joff,koff,mype,ivar,
+!!                                 pdg, ig)
 !!   Call amr_1blk_cc_prol_dg (real,
 !!                                 integer, integer, integer, integer,
 !!                                 integer, integer, integer, integer,
-!!                                 integer, integer, integer, integer)
+!!                                 integer, integer, integer, integer,
+!!                                 TYPE(pdg_t),integer)
 !!
 !! DESCRIPTION
 !!
@@ -33,14 +35,16 @@
 !!
 !!  Stub version created  -  Klaus Weide 2022-04-28
 !!
+!!  2023-03-20 Added pdg,ig arguments          - Klaus Weide
 !!***
 
 Subroutine amr_1blk_cc_prol_dg               &
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,  &
-         mype,ivar)
+         mype,ivar, pdg,ig)
 
   !-----Use Statements
   Use Driver_interface, ONLY: Driver_abort
+  use gr_pmPdgDecl, ONLY : pdg_t
 
   Implicit None
 
@@ -49,6 +53,8 @@ Subroutine amr_1blk_cc_prol_dg               &
   Integer, Intent(in)    :: ia,ib,ja,jb,ka,kb
   Integer, Intent(in)    :: idest,ioff,joff,koff,mype
   Integer, Intent(in)    :: ivar
+  type(pdg_t), intent(INOUT) :: pdg
+  integer, intent(in)    :: ig
 
   call Driver_abort(&
        'An implementation of amr_1blk_cc_prol_dg needs to be provided!')
