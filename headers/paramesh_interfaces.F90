@@ -8,8 +8,6 @@
 !----------------------------------------------------------------------
 
 ! Modification history:
-!
-! Modification history:
 !     Michael L. Rilee, November 2002, *dbz*
 !        Initial support for divergenceless prolongation
 !     Michael L. Rilee, December 2002, *clean_divb*
@@ -923,10 +921,12 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_fun(datain,dataout)
-      real, intent(in)    :: datain(:,:,:,:)
-      real, intent(inout) :: dataout(:,:,:,:)
-      end subroutine amr_restrict_unk_fun
+         subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
+           implicit none
+           real, intent(in)    :: datain(:,:,:,:)
+           real, intent(inout) :: dataout(:,:,:,:)
+           integer, intent(in) :: ioff,joff,koff
+         end subroutine amr_restrict_unk_fun
       end interface
 
       interface
@@ -943,11 +943,13 @@
       end interface
 
       interface
-      subroutine amr_restrict_unk_dg(datain,dataout,ivar)
-      real, intent(in)    :: datain(:,:,:,:)
-      real, intent(inout) :: dataout(:,:,:,:)
-      integer, intent(in) :: ivar
-      end subroutine amr_restrict_unk_dg
+         subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
+           implicit none
+           real, intent(in)    :: datain(:,:,:,:)
+           real, intent(inout) :: dataout(:,:,:,:)
+           integer, intent(in) :: ivar
+           integer, intent(in) :: ioff,joff,koff
+         end subroutine amr_restrict_unk_dg
       end interface
 
       interface
