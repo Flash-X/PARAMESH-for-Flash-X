@@ -109,8 +109,12 @@
 !!
 !!   Peter MacNeice (February 1999).
 !!
+!! MODIFICATIONS
+!!
 !!  2023-03-16 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
 !!  2023-03-17 K. Weide  Special handling for interp_mask_unk_res 40
+!!  2023-03-27 K. Weide  Also restrict into ANCESTOR blocks "where needed"
+!!  2023-03-27 K. Weide  Ancestors accept data from children who are ancestors
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -185,6 +189,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer,Save :: llrefine_min,llrefine_max
   Integer,Save :: llrefine_mint,llrefine_maxt
 
+
   Logical :: l_srl_only,ldiag
   Logical :: lguard,lprolong,lflux,ledge,lrestrict
   Logical :: lfound
@@ -192,6 +197,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 
 !-----Begin Executable Code
+
   nguard0 = nguard*npgs
   nguard1 = nguard - nguard0
   nguard_work0 = nguard_work*npgs
@@ -283,6 +289,9 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
 
 !-----Is this a parent block of at least one leaf node?
               If ((nodetype(lb) == 2 .and. lrefine(lb) == level) .or. &
+                  (nodetype(lb) == 3 .and. lrefine(lb) == level .AND. &
+                     (lrefine(lb) .GE. lrefine_min) .AND. &
+                     ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2)) .OR. &
                   (nodetype(lb) == 2 .and. filling_guardcells)) Then
 
 
@@ -316,7 +325,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                     cnodetype = nodetype(remote_block)
                     cempty = empty(remote_block)
 
-                    If (cnodetype <= 2 .and. cempty == 0 ) Then
+                    If ( cempty == 0 ) Then
 
 !--------compute the offset in the parent block appropriate for this child
                        ioff = mod(jchild-1,2)*nxb/2

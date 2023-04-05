@@ -3,6 +3,24 @@
 	* source/amr_restrict_unk_fun.F90: call amr_restrict_unk_dg for
 	a set of variables (when requested), instead of per-variable.
 
+2023-03-27  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90: request data for restriction
+	also into ANCESTOR blocks, if the ancestor data could potentially
+	be needed for purposes of (de)refinement criteria. Such a
+	potential need is assumed if the ANCESTOR has at least one
+	same-level neighbor of type 2 (PARENT) and the ANCESTOR's
+	refinement level is not below lrefine_min.
+
+2023-03-26  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_morton_bnd_restrict.F90: request data for restriction
+	also into ANCESTOR blocks, if the ancestor data could potentially
+	be needed for purposes of (de)refinement criteria. Such a
+	potential need is assumed if the ANCESTOR has at least one
+	same-level neighbor of type 2 (PARENT) and the ANCESTOR's
+	refinement level is not below lrefine_min.
+
 2023-03-17  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: special handling for interp_mask_unk_res 40.
