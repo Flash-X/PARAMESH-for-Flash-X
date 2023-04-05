@@ -58,6 +58,8 @@
 !!    Written by Peter MacNeice  and Michael Gehmeyr, February 2000.
 !!    Major simplification and rewrite by Kevin Olson, August 2007.
 !!
+!! MODIFICATIONS
+!!  2023-03-26 K. Weide  Request data for restriction into ANCESTORs as needed
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -136,6 +138,9 @@
       Do lb = 1, lnblocks
 
       If (nodetype(lb) == 2 .or.                                       &
+          (nodetype(lb) == 3 .AND. &
+             (lrefine(lb) .GE. lrefine_min) .AND. &
+             ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2))       .OR. &
           (advance_all_levels .and. nodetype(lb) == 3)) Then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
