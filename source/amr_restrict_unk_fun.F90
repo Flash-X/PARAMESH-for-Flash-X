@@ -55,6 +55,8 @@
 !!   Written :     Peter MacNeice          January 1997
 !!   Modified by Kevin Olson for high order restriction, 2004.
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
+!! MODIFICATIONS
+!!  2022-11-02 A. Harris  Call amr_restrict_unk_dg for many variables at once
 !!***
 
 Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
