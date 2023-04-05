@@ -89,13 +89,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
             If (order <=0 .or. order > 5) order = 1
             Call amr_restrict_unk_genorder(datain,dataout,order,ivar)
 
-         Elseif (interp_mask_unk_res(ivar) == 40) Then
-!--------User defined interpolation to be used for
-!prolongation/restriction from Thornado
-
-            Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
-
-         ElseIf (interp_mask_unk_res(ivar) >= 20) Then
+         ElseIf (interp_mask_unk_res(ivar) >= 20 .and. interp_mask_unk_res(ivar) /= 40 ) Then
 
 !-----------Call a user defined routine for restriction
             Call amr_restrict_unk_user()
@@ -105,6 +99,10 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
      End If
 
   End Do  ! End Do ivar = 1, nvar
+
+!--------User defined interpolation to be used for
+!prolongation/restriction from Thornado
+  If ( any( interp_mask_unk_res == 40 ) ) Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
 
 End Subroutine amr_restrict_unk_fun
 
