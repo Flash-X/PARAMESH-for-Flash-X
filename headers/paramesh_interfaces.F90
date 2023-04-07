@@ -943,11 +943,10 @@
       end interface
 
       interface
-         subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
+         subroutine amr_restrict_unk_dg(datain,dataout,ioff,joff,koff)
            implicit none
            real, intent(in)    :: datain(:,:,:,:)
            real, intent(inout) :: dataout(:,:,:,:)
-           integer, intent(in) :: ivar
            integer, intent(in) :: ioff,joff,koff
          end subroutine amr_restrict_unk_dg
       end interface

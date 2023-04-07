@@ -56,7 +56,8 @@
 !!   Modified by Kevin Olson for high order restriction, 2004.
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
 !! MODIFICATIONS
-!!  2022-11-02 A. Harris  Call amr_restrict_unk_dg for many variables at once
+!!  2023-04-05 A. Harris  Call amr_restrict_unk_dg for many variables at once
+!!  2023-04-07 K. Weide   Call amr_restrict_unk_dg without ivar argument
 !!***
 
 Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
@@ -104,7 +105,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
 
 !--------User defined interpolation to be used for
 !prolongation/restriction from Thornado
-  If ( any( interp_mask_unk_res == 40 ) ) Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff)
+  If ( any( interp_mask_unk_res == 40 ) ) Call amr_restrict_unk_dg(datain,dataout,ioff,joff,koff)
 
 End Subroutine amr_restrict_unk_fun
 
