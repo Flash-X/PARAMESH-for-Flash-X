@@ -1,3 +1,8 @@
+2023-04-07  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_restrict_unk_fun.F90,source/amr_restrict_unk_dg.F90,headers/paramesh_interfaces.F90:
+	eliminate ivar argument from amr_restrict_unk_dg.
+
 2023-04-05  Austin Harris  <jaharris87>
 
 	* source/amr_restrict_unk_fun.F90: call amr_restrict_unk_dg for
