@@ -4,7 +4,7 @@
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
 !!  National Aeronautics and Space Administration, Goddard Space Flight
 !!  Center.  All Rights Reserved.
-!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!  Copyright 2023 UChicago Argonne, LLC and contributors
 !!
 !!  Use of the PARAMESH software is governed by the terms of the
 !!  usage agreement which can be found in the file
@@ -71,6 +71,7 @@
 !!   amr_1blk_cc_prol_genorder
 !!   amr_1blk_cc_prol_dg
 !!   amr_1blk_cc_prol_user
+!!   amr_block_geometry
 !!
 !! RETURNS
 !!
@@ -84,7 +85,9 @@
 !!  2022-10-07 Klaus Weide  Made PDG-aware (temporary, intermediate changes)
 !!  2022-11-08 Klaus Weide  Made PDG-aware properly with pdg,ig arguments
 !!  2022-12-03 Klaus Weide  Call amr_1blk_cc_prol_inject with pdg,ig arguments
-!!  2023-03-20 Klaus Weide  More use of pdg,ig arguments
+!!  2023-03-20 Klaus Weide  Call amr_1blk_cc_prol_dg with pdg,ig arguments
+!!  2023-03-15 Klaus Weide  Call amr_block_geometry if needed for _prol_dg
+!!  2023-04-19 Klaus Weide  Call amr_block_geometry with pdg,ig arguments
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -99,6 +102,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
   use gr_pmPdgDecl, ONLY : pdg_t
   Use paramesh_dimensions, ONLY: gr_thePdgDimens
   Use physicaldata, ONLY: int_gcell_on_cc, interp_mask_unk
+  Use physicaldata, ONLY: curvilinear
 
   Use paramesh_interfaces, only :                  &
                        amr_1blk_cc_prol_inject,    & 
@@ -106,7 +110,9 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
                        amr_1blk_cc_prol_genorder,  & 
                        amr_1blk_cc_prol_dg,    &
                        amr_1blk_cc_prol_user,  &
-                       amr_prolong_gen_unk1_fun
+                       amr_prolong_gen_unk1_fun    &
+                       amr_block_geometry
+
 
 !-----Include Statements
 #include "Flashx_mpi_implicitNone.fh"
@@ -131,12 +137,31 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
   end if  ! End If (timing_mpi)
 
   nvar = gr_thePdgDimens(ig) % nvar
+  if (curvilinear .AND. &
+      ANY(interp_mask_unk(:) == 40 .and. int_gcell_on_cc(:))) then
+     ! This call prepares cell_face_coord1[,2[,3]] for use by
+     ! amr_1blk_cc_prol_dg. It has been pulled out of the loop over
+     ! ivar, below, to avoid unnecessarily repeated calls.
+     call amr_block_geometry(lb_p,pe_p,pdg,ig)
+  end if
 
 #ifdef GRID_WITH_MONOTONIC
 ! Call the minimally changed subroutine from Paramesh2
   call amr_prolong_gen_unk1_fun &
      &     (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
      &     mype,lb,pdg,ig)
+
+  Do ivar = 1, nvar
+     If (interp_mask_unk(ivar) == 40 .and. int_gcell_on_cc(ivar)) Then
+
+!--------Special interpolation for Thornado DG variables
+
+        Call amr_1blk_cc_prol_dg                      &
+        (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
+        mype,ivar,pdg,ig)
+
+     End If
+  End Do
 #else
   Do ivar = 1, nvar
      If (int_gcell_on_cc(ivar)) Then
@@ -171,8 +196,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 
         Elseif (interp_mask_unk(ivar) == 40) Then
 
-!--------User defined interpolation to be used for
-!prolongation/restriction from Thornado
+!--------Special interpolation for Thornado DG variables
 
            Call amr_1blk_cc_prol_dg                      &
            (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &

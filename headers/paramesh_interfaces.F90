@@ -1104,12 +1104,11 @@
       end interface
 
       interface
-         subroutine amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff,pdg,ig)
+         subroutine amr_restrict_unk_dg(datain,dataout,ioff,joff,koff,pdg,ig)
            use gr_pmPdgDecl, ONLY : pdg_t
            implicit none
            real, intent(in)    :: datain(:,:,:,:)
            real, intent(inout) :: dataout(:,:,:,:)
-           integer, intent(in) :: ivar
            integer, intent(in) :: ioff,joff,koff
            type(pdg_t),intent(INOUT) :: pdg
            integer, intent(in) :: ig

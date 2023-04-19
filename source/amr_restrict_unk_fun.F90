@@ -60,6 +60,8 @@
 !!  2022-11-02 K. Weide  Added 'ig' dummy argument and used it for 'nvar'
 !!  2022-11-08 K. Weide  Pass ig to amr_restrict_unk_genorder
 !!  2023-03-20 K. Weide  Use pdg and ig arguments
+!!  2023-04-05 A. Harris  Call amr_restrict_unk_dg for many variables at once
+!!  2023-04-07 K. Weide   Call amr_restrict_unk_dg without ivar argument
 !!***
 
 Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, pdg,ig)
@@ -100,13 +102,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, pdg,ig)
             If (order <=0 .or. order > 5) order = 1
             Call amr_restrict_unk_genorder(datain,dataout,order,ivar,ig)
 
-         Elseif (interp_mask_unk_res(ivar) == 40) Then
-!--------User defined interpolation to be used for
-!prolongation/restriction from Thornado
-
-            Call amr_restrict_unk_dg(datain,dataout,ivar,ioff,joff,koff,pdg,ig)
-
-         ElseIf (interp_mask_unk_res(ivar) >= 20) Then
+         ElseIf (interp_mask_unk_res(ivar) >= 20 .and. interp_mask_unk_res(ivar) /= 40 ) Then
 
 !-----------Call a user defined routine for restriction
             Call amr_restrict_unk_user()
@@ -116,6 +112,9 @@ Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff, pdg,ig)
      End If
 
   End Do  ! End Do ivar = 1, nvar
+
+!--------Special restriction for Thornado DG variables
+  If ( any( interp_mask_unk_res == 40 ) ) Call amr_restrict_unk_dg(datain,dataout,ioff,joff,koff,pdg,ig)
 
 End Subroutine amr_restrict_unk_fun
 

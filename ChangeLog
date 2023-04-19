@@ -1,3 +1,18 @@
+2023-04-19  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90:
+	add pdg,ig arguments to amr_block_geometry call.
+
+2023-04-07  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_restrict_unk_fun.F90,source/amr_restrict_unk_dg.F90,headers/paramesh_interfaces.F90:
+	eliminate ivar argument from amr_restrict_unk_dg.
+
+2023-04-05  Austin Harris  <jaharris87>
+
+	* source/amr_restrict_unk_fun.F90: call amr_restrict_unk_dg for
+	a set of variables (when requested), instead of per-variable.
+
 2023-03-28  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_amr_1blk_restrict.F90,source/mpi_morton_bnd_restrict.F90:
@@ -24,7 +39,7 @@
 2023-03-20  Klaus Weide  <kweide@uchicago.edu>
 
 	* headers/paramesh_interfaces.F90,source/amr_restrict_unk_fun.F90,source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90:
-	fixes related to use og pdg,ig aurguments.
+	fixes related to use of pdg,ig arguments.
 
 2023-03-17  Klaus Weide  <kweide@uchicago.edu>
 
