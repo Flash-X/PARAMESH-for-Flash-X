@@ -110,7 +110,7 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
                        amr_1blk_cc_prol_genorder,  & 
                        amr_1blk_cc_prol_dg,    &
                        amr_1blk_cc_prol_user,  &
-                       amr_prolong_gen_unk1_fun    &
+                       amr_prolong_gen_unk1_fun,   &
                        amr_block_geometry
 
 
