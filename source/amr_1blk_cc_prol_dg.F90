@@ -1,4 +1,4 @@
-!!****if* source/Grid/GridMain/AMR/Paramesh4/PM4_package/source/amr_1blk_cc_prol_dg
+!!****if* source/rid/GridMain/AMR/Paramesh4/PM4_package/source/amr_1blk_cc_prol_dg
 !! NOTICE
 !!  This file derived from PARAMESH - an adaptive mesh library.
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
@@ -17,11 +17,11 @@
 !! SYNOPSIS
 !!
 !!   Call amr_1blk_cc_prol_dg (recv,ia,ib,ja,jb,ka,kb,idest,
-!!                                 ioff,joff,koff,mype,ivar)
+!!                                 ioff,joff,koff,mype)
 !!   Call amr_1blk_cc_prol_dg (real,
 !!                                 integer, integer, integer, integer,
 !!                                 integer, integer, integer, integer,
-!!                                 integer, integer, integer, integer)
+!!                                 integer, integer, integer)
 !!
 !! DESCRIPTION
 !!
@@ -32,12 +32,13 @@
 !! AUTHORS
 !!
 !!  Stub version created  -  Klaus Weide 2022-04-28
+!!  Eliminated ivar arg   -  Klaus Weide 2023-04-19
 !!
 !!***
 
 Subroutine amr_1blk_cc_prol_dg               &
         (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff,  &
-         mype,ivar)
+         mype)
 
   !-----Use Statements
   Use Driver_interface, ONLY: Driver_abort
@@ -48,7 +49,6 @@ Subroutine amr_1blk_cc_prol_dg               &
   Real,    Intent(inout) :: recv(:,:,:,:)
   Integer, Intent(in)    :: ia,ib,ja,jb,ka,kb
   Integer, Intent(in)    :: idest,ioff,joff,koff,mype
-  Integer, Intent(in)    :: ivar
 
   call Driver_abort(&
        'An implementation of amr_1blk_cc_prol_dg needs to be provided!')
