@@ -1,5 +1,17 @@
 2023-04-19  Klaus Weide  <kweide@uchicago.edu>
 
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90,source/amr_1blk_cc_prol_dg.F90,headers/paramesh_interfaces.F90:
+	eliminate ivar argument from amr_1blk_cc_prol_dg.
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90: call
+	amr_1blk_cc_prol_dg not in an ivar loop, but only once if and only
+	if any elements of the interp_mask_unk and int_gcell_on_cc arrays
+	say to do so. This is essentially the version recently developed
+	by Austin Harris in the Thornado directory of the Flash-X
+	code. However, the array used to mask variables in is
+	interp_mask_unk (as generally for purposes of interpolation /
+	prolongation), not interp_mask_unk_res.
+
 	* source/amr_1blk_cc_prol_gen_unk_fun.F90:
 	add pdg,ig arguments to amr_block_geometry call.
 

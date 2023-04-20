@@ -139,12 +139,11 @@
 
       interface
       subroutine amr_1blk_cc_prol_dg(recv,ia,ib,ja,jb,ka,kb,          &
-     &       idest,ioff,joff,koff,mype,ivar,pdg,ig)
+     &       idest,ioff,joff,koff,mype,pdg,ig)
         use gr_pmPdgDecl, ONLY : pdg_t
         implicit none
       integer, intent(in) :: ia,ib,ja,jb,ka,kb
       integer, intent(in) :: idest,ioff,joff,koff,mype
-      integer, intent(in) :: ivar
       real,    intent(inout) :: recv(:,:,:,:)
       type(pdg_t),intent(INOUT) :: pdg
       Integer, Intent(in) :: ig

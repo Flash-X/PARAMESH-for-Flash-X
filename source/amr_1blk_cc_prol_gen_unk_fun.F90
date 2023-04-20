@@ -88,6 +88,7 @@
 !!  2023-03-20 Klaus Weide  Call amr_1blk_cc_prol_dg with pdg,ig arguments
 !!  2023-03-15 Klaus Weide  Call amr_block_geometry if needed for _prol_dg
 !!  2023-04-19 Klaus Weide  Call amr_block_geometry with pdg,ig arguments
+!!  2023-04-19 Klaus Weide  Call amr_1blk_cc_prol_dg at most once, w/o ivar
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -150,18 +151,6 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
   call amr_prolong_gen_unk1_fun &
      &     (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
      &     mype,lb,pdg,ig)
-
-  Do ivar = 1, nvar
-     If (interp_mask_unk(ivar) == 40 .and. int_gcell_on_cc(ivar)) Then
-
-!--------Special interpolation for Thornado DG variables
-
-        Call amr_1blk_cc_prol_dg                      &
-        (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
-        mype,ivar,pdg,ig)
-
-     End If
-  End Do
 #else
   Do ivar = 1, nvar
      If (int_gcell_on_cc(ivar)) Then
@@ -194,19 +183,18 @@ subroutine amr_1blk_cc_prol_gen_unk_fun                &
 
            Call amr_1blk_cc_prol_user()
 
-        Elseif (interp_mask_unk(ivar) == 40) Then
-
-!--------Special interpolation for Thornado DG variables
-
-           Call amr_1blk_cc_prol_dg                      &
-           (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
-           mype,ivar,pdg,ig)
-
         End If  ! End If (interp_mask_unk(ivar) < 20
 
      End If  ! Enf If (int_gcell_on_cc(ivar))
   End Do  ! End Do ivar = 1, nvar
 #endif
+
+!--------User defined interpolation to be used for
+!prolongation/restriction from Thornado
+  If ( ANY( interp_mask_unk == 40 .and. int_gcell_on_cc ) ) &
+        Call amr_1blk_cc_prol_dg                      &
+        (recv,ia,ib,ja,jb,ka,kb,idest,ioff,joff,koff, &
+        mype,pdg,ig)
 
   if (timing_mpi) then
      timer_amr_1blk_cc_prol_gen_unk =                 &
