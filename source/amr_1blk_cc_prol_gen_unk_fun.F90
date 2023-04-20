@@ -82,6 +82,7 @@
 !!  Modified for GRID_WITH_MONOTONIC variant - Klaus Weide 2022-02-20
 !!  Changes to call amr_1blk_cc_prol_dg for Thornado - Austin Harris 2021-12-06
 !!  2023-03-15 Call amr_block_geometry if needed for _prol_dg     - Klaus Weide
+!!  2023-04-19 Call amr_1blk_cc_prol_dg at most once, w/o ivar    - Klaus Weide
 !!***
 
 #include "paramesh_preprocessor.fh"
