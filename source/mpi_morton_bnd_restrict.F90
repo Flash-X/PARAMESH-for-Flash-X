@@ -71,6 +71,8 @@
 !!  2022-05-13 K. Weide  Use local pattern pointer to access comm pattern
 !!  2022-05-20 K. Weide  Variant pattern for subPatNo=GRID_SUBPAT_RESTRICT_ANC
 !!  2022-05-25 K. Weide  Variant pattern for GRID_SUBPAT_RESTRICT_FOR_FCORR
+!!  2023-03-26 K. Weide  Request data for restriction into ANCESTORs as needed
+!!  2024-04-01 K. Weide  Combined logic for which children to request data from
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -161,12 +163,15 @@
       Do lb = 1, lnblocks
 
       If (nodetype(lb) == 2 .or.                                       &
-           (advance_all_levels .and. nodetype(lb) == 3)) Then
+          (nodetype(lb) == 3 .AND.                                     &
+           (advance_all_levels .OR.                                    &
+            (subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT    .AND.        &
+             lrefine(lb) .GE. lrefine_min                 .AND.        &
+             ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2) )))) then
         if (advance_all_levels .OR. &
-            (subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT) .OR.        &
+            subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT .OR.        &
             (subPatLoc == GRID_SUBPAT_RESTRICT_ANC .AND.        &
-             any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
-                 surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1)) ) then
+             hasLeafFaceNeighs(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb)) )) then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
         Do i = 1,nchild

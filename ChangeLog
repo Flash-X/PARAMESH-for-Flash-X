@@ -1,3 +1,64 @@
+2024-04-01  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_morton_bnd_restrict.F90: on merging various lines of
+	development, combine the conditions that decide from which children
+	data is requested into a more comprehensive logic.
+
+2023-04-19  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90,source/amr_1blk_cc_prol_dg.F90,headers/paramesh_interfaces.F90:
+	eliminate ivar argument from amr_1blk_cc_prol_dg.
+
+	* source/amr_1blk_cc_prol_gen_unk_fun.F90: call
+	amr_1blk_cc_prol_dg not in an ivar loop, but only once if and only
+	if any elements of the interp_mask_unk and int_gcell_on_cc arrays
+	say to do so. This is essentially the version recently developed
+	by Austin Harris in the Thornado directory of the Flash-X
+	code. However, the array used to mask variables in is
+	interp_mask_unk (as generally for purposes of interpolation /
+	prolongation), not interp_mask_unk_res.
+
+2023-04-07  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/amr_restrict_unk_fun.F90,source/amr_restrict_unk_dg.F90,headers/paramesh_interfaces.F90:
+	eliminate ivar argument from amr_restrict_unk_dg.
+
+2023-04-05  Austin Harris  <jaharris87>
+
+	* source/amr_restrict_unk_fun.F90: call amr_restrict_unk_dg for
+	a set of variables (when requested), instead of per-variable.
+
+2023-03-27  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90: request data for restriction
+	also into ANCESTOR blocks, if the ancestor data could potentially
+	be needed for purposes of (de)refinement criteria. Such a
+	potential need is assumed if the ANCESTOR has at least one
+	same-level neighbor of type 2 (PARENT) and the ANCESTOR's
+	refinement level is not below lrefine_min.
+
+2023-03-26  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_morton_bnd_restrict.F90: request data for restriction
+	also into ANCESTOR blocks, if the ancestor data could potentially
+	be needed for purposes of (de)refinement criteria. Such a
+	potential need is assumed if the ANCESTOR has at least one
+	same-level neighbor of type 2 (PARENT) and the ANCESTOR's
+	refinement level is not below lrefine_min.
+
+2023-03-17  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: special handling for interp_mask_unk_res 40.
+
+2023-03-16  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90,source/mpi_amr_restrict_fulltree.F90: pass ioff,joff,koff to amr_restrict_unk_fun.
+	* headers/paramesh_interfaces.F90(amr_restrict_unk_fun,amr_restrict_unk_dg):
+	add ioff,joff,koff arguements to interfaces.
+	* source/amr_restrict_unk_fun.F90,source/amr_restrict_unk_dg.F90:
+	add ioff,joff,koff arguments to argument lists; do not do
+	anything with them here except passing on.
+
 2023-01-18  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/gr_pmBlockGetter.F90: renumber S_* states.
@@ -553,4 +614,3 @@
 2004-02     Kevin Olson
 
 	* Paramesh4/Incomp/amr_restrict_fc_ins.F90: Written
-

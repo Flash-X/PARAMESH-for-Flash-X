@@ -92,10 +92,8 @@
       Use paramesh_comm_data
       Use paramesh_interfaces, only : fill_old_loc
 
-      Implicit None
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, Intent(inout) :: new_loc(:,:)

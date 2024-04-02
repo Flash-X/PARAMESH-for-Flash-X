@@ -4,7 +4,7 @@
 !!  Copyright (C) 2003, 2004 United States Government as represented by the
 !!  National Aeronautics and Space Administration, Goddard Space Flight
 !!  Center.  All Rights Reserved.
-!!  Copyright 2022 UChicago Argonne, LLC and contributors
+!!  Copyright 2023 UChicago Argonne, LLC and contributors
 !!
 !!  Use of the PARAMESH software is governed by the terms of the
 !!  usage agreement which can be found in the file
@@ -16,14 +16,18 @@
 !!
 !! SYNOPSIS
 !!
-!!   Call amr_restrict_unk_fun(datain, dataout)
-!!   Call amr_restrict_unk_fun(real array, real array)
+!!   Call amr_restrict_unk_fun(datain, dataout,       ioff   ,joff   ,koff)
+!!   Call amr_restrict_unk_fun(real array, real array,integer,integer,integer)
 !!
 !! ARGUMENTS
 !!
 !!   Real, Intent(in)    :: datain(:,:,:,:)  data to restrict
 !!   Real, Intent(inout) :: dataout(:,:,:,:) restricted data to return
-!!   
+!!   ioff, joff, koff : offsets of the restricted data that is returned within the coarse
+!!                      block; each of these numbers should be either 0 or half
+!!                      the number of interior cells in the block for the
+!!                      relevant direction.
+!!
 !! USES
 !!
 !!   paramesh_dimensions
@@ -51,9 +55,12 @@
 !!   Written :     Peter MacNeice          January 1997
 !!   Modified by Kevin Olson for high order restriction, 2004.
 !!   Call amr_restrict_unk_dg for Thornado - Austin Harris, K. Weide 2022-04-28
+!! MODIFICATIONS
+!!  2023-04-05 A. Harris  Call amr_restrict_unk_dg for many variables at once
+!!  2023-04-07 K. Weide   Call amr_restrict_unk_dg without ivar argument
 !!***
 
-Subroutine amr_restrict_unk_fun(datain,dataout)
+Subroutine amr_restrict_unk_fun(datain,dataout,ioff,joff,koff)
 
 !-----Use statements.
   Use paramesh_dimensions
@@ -67,6 +74,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
 !-----Input/Output arguments.
   Real, Intent(in)    :: datain(:,:,:,:)
   Real, Intent(inout) :: dataout(:,:,:,:)
+  Integer, Intent(in) :: ioff,joff,koff
 
 !-----Local variables.
   Integer :: ivar, order
@@ -84,13 +92,7 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
             If (order <=0 .or. order > 5) order = 1
             Call amr_restrict_unk_genorder(datain,dataout,order,ivar)
 
-         Elseif (interp_mask_unk_res(ivar) == 40) Then
-!--------User defined interpolation to be used for
-!prolongation/restriction from Thornado
-
-            Call amr_restrict_unk_dg(datain,dataout,ivar)
-
-         ElseIf (interp_mask_unk_res(ivar) >= 20) Then
+         ElseIf (interp_mask_unk_res(ivar) >= 20 .and. interp_mask_unk_res(ivar) /= 40 ) Then
 
 !-----------Call a user defined routine for restriction
             Call amr_restrict_unk_user()
@@ -100,6 +102,10 @@ Subroutine amr_restrict_unk_fun(datain,dataout)
      End If
 
   End Do  ! End Do ivar = 1, nvar
+
+!--------User defined interpolation to be used for
+!prolongation/restriction from Thornado
+  If ( any( interp_mask_unk_res == 40 ) ) Call amr_restrict_unk_dg(datain,dataout,ioff,joff,koff)
 
 End Subroutine amr_restrict_unk_fun
 
