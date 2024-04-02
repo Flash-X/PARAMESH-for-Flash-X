@@ -3,6 +3,8 @@
 	* source/mpi_morton_bnd_restrict.F90: on merging various lines of
 	development, combine the conditions that decide from which children
 	data is requested into a more comprehensive logic.
+	* source/gr_amr1blkRestrict.F90: pass ioff,joff,koff to
+	amr_restrict_unk_fun. Special handling for interp_mask_unk_res 40.
 
 2023-04-19  Klaus Weide  <kweide@uchicago.edu>
 

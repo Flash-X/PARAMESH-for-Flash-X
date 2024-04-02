@@ -1,6 +1,9 @@
 !----------------------------------------------------------------------
-! PARAMESH - an adaptive mesh library.
-! Copyright (C) 2003
+!!  This file is derived from PARAMESH - an adaptive mesh library.
+!!  Copyright (C) 2003, 2004 United States Government as represented by the
+!!  National Aeronautics and Space Administration, Goddard Space Flight
+!!  Center.  All Rights Reserved.
+!!  Copyright 2024 UChicago Argonne, LLC and contributors
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -85,9 +88,8 @@
 !!   the restriction operator to it. Guardcell data is not involved,
 !!   for either the chld or parent blocks.
 !!
-!!   This routine calls a user provided routine called restrict_fun
-!!   which defines the pattern of restriction which the user wishes to
-!!   apply.
+!!   This routine calls subroutines with names of the form restrict_*_fun,
+!!   which define the actual arithmetical restriction oeprations.
 !!
 !! AUTHORS
 !!
@@ -96,6 +98,8 @@
 !!
 !! MODIFICATIONS
 !!  2022-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
+!!  2024-04-01 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
+!!  2024-04-01 K. Weide  Special handling for interp_mask_unk_res 40
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -289,6 +293,8 @@
 
          If (curvilinear_conserve) Then
 
+            where(interp_mask_unk_res(:) .NE. 40) &
+                                   interp_mask_unk_res(:) = 1
             interp_mask_unk_res(:) = 1
             interp_mask_work_res(:) = 1
             interp_mask_facex_res(:) = 1
@@ -309,7 +315,8 @@
 
 !----------Compute volume weighted cell center data for conservative restriction
            Do ivar = 1,nvar
-             If (int_gcell_on_cc(ivar))                                & 
+             If (int_gcell_on_cc(ivar) &
+                 .AND.curvilinear_cons_mask_unk(ivar))                 &
                      unk1(ivar,i1:i2,j1:j2,k1:k2,1) =                  & 
                         unk1(ivar,i1:i2,j1:j2,k1:k2,1)                 & 
                         *cell_vol(i1:i2,j1:j2,k1:k2)
@@ -378,7 +385,7 @@
 !----------Compute restricted cell-centered data from the data in the buffer
            If (lcc) Then
 
-           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp)
+           Call amr_restrict_unk_fun(unk1(:,:,:,:,1),temp,ioff,joff,koff)
            kc = koff + nguard0*k3d
            jc = joff + nguard0*k2d
            ic = ioff + nguard0
@@ -393,7 +400,7 @@
                  ii = ii + ic
                  Do ivar=1,nvar
                    If (int_gcell_on_cc(ivar)) Then
-                     If (curvilinear_conserve) Then
+                     If (curvilinear_cons_mask_unk(ivar)) Then
                        unk(ivar,ii,jj,kk,lb) =                         & 
                        temp(ivar,i,j,k)                                & 
                        / cell_vol(ii+nguard1,jj+nguard1*k2d,           & 
@@ -964,5 +971,14 @@
          Deallocate(sendf)
       end if
 
+contains
+  logical function curvilinear_cons_mask_unk(iv) result(msk)
+    integer :: iv
+
+    msk = .FALSE.
+    if (lcc .AND. curvilinear_conserve) then
+       msk = (interp_mask_unk_res(iv) .NE. 40)
+    end if
+  end function curvilinear_cons_mask_unk
       End Subroutine gr_amr1blkRestrict
 
