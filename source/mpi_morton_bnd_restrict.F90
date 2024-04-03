@@ -73,6 +73,7 @@
 !!  2022-05-25 K. Weide  Variant pattern for GRID_SUBPAT_RESTRICT_FOR_FCORR
 !!  2023-03-26 K. Weide  Request data for restriction into ANCESTORs as needed
 !!  2024-04-01 K. Weide  Combined logic for which children to request data from
+!!  2024-04-03 K. Weide  Corrected combined logic for which children to request
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -171,7 +172,8 @@
         if (advance_all_levels .OR. &
             subPatLoc == GRID_SUBPAT_RESTRICT_DEFAULT .OR.        &
             (subPatLoc == GRID_SUBPAT_RESTRICT_ANC .AND.        &
-             hasLeafFaceNeighs(surr_blks(:,1:3,1:1+2*k2d,1:1+2*k3d,lb)) )) then
+             any(surr_blks(1,1:3,1:1+2*k2d,1:1+2*k3d,lb) > 0 .and.      &
+                 surr_blks(3,1:3,1:1+2*k2d,1:1+2*k3d,lb) == 1) )) then
 
 !------ADD OFF PROCESSOR CHILDREN OF BLOCK 'lb' TO FETCH LIST
         Do i = 1,nchild

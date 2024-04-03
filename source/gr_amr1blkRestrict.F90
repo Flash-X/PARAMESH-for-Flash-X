@@ -100,6 +100,7 @@
 !!  2022-06-13 K. Weide  Ancillary restrict: skip parent blocks w/o leaf neighs
 !!  2024-04-01 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
 !!  2024-04-01 K. Weide  Special handling for interp_mask_unk_res 40
+!!  2024-04-03 K. Weide  Correct special handling for interp_mask_unk_res 40
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -295,7 +296,6 @@
 
             where(interp_mask_unk_res(:) .NE. 40) &
                                    interp_mask_unk_res(:) = 1
-            interp_mask_unk_res(:) = 1
             interp_mask_work_res(:) = 1
             interp_mask_facex_res(:) = 1
             interp_mask_facey_res(:) = 1
