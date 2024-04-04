@@ -6,7 +6,7 @@
 ! Copyright (C) 2003, 2004 United States Government as represented by the
 ! National Aeronautics and Space Administration, Goddard Space Flight
 ! Center.  All Rights Reserved.
-! Copyright (C) 2022 The University of Chicago
+! Copyright (C) 2024 The University of Chicago
 !
 ! Use of the PARAMESH software is governed by the terms of the
 ! usage agreement which can be found in the file
@@ -25,7 +25,7 @@
 !!                           lflux,ledge,lrestrict,lfulltree,
 !!                           iopt,lcc,lfc,lec,lnc,tag_offset,
 !!                           getter,
-!!                           stages,
+!!                           ntypeMin,ntypeMax,levelMin,levelMax,
 !!                           nlayersx,nlayersy,nlayersz,
 !!                           flux_dir)
 !!   Call gr_mpiAmrComm(mype,nprocs,
@@ -36,9 +36,10 @@
 !!   Call gr_mpiAmrComm(integer, integer,
 !!                           logical, logical,
 !!                           logical, logical, logical, logical,
-!!                           integer, logical, logical, logical, logical, integer
-!!                           optional integer,
-!!                           optional integer, optional integer, optional, integer,
+!!                           integer, logical, logical, logical, logical, integer,
+!!                           optional type(gr_pmBlockGetter_t),
+!!                           optional integer, optional integer, optional integer, optional integer,
+!!                           optional integer, optional integer, optional integer,
 !!                           optional integer)
 !!
 !! ARGUMENTS      
@@ -95,17 +96,49 @@
 !!       If flux_dir = 3, operate on 'z' direction.
 !!     If not specified, all directions are operated on.
 !!
-!!   stages - a mask of bitflags.
+!!   getter - an optional OUTPUT argument. If it is present, then
+!!      a properly initialized gr_pmBlockGetter_t is returned here,
+!!      ready having its 'get' type-bound function called.
+!!      Note that the presence or absence of a getter actual argument
+!!      fundamentally changes how the gr_mpiAmrComm subroutine behaves.
+!!      When getter is NOT present (CASE A),
+!!       * act similar to the predecessor subroutine mpi_amr_comm_setup
+!!       * when gr_mpiAmrComm returns, MPI communications are completed,
+!!         and received data have been put in their proper place,
+!!         which is the array temprecv_buf.
+!!      When getter IS PRESENT (CASE B),
+!!       * sending of data has been started,
+!!       * receiving of data - as well as putting data in the proper
+!!         places and further processing it - remains to be done, by
+!!         the caller (directly or indirectly) repeatedly calling the
+!!         get method of the getter.
+!!       * The caller is ultimately responsible for disposing of the
+!!         getter object.
+!!
+!!   stages - a mask of bitflags. OBSOLETE DOCUMENTATION.
 !!            Tells this routine which parts of the work of
-!!            communcating it shoudl actually do.
+!!            communcating it should actually do.
 !!            Bitwise OR of the following integer values:
 !!               1 (sendBit)
 !!               2 (postRecvBit)
 !!               4 waitBit
+!!
+!!   ntypeMin,ntypeMax - can be optionally used to limit the types of
+!!      blocks that the recipient is interested in.
+!!      Can be one of the integers 1,2,3 for LEAF, PARENT_BLK,
+!!      ANCESTOR, respectively.
+!!      Omit or use (-1) to not limit.
+!!      This is a hint, limiting is not guaranteed.
+!!
+!!   levelMin,levelMax - can be optionally used to limit the
+!!      refinement levels of blocks that the recipient is interested in.
+!!      Omit or use UNSPEC_LEVEL to not limit.
+!!      This is a hint, limiting is not guaranteed.
+!!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
-!!   mpif.h
+!!   Flashx_mpi_implicitNone.fh
 !!
 !! USES
 !!
@@ -176,7 +209,6 @@ contains
                                     lflux,ledge,lrestrict,lfulltree,   & 
                                     iopt,lcc,lfc,lec,lnc,tag_offset,   &
                                     getter,                            &
-!!$                                    stages,                            &
                                     ntypeMin,ntypeMax,levelMin,levelMax,&
                                     nlayersx,nlayersy,nlayersz,        & 
                                     flux_dir)
@@ -226,12 +258,9 @@ contains
       use Logfile_interface, ONLY: Logfile_stamp
 #endif
 
-      Implicit None
 
 !-----Include statements.
-! #ifdef DEBUG  ! currently also used for MPI_STATUS_SIZE
-      Include 'mpif.h'
-! #endif
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, Intent(in)    :: mype,nprocs,iopt
@@ -239,7 +268,6 @@ contains
       Logical, Intent(in)    :: lcc,lfc,lec,lnc,lfulltree
       Logical, Intent(in)    :: lguard,lprolong,lflux,ledge,lrestrict
       type(gr_pmBlockGetter_t), intent(OUT), OPTIONAL, TARGET :: getter
-!!$      integer, intent(in), optional :: stages
       integer, intent(IN), optional :: ntypeMin, ntypeMax
       integer, intent(IN), optional :: levelMin, levelMax
       Integer, Intent(in), Optional :: nlayersx,nlayersy,nlayersz
@@ -284,16 +312,16 @@ contains
 ! * Swap in the right communcation pattern
 ! * Compute sizes of send_buf and temprecv_buf (rank 0: sometimes log them)
 ! * Allocate temprecv_buf
-! * CASE A (using getter)
+! * CASE A (traditional)
 !   * Initialize/allocate local commCt object
 ! * CASE B (using getter)
 !   * Build the GETTER (which includes a commCtl subobject)
 ! * Allocate commCtl % sendBuf
 ! * Pack data into commCtl % sendBuf
-! * Call gr_mpiXchangeBlocks(stages=3): Communicate, part1: POST sends & receives
+! * Call gr_mpiXchangeBlocks("stage 3"): Communicate, part1: POST sends & receives
 ! * Set ladd_strt, ladd_end from comm pattern's strt_buff, laddress
 ! * CASE A (traditional)
-!   * Call gr_mpiXchangeBlocks(stages=4): Finish Communicating!
+!   * Call gr_mpiXchangeBlocks("stage 4"): Finish Communicating!
 !   * Unpack metainfo for blocks (call mpi_unpack_{blocks,fluxes,edges})
 !   * Cleanup/deallocate commCtl object
 ! * CASE B (using getter)

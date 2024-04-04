@@ -24,6 +24,7 @@
 !!                           lguard,lprolong,
 !!                           lflux,ledge,lrestrict,lfulltree,
 !!                           iopt,lcc,lfc,lec,lnc,tag_offset,
+!!                           ntypeMin,ntypeMax,levelMin,levelMax,
 !!                           nlayersx,nlayersy,nlayersz,
 !!                           flux_dir)
 !!   Call mpi_amr_comm_setup(mype,nprocs,
@@ -34,8 +35,9 @@
 !!   Call mpi_amr_comm_setup(integer, integer,
 !!                           logical, logical,
 !!                           logical, logical, logical, logical,
-!!                           integer, logical, logical, logical, logical, integer
-!!                           optional integer, optional integer, optional, integer,
+!!                           integer, logical, logical, logical, logical, integer,
+!!                           optional integer, optional integer, optional integer, optional integer,
+!!                           optional integer, optional integer, optional integer,
 !!                           optional integer)
 !!
 !! ARGUMENTS      
@@ -92,6 +94,18 @@
 !!       If flux_dir = 3, operate on 'z' direction.
 !!     If not specified, all directions are operated on.
 !!
+!!   ntypeMin,ntypeMax - can be optionally used to limit the types of
+!!      blocks that the recipient is interested in.
+!!      Can be one of the integers 1,2,3 for LEAF, PARENT_BLK,
+!!      ANCESTOR, respectively.
+!!      Omit or use (-1) to not limit.
+!!      This is a hint, limiting is not guaranteed.
+!!
+!!   levelMin,levelMax - can be optionally used to limit the
+!!      refinement levels of blocks that the recipient is interested in.
+!!      Omit or use UNSPEC_LEVEL to not limit.
+!!      This is unimplemented and ignored in the present implementation.
+!!
 !! INCLUDES
 !!
 !!   paramesh_preprocessor.fh
@@ -104,6 +118,7 @@
 !!   workspace
 !!   tree
 !!   mpi_morton
+!!   paramesh_interfaces
 !!   paramesh_mpi_interfaces
 !!
 !! CALLS
