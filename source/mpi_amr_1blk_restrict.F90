@@ -124,6 +124,7 @@
 !!  2023-03-17 K. Weide  Special handling for interp_mask_unk_res 40
 !!  2023-03-27 K. Weide  Also restrict into ANCESTOR blocks "where needed"
 !!  2023-03-27 K. Weide  Ancestors accept data from children who are ancestors
+!!  2024-04-04 K. Weide  Tweaked ntypeMin,ntypeMax passed to  gr_mpiAmrComm
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -188,6 +189,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
   Integer :: remote_pe0,remote_block0
   integer :: remote_pe,remote_block,icoord,nprocs,ierr
   Integer :: lb,level,ich,jchild,ioff,joff,koff
+  integer :: ntypeMin,ntypeMax
   integer :: levMin,levMax
   Integer :: idest,i,j,k,ii,jj,kk,ivar,iopt0,jface,ng0
   Integer :: ia,ja,ka,ib,jb,kb,isa,isb,jsa,jsb,ksa,ksb
@@ -291,10 +293,14 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
         lrestrict = .True.
 
         if (filling_guardcells) then
+           ntypeMin = PARENT_BLK
+           ntypeMax = PARENT_BLK
 !!$           lev = UNSPEC_LEVEL
            levMin = 1
            levMax = 1000
         else
+           ntypeMin = PARENT_BLK
+           ntypeMax = ANCESTOR
 !!$           lev = level
            levMin = level
            levMax = level
@@ -304,7 +310,7 @@ Subroutine mpi_amr_1blk_restrict(mype,iopt,lcc,lfc,lec,lnc,      &
                             lflux,ledge,lrestrict,lfulltree,         &
                             iopt,lcc,lfc,lec,lnc,                    &
                             tag_offset,                              &
-                            ntypeMin=LEAF, ntypeMax=PARENT_BLK,      &
+                            ntypeMin=ntypeMin, ntypeMax=ntypeMax,    &
                             levelMin=levMin, levelMax=levMax,        &
                             nlayersx=1,nlayersy=1,nlayersz=1)
         call Timers_stop("gr_mpiAmrComm s")

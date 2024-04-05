@@ -24,6 +24,7 @@
 !!  2022-06-14 K. Weide  Tweaked error message texts for lkup errors
 !!  2023-01-18 K. Weide  Renumber S_* states
 !!  2023-01-18 K. Weide  Set push_data_out_very_quickly to FALSE
+!!  2024-04-04 K. Weide  Tweak GRID_PAT_RESTRICT nodetype=3 in dependencyDirs
 
 #include "constants.h"
 #include "Simulation.h"
@@ -36,6 +37,7 @@ module gr_pmBlockGetter
     use gr_flashHook_interfaces, ONLY: i27b ! a kind type parameter
     use tree, ONLY : lnblocks, surr_blks, laddress, strt_buffer
     use tree, ONLY : nodetype, child, parent, which_child, newchild, lrefine
+    use tree, ONLY : lrefine_min
     use physicaldata,        ONLY: advance_all_levels
     use mpi_morton,          ONLY: ladd_strt, ladd_end
     use paramesh_dimensions, ONLY : ndim, nguard,nguard_work
@@ -1582,7 +1584,10 @@ contains
        end if
     case default !(GRID_PAT_RESTRICT)
        if (nodetype(lb) == 2 .or.                                       &
-           (advance_all_levels .and. nodetype(lb) == 3)) then
+           (nodetype(lb) == 3 .and.                                     &
+            (advance_all_levels  .OR.                                   &
+             (lrefine(lb) .GE. lrefine_min                 .AND.        &
+              ANY(surr_blks(3,:,1:1+2*K2D,1:1+2*K3D,lb)==2) )))) then
           n = 2**NDIM
        end If
     end select

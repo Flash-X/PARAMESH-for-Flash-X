@@ -101,6 +101,7 @@
 !!  2024-04-01 K. Weide  Pass ioff,joff,koff to amr_restrict_unk_fun
 !!  2024-04-01 K. Weide  Special handling for interp_mask_unk_res 40
 !!  2024-04-03 K. Weide  Correct special handling for interp_mask_unk_res 40
+!!  2024-04-04 K. Weide  Tweak nodetype-dependent logic for skipping computation
 !!***
 
 !!REORDER(5): unk, facevar[xyz]
@@ -213,8 +214,11 @@
       If (lnblocks > 0) Then
 
 !-----Is this a parent block of at least one leaf node?
-      If (nodetype(lb) == 2) Then
-
+      If (nodetype(lb) == 2 .OR.                                      &
+                  (nodetype(lb) == 3  .AND.                           &
+                     (lrefine(lb) .GE. lrefine_min) .AND. &
+                     ANY(surr_blks(3,:,1:1+2*k2d,1:1+2*k3d,lb)==2))   &
+                     ) Then
                  ! Skip this parent block if (1) we are here just in
                  ! preparation for filling guard cells, AND (2) this
                  ! parent block has no LEAF neighbors - i.e., this
@@ -268,7 +272,8 @@
         cnodetype = nodetype(remote_block)
         cempty = empty(remote_block)
 
-        If (cnodetype <= 2 .and. cempty == 0 ) Then
+        If ((nodetype(lb) - cnodetype == 1  .OR. &
+             nodetype(lb) - cnodetype == 0) .and. cempty == 0 ) Then
 
 !--------compute the offset in the parent block appropriate for this child
          ioff = mod(jchild-1,2)*nxb/2
@@ -952,7 +957,7 @@
       End If  ! End (iopt == 1)
 #endif
 
-      End If  ! End If (nodetype(lb) == 2)
+      End If  ! End If (nodetype(lb) == 2 .OR. ... )
 
       End If  ! End If (lnblocks > 0)
 

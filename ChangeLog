@@ -1,3 +1,15 @@
+2024-04-04  Klaus Weide  <kweide@uchicago.edu>
+
+	* source/mpi_amr_1blk_restrict.F90: tweaked ntypeMin,ntypeMax values
+	passed to gr_mpiAmrComm.
+	* source/gr_amr1blkRestrict.F90: tweaked nodetype-dependent logic
+	to mirror more close that being used in
+	mpi_amr_1blk_restrict. However, it appears that this code is
+	currently not being exercised.
+	* source/gr_pmBlockGetter.F90: tweaked function dependencyDirs to
+	accommodate scenarios where restriction into an ANCESTOR block is
+	requested.
+
 2024-04-03  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/mpi_morton_bnd_restrict.F90: corrected one of the conditions that decide from which children
