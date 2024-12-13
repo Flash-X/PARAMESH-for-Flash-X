@@ -1,3 +1,7 @@
+2024-12-11  Klaus Weide  <kweide@uchicago.edu>
+
+	* bittree/amr_exchange_work_bflags.F90: include "Flashx_mpi_implicitNone.fh".
+
 2023-04-19  Klaus Weide  <kweide@uchicago.edu>
 
 	* source/amr_1blk_cc_prol_gen_unk_fun.F90,source/amr_1blk_cc_prol_dg.F90,headers/paramesh_interfaces.F90:

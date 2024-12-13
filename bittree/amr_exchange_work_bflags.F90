@@ -18,6 +18,9 @@
 !!
 !!   Tom Klosterman
 !!
+!! MODIFICATIONS
+!!  2024-12-11 Klaus Weide  Include Flashx_mpi_implicitNone.fh
+!!
 !!***
 
 #include "paramesh_preprocessor.fh"
@@ -30,10 +33,7 @@
       use paramesh_dimensions, only : maxblocks
       use paramesh_comm_data, ONLY : amr_mpi_meshComm, amr_mpi_real
 
-      Implicit None
-
-!-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       integer, intent(in) :: nprocs,mype
