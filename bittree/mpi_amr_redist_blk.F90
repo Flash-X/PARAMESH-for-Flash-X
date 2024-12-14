@@ -77,6 +77,10 @@
 !!   Kevin Olson (1998)
 !!   Bug fix contributed by Paul Ricker and Marcus Gross (2003)
 !!
+!! MODIFICATIONS
+!!  2019        Tom Klosterman  Use Bittree
+!!  2024-12-14  Klaus Weide     Include Flashx_mpi_implicitNone.fh
+!!
 !!***
 
 !!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
@@ -93,10 +97,8 @@
       Use paramesh_interfaces, only : fill_old_loc
       use bittree, only: gr_btIdentify
 
-      Implicit None
-
 !-----Include statements
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, Intent(inout) :: new_loc(2,maxblocks_tr)

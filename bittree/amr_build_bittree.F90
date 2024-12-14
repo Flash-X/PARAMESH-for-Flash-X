@@ -27,6 +27,9 @@
 !! HISTORY
 !!
 !!  2021 - 2022  Tom Klosterman
+!!
+!! MODIFICATIONS
+!!  2024-12-14 Klaus Weide  Include Flashx_mpi_implicitNone.fh
 !!***
 #include "constants.h"
 
@@ -53,8 +56,7 @@ subroutine amr_build_bittree()
 
   use iso_c_binding, only: c_bool, c_int
   
-  implicit none
-#include "mpif.h"
+#include "Flashx_mpi_implicitNone.fh"
   
   real :: gmin(ndim), gmax(ndim)
   integer :: top(3)
