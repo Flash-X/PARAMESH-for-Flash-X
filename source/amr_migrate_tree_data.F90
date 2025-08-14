@@ -34,7 +34,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   io
 !!   paramesh_comm_data
 !!
 !! CALLS
@@ -66,14 +65,11 @@
       Use paramesh_dimensions
       Use physicaldata
       Use tree
-      Use io
-      Use paramesh_comm_data
+      Use paramesh_comm_data, ONLY : amr_mpi_real, amr_mpi_meshComm
       Use paramesh_interfaces, only : fill_old_loc
       Use paramesh_mpi_interfaces, only : MPI_int_SSEND
 
-      Implicit None
-
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output variables.
       Integer, Intent(inout) :: new_loc(2,maxblocks_tr)

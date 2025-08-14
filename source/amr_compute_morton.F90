@@ -68,8 +68,6 @@
 !!
 !!***
 
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
 #include "paramesh_preprocessor.fh"
 
       Subroutine amr_compute_morton (mort_no)
@@ -79,13 +77,10 @@
       Use physicaldata
       Use tree
       Use paramesh_mpi_interfaces, only : morton_number
-      Use io
-      Use paramesh_comm_data
-
-      Implicit None
+      Use paramesh_comm_data, ONLY : amr_mpi_real, amr_mpi_meshComm
 
 !-----Include statements.
-      Include 'mpif.h'
+#include "Flashx_mpi_implicitNone.fh"
 
 !-----Input/Output arguments.
       Integer, Intent(out) ::  mort_no(:,:)

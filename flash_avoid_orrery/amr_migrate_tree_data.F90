@@ -37,7 +37,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   io
 !!   paramesh_comm_data
 !!
 !! CALLS
@@ -70,8 +69,7 @@
       Use paramesh_dimensions
       Use physicaldata
       Use tree
-      Use io
-      Use paramesh_comm_data
+      Use paramesh_comm_data, ONLY : amr_mpi_real, amr_mpi_meshComm
       Use paramesh_interfaces, only : fill_old_loc
       Use paramesh_mpi_interfaces, only : MPI_int_SSEND
 
@@ -424,8 +422,7 @@ Subroutine amr_migrate_tree_data_flash (new_loc,nprocs,mype)
   Use paramesh_dimensions
   Use physicaldata
   Use tree
-  Use io
-  Use paramesh_comm_data
+  Use paramesh_comm_data, ONLY : amr_mpi_real, amr_mpi_meshComm
   Use paramesh_interfaces, only : fill_old_loc
   Use paramesh_mpi_interfaces, only : MPI_int_SSEND
 

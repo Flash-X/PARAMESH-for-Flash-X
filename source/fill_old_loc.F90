@@ -36,7 +36,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   io
 !!
 !! CALLS
 !! 
@@ -67,7 +66,6 @@
       Use paramesh_dimensions
       Use physicaldata
       Use tree
-      Use io
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 
       Implicit None

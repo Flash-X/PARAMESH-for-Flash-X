@@ -31,7 +31,6 @@
 !!   physicaldata
 !!   tree
 !!   timings
-!!   io
 !!   paramesh_mpi_interfaces
 !!
 !! CALLS
@@ -70,7 +69,6 @@
       Use physicaldata
       Use tree
       Use timings
-      Use io
       Use paramesh_mpi_interfaces, Only : mpi_morton_bnd,              & 
                                           mpi_morton_bnd_prolong,      & 
                                           mpi_morton_bnd_fluxcon,      & 
@@ -143,7 +141,6 @@ Subroutine amr_morton_process_flash()
   Use physicaldata
   Use tree
   Use timings
-  Use io
 
   Use paramesh_mpi_interfaces, Only : mpi_morton_bnd,              & 
        mpi_morton_bnd_prolong,      & 

@@ -56,7 +56,7 @@
         use physicaldata
         use tree
         use timings
-        use io
+        use io, ONLY : output_dir
         use Grid_data, ONLY : gr_meshMe, gr_meshNumProcs
 
         implicit none

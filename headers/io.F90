@@ -11,11 +11,9 @@
 !        Initial support for divergenceless prolongation
 !     Michael L. Rilee, December 2002, *clean_divb*
 !        Support for projecting field onto divergenceless field
+!     Klaus Weide, May 2025, *io.F90*
+!        Simplify
 !
-
-!!REORDER(5): unk, facevar[xyz], tfacevar[xyz]
-!!REORDER(4): recvar[xyz]f
-#include "paramesh_preprocessor.fh"
 
       Module io
 

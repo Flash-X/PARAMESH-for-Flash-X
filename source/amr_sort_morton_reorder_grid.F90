@@ -43,7 +43,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   io
 !!   paramesh_mpi_interfaces
 !!
 !! CALLS
@@ -82,7 +81,6 @@
       Use paramesh_dimensions
       Use physicaldata
       Use tree
-      Use io
       Use paramesh_interfaces, only : morton_sort
       Use Paramesh_comm_data, ONLY : amr_mpi_meshComm
 

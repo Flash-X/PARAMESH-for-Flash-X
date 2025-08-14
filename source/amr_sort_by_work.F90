@@ -90,7 +90,7 @@
       Use physicaldata
       Use tree
       Use paramesh_interfaces, only : fill_old_loc
-      Use io
+      Use io, ONLY : amr_log_file
       Use paramesh_comm_data
 
 #include "Flashx_mpi_implicitNone.fh"

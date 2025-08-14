@@ -1,3 +1,9 @@
+2025-08-13  Klaus Weide  <kweide@uchicago.edu>
+
+	* headers/io.F90,source/amr_compute_morton.F90,source/amr_migrate_tree_data.F90,source/amr_morton_order.F90,source/amr_sort_by_work.F90,source/amr_sort_morton.F90,
+	source/amr_sort_morton_reorder_grid.F90,source/fill_old_loc.F90,source/gr_amr_dump_runtime_parameters.F90,flash_avoid_orrery/amr_migrate_tree_data.F90,
+	flash_avoid_orrery/amr_morton_process.F90: some minor cleanup.
+
 2024-12-14  Klaus Weide  <kweide@uchicago.edu>
 
 	* bittree/amr_build_bittree.F90,bittree/mpi_amr_redist_blk.F90: include "Flashx_mpi_implicitNone.fh".

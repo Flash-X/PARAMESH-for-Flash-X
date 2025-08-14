@@ -50,7 +50,6 @@
 !!   paramesh_dimensions
 !!   physicaldata
 !!   tree
-!!   io
 !!   paramesh_interfaces
 !!
 !! CALLS
@@ -92,7 +91,6 @@
       Use paramesh_dimensions
       Use physicaldata
       Use tree
-      Use io
       Use paramesh_interfaces, only : amr_compute_morton,              & 
                                       amr_migrate_tree_data,           & 
                                       amr_redist_blk,                  & 
